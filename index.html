@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <!-- Using favicon with less margins -->
+    <link rel="icon" href="https://guquxpxxycfmmlqajdyw.supabase.co/storage/v1/object/public/other//favicon-less-margins.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="Content-Security-Policy" content="
+      default-src 'self';
+      connect-src 'self' https://*.stripe.com https://api.stripe.com https://js.stripe.com https://*.supabase.co wss://*.supabase.co;
+      script-src 'self' https://js.stripe.com https://m.stripe.network https://hcaptcha.com https://*.hcaptcha.com 'unsafe-inline' 'unsafe-eval';
+      worker-src 'self' blob:;
+      frame-src 'self' https://js.stripe.com https://payments.stripe.com https://hcaptcha.com https://*.hcaptcha.com;
+      img-src 'self' data: https: https://*.stripe.com;
+      style-src 'self' 'unsafe-inline' https://js.stripe.com https://fonts.googleapis.com;
+      font-src 'self' https://js.stripe.com https://fonts.gstatic.com;
+    ">
+    <link href="https://fonts.googleapis.com/css2?family=VT323&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Lora:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <meta name="description" content="The Garden" />
+    <meta name="theme-color" content="#121212">
+    <title>The Garden</title>
+    <!-- Stripe CSP build: only load in production -->
+    <script src="https://js.stripe.com/v3/"></script>
+  </head>
+  <body style="background-color: var(--color-bg-main);">
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

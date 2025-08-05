@@ -1,0 +1,41 @@
+[build]
+  command = "npm run build" 
+  publish = "dist"
+  functions = "netlify/functions"
+
+[build.environment]
+
+# Production (main branch) - in.thegarden.pt
+[context.production]
+  [context.production.environment]
+    NODE_ENV = "production"
+    VITE_SUPABASE_URL = "https://guquxpxxycfmmlqajdyw.supabase.co"
+    VITE_SUPABASE_ANON_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd1cXV4cHh4eWNmbW1scWFqZHl3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzE5MzczOTYsImV4cCI6MjA0NzUxMzM5Nn0.CaOsAbm7eALs22atCPtsaGSWc5h6QZ8ly8Bar_O3N8Y"
+
+# Dev branch - dev--mellow-mandazi-f4bd0c.netlify.app
+[context.dev]
+  [context.dev.environment]
+    NODE_ENV = "development"
+    VITE_SUPABASE_URL = "https://guquxpxxycfmmlqajdyw.supabase.co"
+    VITE_SUPABASE_ANON_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd1cXV4cHh4eWNmbW1scWFqZHl3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzE5MzczOTYsImV4cCI6MjA0NzUxMzM5Nn0.CaOsAbm7eALs22atCPtsaGSWc5h6QZ8ly8Bar_O3N8Y"
+
+# Deploy previews (pull requests)
+[context.deploy-preview]
+  [context.deploy-preview.environment]
+    NODE_ENV = "development"
+    VITE_SUPABASE_URL = "https://guquxpxxycfmmlqajdyw.supabase.co"
+    VITE_SUPABASE_ANON_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd1cXV4cHh4eWNmbW1scWFqZHl3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzE5MzczOTYsImV4cCI6MjA0NzUxMzM5Nn0.CaOsAbm7eALs22atCPtsaGSWc5h6QZ8ly8Bar_O3N8Y"
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    Access-Control-Allow-Origin = "*"
+    Access-Control-Allow-Methods = "*"
+    Access-Control-Allow-Headers = "*"
+    Content-Security-Policy = "default-src 'self'; connect-src 'self' https://*.stripe.com https://api.stripe.com https://js.stripe.com https://*.supabase.co wss://*.supabase.co; script-src 'self' https://js.stripe.com https://m.stripe.network https://hcaptcha.com https://*.hcaptcha.com 'unsafe-inline'; worker-src 'self' blob:; frame-src 'self' https://js.stripe.com https://payments.stripe.com https://hcaptcha.com https://*.hcaptcha.com; img-src 'self' data: https: https://*.stripe.com; style-src 'self' 'unsafe-inline' https://js.stripe.com https://fonts.googleapis.com; font-src 'self' https://js.stripe.com https://fonts.gstatic.com;"
+    Permissions-Policy = "payment=(self 'https://js.stripe.com'), fullscreen=(self)"
