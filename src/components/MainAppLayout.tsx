@@ -169,8 +169,10 @@ export function MainAppLayout({ children }: MainAppLayoutProps) {
   // Show loading screen if either session or permissions are loading
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-neutral-900 text-stone-400 font-mono">
-        <div>Loading...</div>
+      <div className="min-h-screen flex items-center justify-center castle-animate-fade">
+        <div className="castle-ornament">
+          <div className="castle-animate-glow">Loading...</div>
+        </div>
       </div>
     );
   }
@@ -182,18 +184,13 @@ export function MainAppLayout({ children }: MainAppLayoutProps) {
         flexGrow: 1,
         display: "flex",
         flexDirection: "column",
-        backgroundImage: theme === 'light'
-          ? `linear-gradient(rgba(250, 250, 249, 0.92), rgba(250, 250, 249, 0.92)), url(https://guquxpxxycfmmlqajdyw.supabase.co/storage/v1/object/public/background-image//fern-bg-sam-blurred.png)`
-          : `url(https://guquxpxxycfmmlqajdyw.supabase.co/storage/v1/object/public/background-image//fern-bg-sam-blurred.png)`,
-        backgroundSize: 'cover',
-        backgroundRepeat: 'no-repeat',
-        backgroundAttachment: 'fixed',
-        backgroundPosition: 'center',
-        backgroundColor: theme === 'light' ? '#FAFAF9' : '#121212'
+        background: `linear-gradient(180deg, var(--castle-bg-primary) 0%, var(--castle-bg-secondary) 50%, var(--castle-bg-primary) 100%)`,
+        minHeight: '100vh'
       }}
     >
       {/* === Header Start === */}
-      <header className={`fixed top-0 left-0 right-0 z-50 border-border/50 transition-all duration-300 ease-in-out ${!showHeader ? '-translate-y-full' : ''} ${theme === 'light' ? 'border-b border-border/50' : ''} ${(isAdminPage || isHousekeepingPage) ? 'bg-black/50' : ''}`}>
+      <header className={`fixed top-0 left-0 right-0 z-50 castle-bg-surface border-b transition-all duration-300 ease-in-out ${!showHeader ? '-translate-y-full' : ''}`}
+              style={{ borderColor: 'var(--castle-border-primary)', background: 'var(--castle-bg-surface)', backdropFilter: 'blur(10px)' }}>
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between h-10 sm:h-14">
             <button
@@ -202,7 +199,7 @@ export function MainAppLayout({ children }: MainAppLayoutProps) {
               className="text-primary flex items-center gap-3 hover:opacity-80 transition-opacity"
             >
               <div>
-                <h1 className="text-xl sm:text-2xl font-lettra-bold text-primary">The Garden</h1>
+                <h1 className="text-xl sm:text-2xl" style={{ fontFamily: 'var(--castle-font-primary)', color: 'var(--castle-text-accent)' }}>The Castle</h1>
               </div>
             </button>
 
@@ -248,14 +245,14 @@ export function MainAppLayout({ children }: MainAppLayoutProps) {
               <nav className="flex gap-6 items-center">
                 <button
                   onClick={() => handleHeaderNavigation('/my-bookings')}
-                  className={`p-1.5 font-lettra text-sm transition-colors border border-shade-1 bg-surface-dark rounded-sm text-primary ${location.pathname === '/my-bookings' ? 'font-medium' : 'hover:opacity-80'}`}
+                  className={`castle-btn ghost small ${location.pathname === '/my-bookings' ? 'castle-animate-glow' : ''}`}
                 >
                   MY ACCOUNT
                 </button>
                 {isAdmin && (
                   <button
                     onClick={() => handleHeaderNavigation('/admin')}
-                    className={`p-1.5 text-sm transition-colors uppercase font-lettra text-primary border border-shade-1 bg-surface-dark rounded-sm ${location.pathname === '/admin' ? 'font-medium' : 'hover:opacity-80'}`}
+                    className={`castle-btn ghost small ${location.pathname === '/admin' ? 'castle-animate-glow' : ''}`}
                   >
                     ADMIN PANEL
                   </button>
@@ -271,7 +268,7 @@ export function MainAppLayout({ children }: MainAppLayoutProps) {
               </nav>
               <button
                 onClick={handleSignOut}
-                className="p-1.5 transition-colors text-sm uppercase font-lettra text-primary hover:opacity-80"
+                className="castle-btn danger small"
               >
                 SIGN OUT
               </button>

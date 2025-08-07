@@ -206,6 +206,14 @@ export function BookingSummary({
   }, [availableCredits, creditsToUse, creditsEnabled, creditsLoading, userHasManuallyAdjustedCredits]);
   // --- END ADDED: Track credit changes over time ---
   
+  // Clear error when accommodation changes
+  useEffect(() => {
+    if (error) {
+      console.log('[BookingSummary] Clearing error due to accommodation change');
+      setErrorWithLogging(null);
+    }
+  }, [selectedAccommodation?.id]);
+  
   // Track when credits are set
   const setCreditsToUseWithLogging = useCallback((value: number) => {
     console.log('[CREDIT_TRACKING] Setting creditsToUse:', {
@@ -599,6 +607,7 @@ export function BookingSummary({
 
   // State for pending payment row
   const [pendingPaymentRowId, setPendingPaymentRowId] = useState<string | null>(null);
+  const [pendingBookingId, setPendingBookingId] = useState<string | null>(null);
 
   const handleBookingSuccess = useCallback(async (paymentIntentId?: string, paymentRowIdOverride?: string) => {
     // Added optional paymentIntentId
@@ -779,22 +788,43 @@ export function BookingSummary({
           console.log("[Booking Summary] Adding payment intent ID to booking payload:", paymentIntentId);
         }
 
-        console.log("[BOOKING_FLOW] === STEP 6: Creating booking in database ===");
-        console.log("[BOOKING_FLOW] BOOKING PAYLOAD:", JSON.stringify(bookingPayload, null, 2));
-        
-        // --- ADDED: Log credits state right before database call ---
-        console.log('[CREDIT_TRACKING] 🎯 MOMENT OF TRUTH - Credits before database call:', {
-          availableCredits,
-          creditsToUse,
-          creditsUsedInPayload: bookingPayload.creditsUsed,
-          expectedDeduction: bookingPayload.creditsUsed || 0,
-          expectedNewBalance: availableCredits - (bookingPayload.creditsUsed || 0)
-        });
-        // --- END ADDED: Log credits state right before database call ---
-        
-        const booking = await bookingService.createBooking(bookingPayload);
+        // Check if we have a pending booking to update or need to create a new one
+        let booking;
+        if (pendingBookingId) {
+          console.log("[BOOKING_FLOW] === STEP 6: Updating PENDING booking to CONFIRMED ===");
+          console.log("[BOOKING_FLOW] Updating booking ID:", pendingBookingId);
+          console.log("[BOOKING_FLOW] With payment intent ID:", paymentIntentId);
+          
+          // Update the existing pending booking to confirmed status
+          booking = await bookingService.updateBookingStatus(
+            pendingBookingId,
+            'confirmed',
+            {
+              paymentIntentId: paymentIntentId || undefined,
+              paymentRowId: paymentRowIdToUse || undefined
+            }
+          );
+          
+          console.log("[BOOKING_FLOW] STEP 6 SUCCESS: Booking updated to confirmed:", booking.id);
+        } else {
+          // Fallback: Create a new booking if no pending booking exists
+          console.log("[BOOKING_FLOW] === STEP 6: Creating booking in database (fallback) ===");
+          console.log("[BOOKING_FLOW] BOOKING PAYLOAD:", JSON.stringify(bookingPayload, null, 2));
+          
+          // --- ADDED: Log credits state right before database call ---
+          console.log('[CREDIT_TRACKING] 🎯 MOMENT OF TRUTH - Credits before database call:', {
+            availableCredits,
+            creditsToUse,
+            creditsUsedInPayload: bookingPayload.creditsUsed,
+            expectedDeduction: bookingPayload.creditsUsed || 0,
+            expectedNewBalance: availableCredits - (bookingPayload.creditsUsed || 0)
+          });
+          // --- END ADDED: Log credits state right before database call ---
+          
+          booking = await bookingService.createBooking(bookingPayload);
 
-        console.log("[BOOKING_FLOW] STEP 6 SUCCESS: Booking created:", booking.id);
+          console.log("[BOOKING_FLOW] STEP 6 SUCCESS: Booking created:", booking.id);
+        }
         
         // --- ADDED: Log credits state immediately after booking creation ---
         console.log('[CREDIT_TRACKING] ✅ BOOKING CREATED - Credits should have been deducted by trigger:', {
@@ -1201,6 +1231,13 @@ Please manually create the booking for this user or process a refund.`;
   const handleConfirmClick = async () => {
     console.log('[FLICKER_DEBUG] 🎯 CONFIRM BUTTON CLICKED');
     console.log('[BOOKING_FLOW] === STEP 1: Confirm button clicked ===');
+    console.log('[BOOKING_FLOW] Button handler reached with:', {
+      selectedAccommodation: selectedAccommodation?.title,
+      accommodationPrice: pricing.totalAccommodationCost,
+      finalAmountAfterCredits,
+      selectedWeeksCount: selectedWeeks.length,
+      authToken: !!authToken
+    });
     console.log('[FLICKER_DEBUG] 🎯 PRE-CLICK STATE:', {
       creditsToUse,
       finalAmountAfterCredits,
@@ -1271,7 +1308,7 @@ Please manually create the booking for this user or process a refund.`;
 
 
           const payment = await bookingService.createPendingPayment({
-            bookingId: null, // Use null for pending payment
+            bookingId: null, // Will be updated after booking creation
             userId: user.id,
             startDate,
             endDate,
@@ -1283,23 +1320,100 @@ Please manually create the booking for this user or process a refund.`;
 
           console.log('[BOOKING_FLOW] STEP 3 SUCCESS: Created pending payment row:', payment.id);
           setPendingPaymentRowId(payment.id);
+          
+          // NEW: Create booking with 'pending' status BEFORE payment
+          console.log('[BOOKING_FLOW] === STEP 3.5: Creating PENDING booking BEFORE payment ===');
+          try {
+            const checkOut = addDays(selectedCheckInDate, calculateTotalDays(selectedWeeks) - 1);
+            const formattedCheckIn = formatInTimeZone(selectedCheckInDate, 'UTC', 'yyyy-MM-dd');
+            const formattedCheckOut = formatInTimeZone(checkOut, 'UTC', 'yyyy-MM-dd');
+            
+            // Calculate base accommodation price (before any discounts)
+            const baseAccommodationPrice = pricing.baseAccommodationRate * pricing.weeksStaying;
+            
+            // Calculate seasonal discount amount for accommodation
+            const seasonalDiscountAmount = baseAccommodationPrice * avgSeasonalDiscountPercent;
+            
+            // Calculate duration discount amount for accommodation
+            const accommodationDurationDiscountAmount = baseAccommodationPrice * (pricing.durationDiscountPercent / 100);
+            
+            const bookingPayload = {
+              accommodationId: selectedAccommodation.id,
+              checkIn: formattedCheckIn,
+              checkOut: formattedCheckOut,
+              totalPrice: pricing.totalAmount,
+              status: 'pending' as const, // Create as pending, will update to confirmed after payment
+              paymentIntentId: null, // Will be updated after Stripe payment
+              appliedDiscountCode: appliedDiscount?.code || null,
+              creditsUsed: creditsToUse || 0,
+              accommodationPrice: parseFloat(baseAccommodationPrice.toFixed(2)),
+              foodContribution: pricing.totalFoodAndFacilitiesCost || 0,
+              seasonalAdjustment: parseFloat(seasonalDiscountAmount.toFixed(2)),
+              seasonalDiscountPercent: Math.round(avgSeasonalDiscountPercent * 100), // Store as percentage
+              durationDiscountPercent: pricing.durationDiscountPercent,
+              discountAmount: parseFloat((accommodationDurationDiscountAmount + pricing.durationDiscountAmount + pricing.appliedCodeDiscountValue + seasonalDiscountAmount).toFixed(2)),
+              discountCodePercent: appliedDiscount?.percentage_discount ? appliedDiscount.percentage_discount / 100 : null,
+              discountCodeAppliesTo: appliedDiscount?.applies_to || null,
+              discountCodeAmount: parseFloat(pricing.appliedCodeDiscountValue.toFixed(2)),
+              accommodationPricePaid: pricing.totalAccommodationCost,
+              accommodationPriceAfterSeasonalDuration: parseFloat(pricing.totalAccommodationCost.toFixed(2)),
+              subtotalAfterDiscountCode: parseFloat(pricing.totalAmount.toFixed(2)),
+              paymentRowId: payment.id // Link to the payment row we just created
+            };
+            
+            console.log('[BOOKING_FLOW] Creating pending booking with payload:', bookingPayload);
+            const pendingBooking = await bookingService.createBooking(bookingPayload);
+            console.log('[BOOKING_FLOW] STEP 3.5 SUCCESS: Created PENDING booking:', pendingBooking.id);
+            
+            // Store booking ID for later use
+            setPendingBookingId(pendingBooking.id);
+            
+            // Update payment record with booking_id
+            await bookingService.updatePaymentAfterBooking({
+              paymentRowId: payment.id,
+              bookingId: pendingBooking.id,
+              stripePaymentId: null // Will be updated after Stripe payment
+            });
+            
+          } catch (bookingErr) {
+            console.error('[BOOKING_FLOW] STEP 3.5 WARNING: Could not create pending booking:', bookingErr);
+            // Continue anyway - we'll try again after payment
+          }
 
-          // If the final amount is 0 (fully paid with credits), skip payment and pass payment.id
-          if (finalAmountAfterCredits === 0 && creditsToUse > 0) {
-            console.log('[FLICKER_DEBUG] 🎯 CREDITS-ONLY BOOKING DETECTED');
-            console.log('[BOOKING_FLOW] === STEP 4: Credits-only booking, skipping Stripe ===');
+          // If the final amount is 0 (free accommodation, fully paid with credits, or both), skip payment
+          if (finalAmountAfterCredits === 0) {
+            console.log('[FLICKER_DEBUG] 🎯 FREE/CREDITS-ONLY BOOKING DETECTED');
+            console.log('[BOOKING_FLOW] === STEP 4: Free or credits-only booking, skipping Stripe ===');
+            console.log('[BOOKING_FLOW] Reason for free booking:', {
+              accommodationPrice: pricing.totalAccommodationCost,
+              creditsToUse,
+              finalAmountAfterCredits,
+              isFreeAccommodation: pricing.totalAccommodationCost === 0,
+              isCreditsOnly: creditsToUse > 0
+            });
             console.log('[FLICKER_DEBUG] 🎯 ABOUT TO CALL handleBookingSuccess:', {
               paymentId: payment.id,
               creditsToUse,
               finalAmountAfterCredits
             });
             await handleBookingSuccess(undefined, payment.id);
-            console.log('[FLICKER_DEBUG] 🎯 handleBookingSuccess completed for credits-only booking');
+            console.log('[FLICKER_DEBUG] 🎯 handleBookingSuccess completed for free/credits-only booking');
             return;
           }
         } catch (err) {
           console.error('[BOOKING_FLOW] STEP 3 FAILED: Failed to create pending payment:', err);
-          setError('Failed to create pending payment. Please try again.');
+          console.error('[BOOKING_FLOW] Error details:', {
+            error: err,
+            message: err instanceof Error ? err.message : 'Unknown error',
+            stack: err instanceof Error ? err.stack : undefined
+          });
+          
+          // More specific error message
+          const errorMessage = err instanceof Error && err.message.includes('booking_id') 
+            ? 'Database schema update needed. Please run the migration to allow null booking_id in payments table.'
+            : 'Failed to create pending payment. Please try again.';
+          
+          setError(errorMessage);
           return;
         }
       }
@@ -1308,9 +1422,21 @@ Please manually create the booking for this user or process a refund.`;
       console.log('[BOOKING_FLOW] === STEP 4: Opening Stripe modal ===');
       console.log('[FLICKER_DEBUG] 🎯 OPENING STRIPE MODAL');
       setShowStripeModalWithLogging(true);
-          } catch (err) {
-        setErrorWithLogging('An error occurred. Please try again.');
+    } catch (err) {
+      console.error('[BOOKING_FLOW] Error in handleConfirmClick:', err);
+      setErrorWithLogging('An error occurred. Please try again.');
+      
+      // Clean up any pending booking if it was created
+      if (pendingBookingId) {
+        console.log('[BOOKING_FLOW] Cleaning up pending booking after error:', pendingBookingId);
+        try {
+          await bookingService.updateBookingStatus(pendingBookingId, 'cancelled');
+          setPendingBookingId(null);
+        } catch (cancelError) {
+          console.error('[BOOKING_FLOW] Error cancelling pending booking:', cancelError);
+        }
       }
+    }
   };
 
   const handleAdminConfirm = async () => {
@@ -1394,9 +1520,20 @@ Please manually create the booking for this user or process a refund.`;
               <div className="flex justify-between items-center mb-6">
                 <h3 className="text-xl font-display text-primary">Complete Payment</h3>
                 <button
-                  onClick={() => {
+                  onClick={async () => {
                     console.log('[FLICKER_DEBUG] 🎯 CLOSING STRIPE MODAL');
                     setShowStripeModalWithLogging(false);
+                    
+                    // Cancel the pending booking if user closes modal without payment
+                    if (pendingBookingId) {
+                      console.log('[BOOKING_FLOW] User closed payment modal, cancelling pending booking:', pendingBookingId);
+                      try {
+                        await bookingService.updateBookingStatus(pendingBookingId, 'cancelled');
+                        setPendingBookingId(null);
+                      } catch (cancelError) {
+                        console.error('[BOOKING_FLOW] Error cancelling pending booking:', cancelError);
+                      }
+                    }
                   }}
                   className="text-secondary hover:text-secondary-hover"
                 >
@@ -1523,7 +1660,7 @@ Please manually create the booking for this user or process a refund.`;
                     )}
                   </div>
                    <p className="text-sm text-shade-1 mt-1 font-display">
-                     Includes accommodation, food, facilities, and discounts.
+                     Accommodation price with any applicable discounts.
                    </p>
                 </div>
 
@@ -1552,16 +1689,6 @@ Please manually create the booking for this user or process a refund.`;
                     finalAmountAfterCredits={finalAmountAfterCredits}
                   />
 
-                {/* --- START: Cancellation Policy Section --- */}
-                <div className="pt-2 mt-2">
-                  <button
-                    onClick={() => setShowCancellationModal(true)}
-                    className="text-xs text-shade-2 hover:text-shade-1 underline underline-offset-2 transition-colors font-display"
-                  >
-                    ► Cancellation Policy
-                  </button>
-                </div>
-                {/* --- END: Cancellation Policy Section --- */}
 
                 {/* Confirm Buttons */}
                 <ConfirmButtons

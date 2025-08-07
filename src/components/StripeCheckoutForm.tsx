@@ -69,30 +69,70 @@ export function StripeCheckoutForm({ total, authToken, description, userEmail, o
 
   useEffect(() => {
     const fetchSecret = async () => {
-      // Pass the current environment to the edge function
-      const environment = import.meta.env.MODE;
-      console.log('[StripeCheckout] Sending request with environment and email:', environment, userEmail);
-      
-      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/stripe-webhook`, {
-        method: "POST",
-        mode: 'cors',
-        headers: {
-          Authorization: `Bearer ${authToken}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ 
-          total, 
-          description,
-          environment,
-          email: userEmail,
-          bookingMetadata
-        }),
-      });
-      const data = await response.json();
-      setClientSecret(data.clientSecret);
+      try {
+        // Pass the current environment to the edge function
+        const environment = import.meta.env.MODE;
+        console.log('[StripeCheckout] Sending request with environment and email:', environment, userEmail);
+        
+        // Check if we're in development mode without Edge Functions
+        const isDevelopment = import.meta.env.MODE === 'development';
+        
+        if (isDevelopment && !import.meta.env.VITE_STRIPE_SECRET_KEY) {
+          // In development without Edge Functions, create a test client secret
+          // This is just for testing - in production you need proper Edge Functions
+          console.warn('[StripeCheckout] Edge Functions not available - using test mode');
+          
+          // For testing, we'll show a message
+          alert('Stripe Edge Functions are not configured. In production, you need to deploy the Edge Functions for payment processing.');
+          
+          // Call onSuccess directly for testing (simulating successful payment)
+          if (total === 0) {
+            // Free booking - proceed directly
+            await onSuccess(undefined, paymentRowId);
+            return;
+          }
+          
+          // For non-zero amounts, show error
+          throw new Error('Stripe Edge Functions required for payment processing');
+        }
+        
+        const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/stripe-webhook`, {
+          method: "POST",
+          mode: 'cors',
+          headers: {
+            Authorization: `Bearer ${authToken}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ 
+            total, 
+            description,
+            environment,
+            email: userEmail,
+            bookingMetadata
+          }),
+        });
+        
+        if (!response.ok) {
+          throw new Error(`Stripe webhook failed: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        setClientSecret(data.clientSecret);
+      } catch (error) {
+        console.error('[StripeCheckout] Error fetching client secret:', error);
+        // For free bookings, we can proceed without Stripe
+        if (total === 0) {
+          console.log('[StripeCheckout] Free booking detected, proceeding without payment');
+          await onSuccess(undefined, paymentRowId);
+          onClose();
+        } else {
+          alert('Unable to initialize payment system. Please ensure Stripe Edge Functions are deployed.');
+          onClose();
+        }
+      }
     };
     fetchSecret();
-  }, [authToken, total, description, userEmail, bookingMetadata]);
+  }, [authToken, total, description, userEmail, bookingMetadata, paymentRowId, onSuccess, onClose]);
 
   const handleCheckoutComplete = useCallback(async () => {
     console.log('[StripeCheckout] Payment completed, checking status...');
@@ -114,7 +154,7 @@ export function StripeCheckoutForm({ total, authToken, description, userEmail, o
     });
     const { status, paymentIntentId } = await response.json();
     
-    if (status === 'paid') {
+    if (status === 'completed' || status === 'paid') {  // Check both values for compatibility
       console.log('[StripeCheckout] Payment confirmed, proceeding with booking...');
       console.log('[StripeCheckout] Payment Intent ID:', paymentIntentId);
       

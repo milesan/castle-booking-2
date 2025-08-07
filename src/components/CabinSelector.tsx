@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { Wifi, Zap, Bed, BedDouble, WifiOff, ZapOff, Bath, Percent, Info, Ear, ChevronLeft, ChevronRight, Users } from 'lucide-react';
+import { BedDouble, Bath, Percent, Info, Ear, ChevronLeft, ChevronRight, Users } from 'lucide-react';
 import clsx from 'clsx';
 import type { Accommodation } from '../types';
 import { Week } from '../types/calendar';
@@ -24,9 +24,12 @@ interface AccommodationImage {
   created_at: string;
 }
 
-// Extend the Accommodation type to include images
+// Extend the Accommodation type to include images and property location
 interface ExtendedAccommodation extends Accommodation {
   images?: AccommodationImage[];
+  property_location?: string | null;
+  property_section?: string | null;
+  additional_info?: string | null;
 }
 
 interface Props {
@@ -525,53 +528,44 @@ export function CabinSelector({
                   )}>
                     <div>
                       <h3 className="text-lg font-medium mb-1 text-primary font-lettra-bold uppercase">{acc.title}</h3>
-                      <div className="flex items-center gap-3 text-secondary text-xs mb-4"> {/* Increased bottom margin to mb-4 */}
-                        
-                        {/* Conditionally render the Electricity/No Electricity Popover - hide for Van Parking */}
-                        {acc.title !== 'Van Parking' && (
-                          <HoverClickPopover
-                            triggerContent={acc.has_electricity ? <Zap size={12} /> : <ZapOff size={12} className="opacity-50"/>}
-                            popoverContentNode={<span>{acc.has_electricity ? 'Has Electricity' : 'No Electricity'}</span>}
-                          />
-                        )}
-                        
-                        {/* Wifi Popover - MODIFIED to use HoverClickPopover */}
-                        <HoverClickPopover
-                          triggerContent={acc.has_wifi ? <Wifi size={12} /> : <WifiOff size={12} className="opacity-50"/>}
-                          popoverContentNode={<span>{acc.has_wifi ? 'Has WiFi' : 'No WiFi'}</span>}
-                        />
-                        
-                        {/* Bed Size Popover - MODIFIED to use HoverClickPopover */}
-                        <HoverClickPopover
-                          triggerContent={<Bed size={12} />}
-                          popoverContentNode={(
-                            <>
-                              <h4 className="font-medium font-mono mb-1">Bed Size</h4>
-                              <p className="text-sm color-shade-2 font-mono">
-                                {acc.bed_size || 'N/A'}
-                              </p>
-                            </>
-                          )}
-                        />
-
-                        {/* NEW: Quiet Zone Popover for Microcabins */}
-                        {acc.title.includes('Microcabin') && (
-                          <HoverClickPopover
-                            triggerContent={<Ear size={12} />}
-                            popoverContentNode={<span>We invite those who seek quiet to stay here.</span>}
-                          />
-                        )}
-
-                        {/* NEW: Power Hookup Popover for Van Parking - MODIFIED to use HoverClickPopover */}
-                        {acc.title === 'Van Parking' && (
-                          <HoverClickPopover
-                            triggerContent={<Zap size={12} />}
-                            triggerWrapperClassName="flex items-center gap-1 text-secondary cursor-default" // Maintain text-secondary, use default cursor
-                            popoverContentNode={<span>Power hook-ups available on request</span>}
-                            // Default hoverCloseDelayMs (10ms) will be used
-                          />
-                        )}
-                      </div>
+                      {/* Property Location Badge */}
+                      {acc.property_location && (
+                        <div className="mb-2">
+                          <span className="inline-flex items-center px-2 py-1 rounded-sm text-xs font-medium bg-amber-900/20 text-amber-200 border border-amber-700/30">
+                            {acc.property_location === 'dovecote' && '🕊️ Dovecote'}
+                            {acc.property_location === 'renaissance' && (
+                              <>
+                                🏛️ Renaissance
+                                {acc.property_section && (
+                                  <span className="ml-1 opacity-90">
+                                    · {acc.property_section === 'mezzanine' && 'Mezzanine'}
+                                    {acc.property_section === 'first_floor' && '1st Floor'}
+                                    {acc.property_section === 'second_floor' && '2nd Floor'}
+                                    {acc.property_section === 'attic' && 'Attic'}
+                                  </span>
+                                )}
+                              </>
+                            )}
+                            {acc.property_location === 'oriental' && '🏮 Oriental'}
+                            {acc.property_location === 'palm_grove' && '🌴 Palm Grove'}
+                            {acc.property_location === 'medieval' && '🏰 Medieval'}
+                          </span>
+                        </div>
+                      )}
+                      {/* Additional Info - Display as text */}
+                      {acc.additional_info && (
+                        <div className="text-secondary text-xs mb-3">
+                          {acc.additional_info}
+                        </div>
+                      )}
+                      
+                      {/* Quiet Zone for Microcabins */}
+                      {acc.title.includes('Microcabin') && (
+                        <div className="flex items-center gap-1 text-secondary text-xs mb-3">
+                          <Ear size={12} />
+                          <span>We invite those who seek quiet to stay here.</span>
+                        </div>
+                      )}
                     </div>
                     
                     <div className="flex justify-between items-end">

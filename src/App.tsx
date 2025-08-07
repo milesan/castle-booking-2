@@ -63,8 +63,9 @@ function AppRouterLogic({
   // Show loading while permissions are being checked
   if (permissionsLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-accent-primary"></div>
+      <div className="min-h-screen flex items-center justify-center castle-animate-fade">
+        <div className="w-16 h-16 border-4 border-t-transparent rounded-full animate-spin castle-animate-glow" 
+             style={{ borderColor: 'var(--castle-accent-gold)', borderTopColor: 'transparent' }}></div>
       </div>
     );
   }
@@ -308,11 +309,17 @@ export default function App() {
 
     // --- MODIFIED LOADING SCREEN ---
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-neutral-900 text-stone-400 font-mono">
-        <div className="text-lg mb-4">Loading...</div>
+      <div className="flex flex-col items-center justify-center min-h-screen castle-animate-fade">
+        <div className="castle-ornament">
+          <h2 className="text-2xl mb-4">Loading Your Castle Experience...</h2>
+        </div>
+        <div className="castle-animate-glow mb-8">
+          <div className="w-16 h-16 border-4 border-t-transparent rounded-full animate-spin" 
+               style={{ borderColor: 'var(--castle-accent-gold)', borderTopColor: 'transparent' }}></div>
+        </div>
         <button
           onClick={handleSignOut}
-          className="mb-8 px-4 py-2 text-sm font-medium rounded-sm border border-stone-600 hover:bg-stone-700 hover:text-stone-200 transition-colors"
+          className="castle-btn ghost small"
         >
           Sign Out
         </button>
@@ -335,6 +342,13 @@ export default function App() {
   return (
     <ErrorBoundary>
       <ThemeProvider>
+        {/* Castle Starfield Background */}
+        <div className="castle-stars-container">
+          <div id="castle-stars"></div>
+          <div id="castle-stars2"></div>
+          <div id="castle-stars3"></div>
+        </div>
+        
         {/* Router needs to be here for hooks in App */} 
         <Router> 
            {/* Content that uses hooks needs to be inside Router */}

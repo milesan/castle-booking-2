@@ -129,18 +129,8 @@ const WeekComponent = React.memo(function WeekComponent({
         isAdmin && week.status === 'hidden' && 'border-yellow-400 bg-yellow-500/10',
         isAdmin && week.status === 'deleted' && 'border-red-400 bg-red-500/10 border-dashed',
         isAdmin && week.status === 'visible' && week.isCustom && 'border-blue-400',
-        (() => {
-          const season = getSeasonName(week.startDate);
-          if (!isSelected && !isAdmin) {
-            if (season === 'Low Season') return 'border-season-low';
-            if (season === 'Medium Season') return 'border-season-medium';
-            if (season === 'Summer Season') return 'border-season-summer';
-          }
-          if (!isSelected && !(selectedWeeks.length > 1 && isWeekBetweenSelection(week, selectedWeeks)) && !(isAdmin && (week.status === 'hidden' || week.status === 'deleted' || (week.status === 'visible' && week.isCustom)))) {
-            return 'border-border';
-          }
-          return null;
-        })()
+        // Removed season-based styling - use consistent border
+        !isSelected && !(selectedWeeks.length > 1 && isWeekBetweenSelection(week, selectedWeeks)) && !(isAdmin && (week.status === 'hidden' || week.status === 'deleted' || (week.status === 'visible' && week.isCustom))) && 'border-border'
       )}
              disabled={disabled}
     >
@@ -431,11 +421,7 @@ const WeekComponent = React.memo(function WeekComponent({
         className={clsx(
           'absolute bottom-0 left-0 right-0 transition-all duration-300',
           isSelected ? 'h-1.5 sm:h-2' : 'h-1 sm:h-1.5',
-          isContentVisible && !isSelected && {
-            'bg-season-low': getSeasonName(week.startDate) === 'Low Season',
-            'bg-season-medium': getSeasonName(week.startDate) === 'Medium Season',
-            'bg-season-summer': getSeasonName(week.startDate) === 'Summer Season',
-          },
+          // Removed season color indicators
           isSelected && 'bg-accent-primary'
         )}
       />
@@ -483,22 +469,8 @@ export function WeekSelector({
   
   // PERFORMANCE: Removed verbose prop logging
 
-  // Filter out partial weeks at the edges of the date range
-  const filteredWeeks = weeks.filter(week => {
-    // If it's an edge week (first or last in the range)
-    if (week.isEdgeWeek) {
-      // Check if it's a partial week (not a full 7 days)
-      const diffTime = week.endDate.getTime() - week.startDate.getTime();
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1; // +1 because both start and end dates are inclusive
-      
-      // If it's a partial week at the edge, filter it out
-      if (diffDays !== 7) {
-        console.log('[WeekSelector] Filtering out partial edge week:', getSimplifiedWeekInfo(week, isAdmin, selectedWeeks, testMode, weeks));
-        return false;
-      }
-    }
-    return true;
-  });
+  // For castle booking, just use the single week provided
+  const filteredWeeks = weeks;
 
   // PERFORMANCE: Removed filtered weeks logging
 

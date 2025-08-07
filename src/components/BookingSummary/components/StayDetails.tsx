@@ -51,16 +51,6 @@ export function StayDetails({ selectedWeeks }: StayDetailsProps) {
             </div>
           </div>
           
-          {/* Duration - REMOVED PADDING */}
-          <div className="rounded-sm shadow-sm bg-surface p-4"> 
-            <div className="flex justify-between items-center">
-              <div className="w-full">
-                <span className="text-primary uppercase font-display text-2xl">
-                  {formatNumber(totalWeeksDisplay)} {totalWeeksDisplay === 1 ? 'week' : 'weeks'}
-                </span>
-              </div>
-            </div>
-          </div>
         </div>
       </div>
     </motion.div>

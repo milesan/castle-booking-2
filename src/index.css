@@ -1,3 +1,9 @@
+/* Import Castle Theme Styles */
+@import './styles/castle-theme.css';
+@import './styles/castle-stars.css';
+@import './styles/castle-overrides.css';
+
+/* Keep existing font definitions for compatibility */
 @font-face {
   font-family: 'PP Lettra Mono Thin';
   src: url('/fonts/PPLettraMono-Thin.woff2') format('woff2');
@@ -27,63 +33,63 @@
 @tailwind utilities;
 
 :root {
-  /* Dark mitsode defaults */
-  --color-bg-main: #121212;
-  --color-bg-surface: #121212;
-  --color-bg-surface-transparent: rgba(0, 0, 0, 0.2);
-  --color-text-primary: #DDDDD0;
-  --color-text-secondary: #DDDDD0;
-  --color-border: #B8B8AD;
-  --color-accent-primary: #A2CBA0; /* Green */
-  --color-accent-secondary: #7c9c7a;
-  --color-accent-muted: rgba(255, 209, 102, 0.1); /* Yellow at 10% */
-  --color-accent-subtle: rgba(255, 209, 102, 0.2); /* Yellow at 20% */
-  --color-error: #9C5050;
-  --color-error-muted: rgba(248, 113, 113, 0.1);
-  --color-button-secondary-bg: #334155;
-  --color-button-secondary-bg-hover: #475569;
-  --color-bg-surface-hover: rgba(255, 255, 255, 0.05);
-  --color-garden-gold: #FFBF00;
-  --color-garden-accent: #FFD700;
-  --color-garden-dark: #f3f4f6; /* Was black, now light text */
-  --color-garden-matrix: #A2CBA0;
-  --color-bg-pattern: rgba(110, 231, 183, 0.05); /* Light emerald, subtle on dark */
+  /* Castle Theme - Map to existing variable names for compatibility */
+  --color-bg-main: var(--castle-bg-primary);
+  --color-bg-surface: var(--castle-bg-surface);
+  --color-bg-surface-transparent: rgba(10, 11, 20, 0.8);
+  --color-text-primary: var(--castle-text-primary);
+  --color-text-secondary: var(--castle-text-secondary);
+  --color-border: var(--castle-border-primary);
+  --color-accent-primary: var(--castle-accent-gold);
+  --color-accent-secondary: var(--castle-accent-gold-dark);
+  --color-accent-muted: rgba(212, 197, 160, 0.1);
+  --color-accent-subtle: rgba(212, 197, 160, 0.2);
+  --color-error: var(--castle-error);
+  --color-error-muted: rgba(239, 68, 68, 0.1);
+  --color-button-secondary-bg: var(--castle-bg-tertiary);
+  --color-button-secondary-bg-hover: var(--castle-accent-gold-dark);
+  --color-bg-surface-hover: rgba(212, 197, 160, 0.05);
+  --color-garden-gold: var(--castle-accent-gold);
+  --color-garden-accent: var(--castle-accent-gold-light);
+  --color-garden-dark: var(--castle-text-primary);
+  --color-garden-matrix: var(--castle-accent-emerald);
+  --color-bg-pattern: rgba(212, 197, 160, 0.03);
   --color-shadow: #000000;
-  --color-white: #ffffff; /* Explicit white for when needed */
-  --color-black: #000000; /* Explicit black for when needed */
+  --color-white: #ffffff;
+  --color-black: #000000;
   --color-stone-50: #fafaf9;
-  --color-stone-100: #f5f5f4; /* Added for hover */
+  --color-stone-100: #f5f5f4;
   --color-stone-200: #e7e5e4;
   --color-stone-500: #78716c;
-  --color-stone-600: #57534e; /* Added for icons */
-  --color-stone-700: #44403c; /* Added for button text */
+  --color-stone-600: #57534e;
+  --color-stone-700: #44403c;
   --color-stone-800: #292524;
-  --color-emerald-50: #ecfdf5; /* Added for mobile selected bg */
-  --color-emerald-600: #A2CBA0;
-  --color-emerald-800: #065f46; /* Added for button hover (original) */
-  --color-emerald-900: #065f46;
-  --color-bg-overlay: rgba(0, 0, 0, 0.80); /* Reduced opacity from 0.95 */
-  --color-retro-accent: 162 203 160; /* Dedicated accent color for retro components - same in both themes */
-  --color-shade-1: #B8B8AD;
+  --color-emerald-50: rgba(212, 197, 160, 0.1);
+  --color-emerald-600: var(--castle-accent-gold);
+  --color-emerald-800: var(--castle-accent-gold-dark);
+  --color-emerald-900: var(--castle-accent-gold-dark);
+  --color-bg-overlay: var(--castle-bg-overlay);
+  --color-retro-accent: 212 197 160;
+  --color-shade-1: var(--castle-text-muted);
   --color-shade-2: #93938B;
   --color-shade-3: #6F6F68;
 
   /* Custom Status/Priority Colors */
-  --color-status-medium: #9C8450; /* User's "medium" */
-  --color-status-low: #607C8F;    /* User's "low" */
+  --color-status-medium: var(--castle-warning);
+  --color-status-low: var(--castle-info);
 
   /* Badge Specific Text Colors */
-  --color-badge-active-text: var(--color-stone-800);
-  --color-badge-inactive-text: var(--color-white);
+  --color-badge-active-text: var(--castle-bg-primary);
+  --color-badge-inactive-text: var(--castle-text-primary);
 
   /* Tooltip Specific Variables */
-  --color-tooltip-bg: color-mix(in srgb, var(--color-bg-surface) 90%, black 10%); /* Slightly darker surface */
-  --color-tooltip-border: color-mix(in srgb, var(--color-border) 50%, transparent);
-  --color-tooltip-accent-border: color-mix(in srgb, var(--color-accent-primary) 30%, transparent);
-  --color-tooltip-text: var(--color-text-primary); /* Use primary text color */
+  --color-tooltip-bg: var(--castle-bg-tertiary);
+  --color-tooltip-border: var(--castle-border-primary);
+  --color-tooltip-accent-border: var(--castle-border-hover);
+  --color-tooltip-text: var(--castle-text-primary);
   
-  /* Font variables */
-  --font-primary: 'PP Lettra Mono Regular', monospace;
+  /* Font variables - Use castle fonts */
+  --font-primary: var(--castle-font-primary);
 }
 
 .light-mode {
@@ -136,14 +142,11 @@
 
 @layer base {
   html {
-    /* Ensure the root element has the main background color */
-    background-color: var(--color-bg-main);
+    /* Castle theme handles background */
   }
 
   body {
-    color: var(--color-text-primary);
-    font-size-adjust: 0.422; /* Added to normalize perceived font size */
-    font-family: var(--font-primary); /* Use the variable */
+    /* Castle theme handles body styles */
   }
 }
 

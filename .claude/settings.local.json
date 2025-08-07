@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx supabase:*)",
+      "Bash(pg_restore:*)",
+      "Bash(npm run build:*)",
+      "Bash(git clone:*)",
+      "Bash(find:*)",
+      "Bash(mkdir:*)",
+      "Bash(cp:*)",
+      "Bash(true)"
+    ],
+    "deny": []
+  }
+}

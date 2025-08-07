@@ -44,15 +44,41 @@ export function useCalendar({ startDate, endDate, isAdminMode = false }: UseCale
 
     // Generate weeks with customizations
     const weeks = useMemo(() => {
-        const generatedWeeks = generateWeeksWithCustomizations(
-            normalizedStartDate,
-            normalizedEndDate,
-            config,
-            customizations,
-            isAdminMode
-        );
-
-        return generatedWeeks;
+        // HARDCODED FOR CASTLE BOOKING: Single week Sept 21-26, 2025
+        const singleWeek: Week = {
+            id: 'sept-21-26-2025',
+            startDate: new Date('2025-09-21T00:00:00Z'),
+            endDate: new Date('2025-09-26T00:00:00Z'),
+            name: 'Castle Week',
+            status: 'available' as WeekStatus,
+            isCustom: true,
+            isEdgeWeek: false,
+            flexibleDates: [],
+            checkInDay: 0, // Sunday
+            checkOutDay: 5, // Friday
+        };
+        
+        // For admins, show the normally generated weeks for debugging
+        if (isAdminMode) {
+            const generatedWeeks = generateWeeksWithCustomizations(
+                normalizedStartDate,
+                normalizedEndDate,
+                config,
+                customizations,
+                isAdminMode
+            );
+            // Add our single week at the beginning if it's not already there
+            const hasSeptWeek = generatedWeeks.some(w => 
+                w.startDate.getTime() === singleWeek.startDate.getTime()
+            );
+            if (!hasSeptWeek) {
+                return [singleWeek, ...generatedWeeks];
+            }
+            return generatedWeeks;
+        }
+        
+        // For regular users, only show the single week
+        return [singleWeek];
     }, [normalizedStartDate, normalizedEndDate, config, customizations, isAdminMode]);
 
     // Load initial data

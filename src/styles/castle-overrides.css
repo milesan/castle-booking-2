@@ -1,0 +1,201 @@
+/* Castle Theme Overrides - Apply castle styling to existing elements */
+
+/* Override Tailwind button classes with castle theme */
+.btn,
+.button,
+button[type="submit"],
+button[type="button"] {
+  transition: all var(--castle-transition-base);
+}
+
+/* Apply castle theme to existing form elements */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+input[type="tel"],
+input[type="url"],
+input[type="search"],
+input[type="date"],
+input[type="time"],
+input[type="datetime-local"],
+textarea,
+select {
+  background: var(--castle-bg-tertiary) !important;
+  color: var(--castle-text-primary) !important;
+  border: 2px solid var(--castle-border-primary) !important;
+  border-radius: var(--castle-radius-md) !important;
+  padding: var(--castle-spacing-md) !important;
+  font-family: var(--castle-font-body);
+  transition: all var(--castle-transition-base);
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+  outline: none !important;
+  border-color: var(--castle-accent-gold) !important;
+  box-shadow: 0 0 0 3px rgba(212, 197, 160, 0.1) !important;
+  background: var(--castle-bg-secondary) !important;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--castle-text-muted) !important;
+}
+
+/* Override existing card styles */
+.card,
+.panel,
+.modal-content {
+  background: var(--castle-bg-surface) !important;
+  border: 1px solid var(--castle-border-primary) !important;
+  border-radius: var(--castle-radius-lg) !important;
+  box-shadow: var(--castle-shadow-md) !important;
+}
+
+/* Override existing text styles */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--castle-font-primary) !important;
+  color: var(--castle-text-accent) !important;
+  letter-spacing: 0.05em;
+}
+
+/* Apply castle glow to active/selected items */
+.active,
+.selected,
+[aria-selected="true"] {
+  box-shadow: var(--castle-shadow-glow);
+}
+
+/* Override link styles */
+a {
+  color: var(--castle-accent-gold) !important;
+  transition: all var(--castle-transition-base);
+}
+
+a:hover {
+  color: var(--castle-accent-gold-light) !important;
+  text-shadow: 0 0 10px rgba(212, 197, 160, 0.5);
+}
+
+/* Modal backdrop */
+.modal-backdrop,
+[role="dialog"]::backdrop {
+  background: var(--castle-bg-overlay) !important;
+  backdrop-filter: blur(8px);
+}
+
+/* Loading spinners */
+.animate-spin {
+  border-color: var(--castle-accent-gold) !important;
+  border-top-color: transparent !important;
+}
+
+/* Success/Error/Warning messages */
+.success,
+.text-success {
+  color: var(--castle-success) !important;
+}
+
+.error,
+.text-error,
+.text-danger {
+  color: var(--castle-error) !important;
+}
+
+.warning,
+.text-warning {
+  color: var(--castle-warning) !important;
+}
+
+/* Table styling */
+table {
+  background: var(--castle-bg-surface);
+  border: 1px solid var(--castle-border-primary);
+}
+
+th {
+  background: var(--castle-bg-tertiary);
+  color: var(--castle-text-accent);
+  font-family: var(--castle-font-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+td {
+  border-color: var(--castle-border-primary);
+  color: var(--castle-text-primary);
+}
+
+tr:hover {
+  background: rgba(212, 197, 160, 0.05);
+}
+
+/* Badge/Tag styling */
+.badge,
+.tag,
+.chip {
+  background: var(--castle-bg-tertiary);
+  color: var(--castle-text-primary);
+  border: 1px solid var(--castle-border-primary);
+  border-radius: var(--castle-radius-sm);
+}
+
+/* Progress bars */
+.progress,
+[role="progressbar"] {
+  background: var(--castle-bg-tertiary);
+  border: 1px solid var(--castle-border-primary);
+}
+
+.progress-bar,
+[role="progressbar"] > * {
+  background: var(--castle-accent-gold);
+}
+
+/* Tooltip styling */
+.tooltip,
+[role="tooltip"] {
+  background: var(--castle-bg-tertiary) !important;
+  color: var(--castle-text-primary) !important;
+  border: 1px solid var(--castle-border-primary) !important;
+  box-shadow: var(--castle-shadow-md);
+}
+
+/* Dropdown menus */
+.dropdown-menu,
+[role="menu"] {
+  background: var(--castle-bg-surface);
+  border: 1px solid var(--castle-border-primary);
+  box-shadow: var(--castle-shadow-lg);
+}
+
+.dropdown-item:hover,
+[role="menuitem"]:hover {
+  background: rgba(212, 197, 160, 0.1);
+}
+
+/* Calendar styling */
+.calendar-day {
+  transition: all var(--castle-transition-base);
+}
+
+.calendar-day:hover {
+  background: rgba(212, 197, 160, 0.1);
+  border-color: var(--castle-accent-gold);
+}
+
+.calendar-day.selected {
+  background: var(--castle-accent-gold);
+  color: var(--castle-bg-primary);
+}
+
+/* Mobile responsive adjustments */
+@media (max-width: 768px) {
+  input,
+  textarea,
+  select {
+    font-size: 16px !important; /* Prevent zoom on iOS */
+  }
+}

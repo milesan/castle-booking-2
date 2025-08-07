@@ -36,7 +36,7 @@ export function ConfirmButtons({
           }`}
       >
         <span className="pixel-corners--content 2xl:text-2xl">
-          {isBooking ? 'PROCESSING...' : finalAmountAfterCredits === 0 && creditsToUse > 0 ? 'CONFIRM (CREDITS ONLY)' : 'CONFIRM & DONATE'}
+          {isBooking ? 'PROCESSING...' : finalAmountAfterCredits === 0 ? 'CONFIRM BOOKING' : 'CONFIRM & DONATE'}
           
         </span>
       </button>

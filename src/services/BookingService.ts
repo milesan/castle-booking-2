@@ -179,23 +179,26 @@ class BookingService {
    */
   async createPendingPayment(payment: CreatePendingPaymentInput) {
     const { bookingId, userId, startDate, endDate, amountPaid, breakdownJson, discountCode, paymentType } = payment;
-    const startISO = startDate instanceof Date ? formatDateOnly(startDate) : formatDateOnly(new Date(startDate));
-    const endISO = endDate instanceof Date ? formatDateOnly(endDate) : formatDateOnly(new Date(endDate));
+    
+    // Build metadata object with all the payment details
+    const metadata = {
+      start_date: startDate instanceof Date ? formatDateOnly(startDate) : formatDateOnly(new Date(startDate)),
+      end_date: endDate instanceof Date ? formatDateOnly(endDate) : formatDateOnly(new Date(endDate)),
+      breakdown: breakdownJson,
+      discount_code: discountCode || null,
+      user_id: userId,
+      created_at: new Date().toISOString()
+    };
     
     const { data, error } = await supabase
       .from('payments')
       .insert({
         booking_id: bookingId ?? null,
         user_id: userId,
-        start_date: startISO,
-        end_date: endISO,
-        amount_paid: amountPaid,
-        breakdown_json: breakdownJson,
-        discount_code: discountCode || null,
-        payment_type: paymentType,
+        amount: amountPaid,  // Changed from amount_paid to amount
+        type: 'stripe',  // Using 'stripe' as default since that's the default in the table
         status: 'pending',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
+        metadata: metadata  // Store all extra data in metadata JSONB column
       })
       .select('*')
       .single();
@@ -211,14 +214,23 @@ class BookingService {
    * Update a payment row after Stripe payment confirmation
    */
   async markPaymentAsPaid(paymentId: string, stripePaymentId: string, breakdownJson?: any) {
+    // Update metadata with payment confirmation details
+    const updateData: any = {
+      status: 'completed',  // Changed from 'paid' to 'completed' to match enum
+      stripe_payment_intent_id: stripePaymentId,  // Changed to match actual column name
+    };
+    
+    // If we have breakdown data, merge it into metadata
+    if (breakdownJson) {
+      updateData.metadata = {
+        breakdown: breakdownJson,
+        updated_at: new Date().toISOString()
+      };
+    }
+    
     const { data, error } = await supabase
       .from('payments')
-      .update({
-        status: 'paid',
-        stripe_payment_id: stripePaymentId,
-        breakdown_json: breakdownJson,
-        updated_at: new Date().toISOString(),
-      })
+      .update(updateData)
       .eq('id', paymentId)
       .select('*')
       .single();
@@ -226,6 +238,59 @@ class BookingService {
       console.error('[BookingService] Error updating payment to paid:', error);
       throw error;
     }
+    return data;
+  }
+
+  /**
+   * Update a booking's status and optionally payment details
+   */
+  async updateBookingStatus(
+    bookingId: string,
+    status: 'pending' | 'confirmed' | 'cancelled',
+    updates?: {
+      paymentIntentId?: string;
+      paymentRowId?: string;
+    }
+  ): Promise<any> {
+    console.log('[BookingService] Updating booking status:', {
+      bookingId,
+      status,
+      updates
+    });
+
+    const updateData: any = {
+      status,
+      stripe_payment_status: status === 'confirmed' ? 'succeeded' : status === 'pending' ? 'pending' : null,
+      updated_at: new Date().toISOString()
+    };
+
+    if (updates?.paymentIntentId) {
+      updateData.stripe_payment_intent_id = updates.paymentIntentId;
+    }
+
+    const { data, error } = await supabase
+      .from('bookings')
+      .update(updateData)
+      .eq('id', bookingId)
+      .select('*')
+      .single();
+
+    if (error) {
+      console.error('[BookingService] Error updating booking status:', error);
+      throw error;
+    }
+
+    console.log('[BookingService] Successfully updated booking status:', data);
+
+    // If there's a payment row to update, do that too
+    if (updates?.paymentRowId && updates?.paymentIntentId) {
+      await this.updatePaymentAfterBooking({
+        paymentRowId: updates.paymentRowId,
+        bookingId,
+        stripePaymentId: updates.paymentIntentId
+      });
+    }
+
     return data;
   }
 
@@ -251,6 +316,7 @@ class BookingService {
     accommodationPriceAfterSeasonalDuration?: number; // NEW: After seasonal/duration but before codes
     subtotalAfterDiscountCode?: number; // NEW: After discount code but before credits
     paymentRowId?: string; // NEW: Optionally link to a pending payment row
+    status?: 'pending' | 'confirmed'; // NEW: Allow specifying initial status
   }): Promise<Booking> {
     console.log('[BookingService] Creating booking with data:', {
       ...booking,
@@ -314,21 +380,25 @@ class BookingService {
           check_in: checkInISO,
           check_out: checkOutISO,
           total_price: booking.totalPrice,
-          status: 'confirmed',
-          payment_intent_id: booking.paymentIntentId || null,
-          applied_discount_code: booking.appliedDiscountCode || null,
-          credits_used: booking.creditsUsed || 0,
-          accommodation_price: booking.accommodationPrice ?? null,
-          food_contribution: booking.foodContribution ?? null,
-          seasonal_adjustment: booking.seasonalAdjustment ?? null,
-          seasonal_discount_percent: booking.seasonalDiscountPercent ?? null, // NEW field
-          duration_discount_percent: booking.durationDiscountPercent ?? null,
-          discount_amount: booking.discountAmount ?? null,
-          discount_code_percent: booking.discountCodePercent ?? null,
-          discount_code_applies_to: booking.discountCodeAppliesTo ?? null, // NEW field
-          accommodation_price_paid: booking.accommodationPricePaid ?? null, // NEW field
-          accommodation_price_after_seasonal_duration: booking.accommodationPriceAfterSeasonalDuration ?? null, // NEW field
-          subtotal_after_discount_code: booking.subtotalAfterDiscountCode ?? null, // NEW field
+          status: booking.status || 'confirmed',  // Use provided status or default to 'confirmed'
+          stripe_payment_intent_id: booking.paymentIntentId || null,  // Changed column name
+          discount_code: booking.appliedDiscountCode || null,  // Changed column name  
+          credits_applied: booking.creditsUsed || 0,  // Changed column name
+          base_price: booking.accommodationPrice ?? booking.totalPrice,  // Using base_price
+          final_price: booking.totalPrice,  // Set final_price
+          stripe_payment_status: booking.status === 'pending' ? 'pending' : 'succeeded',  // Set payment status based on booking status
+          discount_amount: booking.discountAmount ?? 0,
+          notes: JSON.stringify({  // Store extra data in notes field
+            food_contribution: booking.foodContribution,
+            seasonal_adjustment: booking.seasonalAdjustment,
+            duration_discount_percent: booking.durationDiscountPercent,
+            seasonal_discount_percent: booking.seasonalDiscountPercent,
+            discount_code_percent: booking.discountCodePercent,
+            discount_code_applies_to: booking.discountCodeAppliesTo,
+            accommodation_price_paid: booking.accommodationPricePaid,
+            accommodation_price_after_seasonal_duration: booking.accommodationPriceAfterSeasonalDuration,
+            subtotal_after_discount_code: booking.subtotalAfterDiscountCode
+          }),
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         })
@@ -419,7 +489,7 @@ class BookingService {
             base_price
           ),
           payments:payments!booking_id (
-            amount_paid,
+            amount,
             status
           )
         `)
@@ -433,8 +503,8 @@ class BookingService {
       const transformedData = data?.map(booking => {
         // Sum all paid payments for this booking
         const totalAmountPaid = booking.payments
-          ?.filter((payment: any) => payment.status === 'paid')
-          ?.reduce((sum: number, payment: any) => sum + Number(payment.amount_paid), 0) || 0;
+          ?.filter((payment: any) => payment.status === 'completed')  // Changed to match enum
+          ?.reduce((sum: number, payment: any) => sum + Number(payment.amount), 0) || 0;
         
         return {
           ...booking,
@@ -457,7 +527,7 @@ class BookingService {
       const { data, error } = await supabase
         .from('bookings')
         .select('id')
-        .eq('payment_intent_id', paymentIntentId)
+        .eq('stripe_payment_intent_id', paymentIntentId)  // Changed to correct column name
         .single();
 
       if (error) {
@@ -493,9 +563,9 @@ class BookingService {
       .from('payments')
       .update({
         booking_id: bookingId,
-        status: 'paid',
-        stripe_payment_id: stripePaymentId,
-        updated_at: new Date().toISOString(),
+        status: 'completed',  // Changed from 'paid' to 'completed' to match enum
+        stripe_payment_intent_id: stripePaymentId,  // Changed to match actual column name
+        metadata: supabase.sql`metadata || '{"updated_at": "${new Date().toISOString()}"}'::jsonb`  // Merge with existing metadata
       })
       .eq('id', paymentRowId)
       .select('*')
@@ -663,12 +733,12 @@ class BookingService {
           user_id: user.id,
           start_date: formatDateOnly(currentCheckOut), // Extension starts where original ends
           end_date: extension.newCheckOut,
-          amount_paid: actualPaymentAmount,
-          breakdown_json: paymentBreakdown,
+          amount: actualPaymentAmount,
+          metadata: { breakdown: paymentBreakdown },  // Store in metadata column
           discount_code: extension.appliedDiscountCode || null,
           payment_type: 'extension' as PaymentType,
-          stripe_payment_id: extension.paymentIntentId,
-          status: 'paid',
+          stripe_payment_intent_id: extension.paymentIntentId,
+          status: 'completed',  // Changed from 'paid' to 'completed' to match enum
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         })
@@ -687,8 +757,8 @@ class BookingService {
 
       console.log('[BookingService] CREDITS DEBUG - Payment record created successfully:', {
         paymentId: paymentRecord.id,
-        amountPaid: paymentRecord.amount_paid,
-        creditsInBreakdown: paymentRecord.breakdown_json?.credits_used
+        amountPaid: paymentRecord.amount,
+        creditsInBreakdown: paymentRecord.metadata?.breakdown?.credits_used
       });
 
       // Update the booking with new checkout date and total price
@@ -760,7 +830,7 @@ class BookingService {
         check_out: extension.newCheckOut,
         total_price: newTotalPrice,
         ...(extension.creditsUsed && extension.creditsUsed > 0 && {
-          credits_used: newCreditsUsed
+          credits_applied: newCreditsUsed  // Changed to correct column name
         }),
         updated_at: new Date().toISOString()
       };
@@ -861,7 +931,7 @@ class BookingService {
       console.log('[BookingService] CREDITS DEBUG - Extension process completed successfully with credits:', {
         creditsUsed: extension.creditsUsed,
         finalBookingTotalPrice: newTotalPrice,
-        paymentRecordAmount: paymentRecord.amount_paid,
+        paymentRecordAmount: paymentRecord.amount,
         success: true
       });
 

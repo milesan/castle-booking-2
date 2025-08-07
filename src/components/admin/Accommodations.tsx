@@ -23,7 +23,9 @@ interface Accommodation {
   has_wifi: boolean;
   has_electricity: boolean;
   is_unlimited: boolean;
-  bed_size: string;
+  additional_info: string;
+  property_location: string | null; // Main property location
+  property_section: string | null; // Sub-section (e.g., floor for Renaissance)
   images?: AccommodationImage[]; // New field for multiple images
 }
 
@@ -54,6 +56,25 @@ const ALLOWED_ACCOMMODATION_TYPES = [
     'parking',
     'addon',
     'test'
+];
+
+// Define allowed property locations
+const ALLOWED_PROPERTY_LOCATIONS = [
+    { value: null, label: 'None' },
+    { value: 'dovecote', label: 'Dovecote' },
+    { value: 'renaissance', label: 'Renaissance Rooms' },
+    { value: 'oriental', label: 'Oriental Rooms' },
+    { value: 'palm_grove', label: 'Palm Grove Rooms' },
+    { value: 'medieval', label: 'Medieval Rooms' }
+];
+
+// Define allowed property sections (for Renaissance rooms)
+const ALLOWED_PROPERTY_SECTIONS = [
+    { value: null, label: 'None' },
+    { value: 'mezzanine', label: 'Mezzanine' },
+    { value: 'first_floor', label: 'First Floor' },
+    { value: 'second_floor', label: 'Second Floor' },
+    { value: 'attic', label: 'Attic' }
 ];
 
 // Error Modal Component
@@ -260,7 +281,9 @@ export function Accommodations() {
       capacity: 1, // Add default capacity
       has_wifi: false,
       has_electricity: false,
-      bed_size: ''
+      additional_info: '',
+      property_location: null,
+      property_section: null
     });
     setCreateError(null);
     setCreateLoading(false);
@@ -297,6 +320,23 @@ export function Accommodations() {
          console.warn('[ACCOM] Invalid number input blocked for field:', fieldName, 'value:', value);
          return;
        }
+    }
+    // Handle property_location field - convert empty string to null
+    else if (fieldName === 'property_location') {
+      processedValue = value === '' ? null : value;
+      // If changing location away from renaissance, clear the section
+      if (value !== 'renaissance' && newAccommodationData.property_section) {
+        setNewAccommodationData({
+          ...newAccommodationData,
+          property_location: processedValue,
+          property_section: null
+        });
+        return;
+      }
+    }
+    // Handle property_section field - convert empty string to null
+    else if (fieldName === 'property_section') {
+      processedValue = value === '' ? null : value;
     }
 
     console.log('[ACCOM] New Accommodation Input Change:', { fieldName, processedValue });
@@ -367,9 +407,9 @@ export function Accommodations() {
          dataToSave.capacity = capacity_num;
      }
 
-     // Bed Size (optional)
-     const bed_size = String(dataToSave.bed_size ?? '').trim();
-     dataToSave.bed_size = bed_size;
+     // Additional Info (optional)
+     const additional_info = String(dataToSave.additional_info ?? '').trim();
+     dataToSave.additional_info = additional_info;
 
     if (errors.length > 0) {
       const errorMessage = errors.join(' ');
@@ -481,6 +521,23 @@ export function Accommodations() {
          return;
        }
     }
+    // Handle property_location field - convert empty string to null
+    else if (fieldName === 'property_location') {
+      processedValue = value === '' ? null : value;
+      // If changing location away from renaissance, clear the section
+      if (value !== 'renaissance' && currentEditData.property_section) {
+        setCurrentEditData({
+          ...currentEditData,
+          property_location: processedValue,
+          property_section: null
+        });
+        return;
+      }
+    }
+    // Handle property_section field - convert empty string to null
+    else if (fieldName === 'property_section') {
+      processedValue = value === '' ? null : value;
+    }
 
     console.log('[ACCOM] Input Change:', { fieldName, processedValue });
     setCurrentEditData({
@@ -565,11 +622,11 @@ export function Accommodations() {
          dataToSave.capacity = capacity_num;
      }
 
-     // Bed Size (example: optional, string) - Assuming optional for now
-     const bed_size_val = currentEditData.bed_size ?? ''; // Handle potential null
-     const bed_size = bed_size_val.trim();
-     if (!originalAccommodation || bed_size !== (originalAccommodation.bed_size ?? '')) { // Compare safely
-         dataToSave.bed_size = bed_size; // Save even if empty string, if it changed from null or another value
+     // Additional Info (optional, string)
+     const additional_info_val = currentEditData.additional_info ?? ''; // Handle potential null
+     const additional_info = additional_info_val.trim();
+     if (!originalAccommodation || additional_info !== (originalAccommodation.additional_info ?? '')) { // Compare safely
+         dataToSave.additional_info = additional_info; // Save even if empty string, if it changed from null or another value
      }
 
     // has_wifi (boolean)
@@ -580,6 +637,18 @@ export function Accommodations() {
     // has_electricity (boolean)
     if (!originalAccommodation || currentEditData.has_electricity !== originalAccommodation.has_electricity) {
         dataToSave.has_electricity = currentEditData.has_electricity;
+    }
+
+    // property_location (enum string or null)
+    const property_location = currentEditData.property_location === '' ? null : currentEditData.property_location;
+    if (!originalAccommodation || property_location !== originalAccommodation.property_location) {
+        dataToSave.property_location = property_location;
+    }
+
+    // property_section (enum string or null)
+    const property_section = currentEditData.property_section === '' ? null : currentEditData.property_section;
+    if (!originalAccommodation || property_section !== originalAccommodation.property_section) {
+        dataToSave.property_section = property_section;
     }
 
     if (errors.length > 0) {
@@ -1186,19 +1255,51 @@ export function Accommodations() {
                     placeholder="1"
                   />
                 </div>
-                {/* Bed Size */}
+                {/* Additional Information */}
                 <div>
-                  <label htmlFor="new-bed_size" className={labelClassName}>Bed Size</label>
-                  <input 
-                    type="text" 
-                    id="new-bed_size" 
-                    value={newAccommodationData.bed_size ?? ''} 
-                    onChange={(e) => handleNewAccommodationInputChange(e, 'bed_size')} 
+                  <label htmlFor="new-additional_info" className={labelClassName}>Additional Information</label>
+                  <textarea 
+                    id="new-additional_info" 
+                    value={newAccommodationData.additional_info ?? ''} 
+                    onChange={(e) => handleNewAccommodationInputChange(e, 'additional_info')} 
                     disabled={createLoading} 
-                    className={inputClassName} 
-                    placeholder="e.g. Queen, Twin, etc."
+                    className={`${inputClassName} min-h-[80px] resize-y`} 
+                    placeholder="e.g. bed ø210 at first floor - bath on ground floor - Bluetooth Amplifier"
+                    rows={3}
                   />
                 </div>
+                {/* Property Location */}
+                <div>
+                  <label htmlFor="new-property_location" className={labelClassName}>Property Location</label>
+                  <select
+                    id="new-property_location"
+                    value={newAccommodationData.property_location ?? ''}
+                    onChange={(e) => handleNewAccommodationInputChange(e, 'property_location')}
+                    disabled={createLoading}
+                    className={`${inputClassName.replace("bg-[var(--color-input-bg)]", "bg-[var(--color-furface-modal,theme(colors.gray.800))]")} `}
+                  >
+                    {ALLOWED_PROPERTY_LOCATIONS.map(loc => (
+                      <option key={loc.value ?? 'null'} value={loc.value ?? ''}>{loc.label}</option>
+                    ))}
+                  </select>
+                </div>
+                {/* Property Section (only for Renaissance) */}
+                {newAccommodationData.property_location === 'renaissance' && (
+                  <div>
+                    <label htmlFor="new-property_section" className={labelClassName}>Property Section</label>
+                    <select
+                      id="new-property_section"
+                      value={newAccommodationData.property_section ?? ''}
+                      onChange={(e) => handleNewAccommodationInputChange(e, 'property_section')}
+                      disabled={createLoading}
+                      className={`${inputClassName.replace("bg-[var(--color-input-bg)]", "bg-[var(--color-furface-modal,theme(colors.gray.800))]")} `}
+                    >
+                      {ALLOWED_PROPERTY_SECTIONS.map(sec => (
+                        <option key={sec.value ?? 'null'} value={sec.value ?? ''}>{sec.label}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
                 {/* Features - Checkboxes */}
                 <div className='flex flex-col space-y-1 pt-1'>
                   <label className={checkboxLabelClassName}>
@@ -1518,11 +1619,51 @@ export function Accommodations() {
                         </div>
                         <input type="number" id={`capacity-${accommodation.id}`} value={currentEditData.capacity === null || currentEditData.capacity === undefined ? '' : currentEditData.capacity} onChange={(e) => handleInputChange(e, 'capacity')} disabled={editLoading} className={numberInputClassName} step="1" min="1" />
                     </div>
-                     {/* Bed Size */} 
+                     {/* Additional Information */} 
                     <div>
-                        <label htmlFor={`bed_size-${accommodation.id}`} className={labelClassName}>Bed Size</label>
-                        <input type="text" id={`bed_size-${accommodation.id}`} value={currentEditData.bed_size ?? ''} onChange={(e) => handleInputChange(e, 'bed_size')} disabled={editLoading} className={inputClassName} />
+                        <label htmlFor={`additional_info-${accommodation.id}`} className={labelClassName}>Additional Information</label>
+                        <textarea 
+                          id={`additional_info-${accommodation.id}`} 
+                          value={currentEditData.additional_info ?? ''} 
+                          onChange={(e) => handleInputChange(e, 'additional_info')} 
+                          disabled={editLoading} 
+                          className={`${inputClassName} min-h-[80px] resize-y`}
+                          placeholder="e.g. bed ø210 at first floor - bath on ground floor - Bluetooth Amplifier"
+                          rows={3}
+                        />
                     </div>
+                     {/* Property Location */} 
+                    <div>
+                        <label htmlFor={`property_location-${accommodation.id}`} className={labelClassName}>Property Location</label>
+                        <select
+                            id={`property_location-${accommodation.id}`}
+                            value={currentEditData.property_location ?? ''}
+                            onChange={(e) => handleInputChange(e, 'property_location')}
+                            disabled={editLoading}
+                            className={`${inputClassName.replace("bg-[var(--color-input-bg)]", "bg-[var(--color-furface-modal,theme(colors.gray.800))]")} `}
+                        >
+                            {ALLOWED_PROPERTY_LOCATIONS.map(loc => (
+                                <option key={loc.value ?? 'null'} value={loc.value ?? ''}>{loc.label}</option>
+                            ))}
+                        </select>
+                    </div>
+                     {/* Property Section (only for Renaissance) */} 
+                    {currentEditData.property_location === 'renaissance' && (
+                        <div>
+                            <label htmlFor={`property_section-${accommodation.id}`} className={labelClassName}>Property Section</label>
+                            <select
+                                id={`property_section-${accommodation.id}`}
+                                value={currentEditData.property_section ?? ''}
+                                onChange={(e) => handleInputChange(e, 'property_section')}
+                                disabled={editLoading}
+                                className={`${inputClassName.replace("bg-[var(--color-input-bg)]", "bg-[var(--color-furface-modal,theme(colors.gray.800))]")} `}
+                            >
+                                {ALLOWED_PROPERTY_SECTIONS.map(sec => (
+                                    <option key={sec.value ?? 'null'} value={sec.value ?? ''}>{sec.label}</option>
+                                ))}
+                            </select>
+                        </div>
+                    )}
                      {/* Features - Checkboxes */} 
                     <div className='flex flex-col space-y-1 pt-1'>
                          <label className={checkboxLabelClassName}>
@@ -1575,7 +1716,14 @@ export function Accommodations() {
                         </Tooltip.Root>
                       </Tooltip.Provider>
                     </div>
-                    <p><span className='font-medium'>Bed Size:</span> {accommodation.bed_size || 'N/A'}</p>
+                    {accommodation.additional_info && (
+                      <p><span className='font-medium'>Additional Info:</span> <span className='text-xs'>{accommodation.additional_info}</span></p>
+                    )}
+                    <p><span className='font-medium'>Location:</span> {accommodation.property_location ? ALLOWED_PROPERTY_LOCATIONS.find(loc => loc.value === accommodation.property_location)?.label : 'N/A'}
+                      {accommodation.property_location === 'renaissance' && accommodation.property_section && (
+                        <span className='text-xs ml-1'>({ALLOWED_PROPERTY_SECTIONS.find(sec => sec.value === accommodation.property_section)?.label})</span>
+                      )}
+                    </p>
                     <div className="flex gap-2 pt-1"> 
                       {accommodation.has_wifi && <span className="inline-flex items-center gap-1 bg-[var(--color-bg-success-subtle)] text-[var(--color-text-success)] px-2 py-0.5 rounded-sm text-xs"><Wifi size={12}/> WiFi</span>}
                       {accommodation.has_electricity && <span className="inline-flex items-center gap-1 bg-[var(--color-bg-success-subtle)] text-[var(--color-text-success)] px-2 py-0.5 rounded-sm text-xs"><Zap size={12}/> Electricity</span>}

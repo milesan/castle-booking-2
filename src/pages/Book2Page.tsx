@@ -2,7 +2,8 @@ import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { Calendar, ChevronLeft, ChevronRight, Home, X, HelpCircle } from 'lucide-react';
 import { isSameWeek, addWeeks, isAfter, isBefore, format, addMonths, subMonths, startOfDay, isSameDay, addDays, differenceInDays } from 'date-fns';
 import { formatInTimeZone } from 'date-fns-tz';
-import { WeekSelector } from '../components/WeekSelector';
+// import { WeekSelector } from '../components/WeekSelector';
+import { SimpleWeekSelector } from '../components/SimpleWeekSelector';
 import { formatDateForDisplay, normalizeToUTCDate, doDateRangesOverlap, calculateDurationDiscountWeeks, calculateTotalWeeksDecimal, startOfMonthUTC, addMonthsUTC, subMonthsUTC } from '../utils/dates';
 import CabinSelector from '../components/CabinSelector';
 import { BookingSummary } from '../components/BookingSummary';
@@ -10,11 +11,11 @@ import { MaxWeeksModal } from '../components/MaxWeeksModal';
 import { WeekCustomizationModal } from '../components/admin/WeekCustomizationModal';
 import { DiscountModal } from '../components/DiscountModal';
 import { generateWeeksWithCustomizations, generateSquigglePath, getWeeksInRange } from '../utils/dates';
-import { useWeeklyAccommodations } from '../hooks/useWeeklyAccommodations';
+import { useWeeklyAccommodations } from '../hooks/useWeeklyAccommodations'; // Now using real data
 import { useSession } from '../hooks/useSession';
 import { motion } from 'framer-motion';
 import { convertToUTC1 } from '../utils/timezone';
-import { useCalendar } from '../hooks/useCalendar';
+// import { useCalendar } from '../hooks/useCalendar'; // Not needed for single week
 import { Week, WeekStatus } from '../types/calendar';
 import { CalendarService } from '../services/CalendarService';
 import { CalendarConfigButton } from '../components/admin/CalendarConfigButton';
@@ -81,12 +82,23 @@ export function Book2Page() {
   const month = today.getUTCMonth();
   const initialMonth = new Date(Date.UTC(year, month, 1));
 
+  // Fetch real accommodations from database with images
   const { accommodations, loading: accommodationsLoading } = useWeeklyAccommodations();
   // console.log('[FLICKER_DEBUG] useWeeklyAccommodations result:', { accommodationsCount: accommodations?.length, loading: accommodationsLoading });
   
-
-
-  const [selectedWeeks, setSelectedWeeks] = useState<Week[]>([]);
+  // Initialize with pre-selected castle week
+  const [selectedWeeks, setSelectedWeeks] = useState<Week[]>([{
+    id: 'castle-week-sept-2025',
+    startDate: new Date('2025-09-21T00:00:00Z'),
+    endDate: new Date('2025-09-26T00:00:00Z'),
+    name: 'Castle Week',
+    status: 'available' as WeekStatus,
+    isCustom: false,
+    isEdgeWeek: false,
+    flexibleDates: [],
+    checkInDay: 0,
+    checkOutDay: 5,
+  }]);
   const [selectedAccommodation, setSelectedAccommodation] = useState<string | null>(null);
   const [currentMonth, setCurrentMonth] = useState(initialMonth);
   const [showMaxWeeksModal, setShowMaxWeeksModal] = useState(false);
@@ -178,16 +190,24 @@ export function Book2Page() {
 
   // --- END: Normalize date ---
 
-  // Use our calendar hook WITH NORMALIZED START DATE
-  const { 
-    weeks,
-    isLoading: calendarLoading,
-    setLastRefresh: setCalendarRefresh
-  } = useCalendar({
-    startDate: calendarStartDate,
-    endDate: calendarEndDate,
-    isAdminMode
-  });
+  // HARDCODED SINGLE WEEK - No calendar hook needed
+  const castleWeek: Week = {
+    id: 'castle-week-sept-2025',
+    startDate: new Date('2025-09-21T00:00:00Z'),
+    endDate: new Date('2025-09-26T00:00:00Z'), // End date at midnight (start of 26th)
+    name: 'Castle Week',
+    status: 'available' as WeekStatus,
+    isCustom: false,
+    isEdgeWeek: false,
+    flexibleDates: [],
+    checkInDay: 0, // Sunday
+    checkOutDay: 5, // Friday
+  };
+  
+  const weeks: Week[] = [castleWeek];
+  
+  const calendarLoading = false;
+  const setCalendarRefresh = () => {};
  // Track component mounting for debugging
   useEffect(() => {
     // console.log('[BOOK2] Mounted/Updated'); // Debug logging disabled
@@ -232,154 +252,22 @@ export function Book2Page() {
     setCurrentMonth(newMonth); // Set state to the start of the month
   }, [currentMonth, selectedWeeks]);
 
-  // Main handleWeekSelect function simplified
+  // Simplified handleWeekSelect for single week
   const handleWeekSelect = useCallback((week: Week) => {
-
-    if (isAdminMode) {
-      setSelectedWeekForCustomization(week);
-      return;
-    }
-
     setSelectedWeeks(prev => {
-      // Safety check - if prev is undefined, initialize as empty array
       const currentSelection = prev || [];
       
-      // Add detailed logging to show current selection state
-      if (currentSelection.length > 0) {
-        console.log('[Book2Page] Current selection details:', currentSelection.map((w, idx) => ({
-          position: idx,
-          id: w.id,
-          start: formatDateForDisplay(w.startDate),
-          end: formatDateForDisplay(w.endDate),
-          hasFlexDate: !!w.selectedFlexDate,
-          flexDate: w.selectedFlexDate ? formatDateForDisplay(w.selectedFlexDate) : null
-        })));
-      }
+      // Check if already selected
+      const isSelected = currentSelection.some(w => w.id === week.id);
       
-      // Check if already selected using our consistent helper
-      const isSelected = currentSelection.some(selectedWeek => 
-        areSameWeeks(week, selectedWeek)
-      );
-      
-      // If selected and not first/last, do nothing
-      if (isSelected && !isFirstOrLastSelectedHelper(week, currentSelection)) {
-        return currentSelection;
-      }
-      
-      // If selected, remove it
+      // Toggle selection
       if (isSelected) {
-        return currentSelection.filter(selectedWeek => 
-          !areSameWeeks(week, selectedWeek)
-        );
+        return []; // Deselect
+      } else {
+        return [week]; // Select (only one week allowed)
       }
-      
-      // If first selection, just return the new week
-      if (currentSelection.length === 0) {
-        return [week];
-      }
-
-      // Handle range selection - get earliest and latest dates
-      const earliestDate = currentSelection[0].startDate;
-      const latestDate = currentSelection[currentSelection.length - 1].startDate;
-
-      let newWeeks: Week[];
-      
-      // If selecting a week before the earliest selected week
-      if (isBefore(week.startDate, earliestDate)) {
-        // First, get all weeks in the range
-        const weeksInRange = weeks.filter(w => 
-          (w.startDate >= week.startDate && w.startDate <= latestDate) || 
-          areSameWeeks(w, week) ||
-          currentSelection.some(sw => areSameWeeks(w, sw))
-        );
-        
-        // Then, build a new array using current selection for already selected weeks
-        newWeeks = weeksInRange.map(w => {
-          // For newly selected weeks that aren't the current week, just use them as-is
-          if (!areSameWeeks(w, week) && !currentSelection.some(sw => areSameWeeks(w, sw))) {
-            return w;
-          }
-          
-          // For the newly clicked week, use the week parameter directly
-          if (areSameWeeks(w, week)) {
-            return week;
-          }
-          
-          // For already selected weeks, return the exact same object from current selection
-          // to preserve any properties like selectedFlexDate
-          const matchingWeek = currentSelection.find(sw => areSameWeeks(w, sw));
-          if (matchingWeek) {
-            return matchingWeek;
-          }
-          
-          // Fallback (shouldn't happen)
-          return w;
-        });
-      } 
-      // If selecting a week after the latest selected week
-      else if (isAfter(week.startDate, latestDate)) {
-        // First, get all weeks in the range
-        const weeksInRange = weeks.filter(w => 
-          (w.startDate >= earliestDate && w.startDate <= week.startDate) || 
-          areSameWeeks(w, week) ||
-          currentSelection.some(sw => areSameWeeks(w, sw))
-        );
-        
-        // Then, build a new array using current selection for already selected weeks
-        newWeeks = weeksInRange.map(w => {
-          // For newly selected weeks that aren't the current week, just use them as-is
-          if (!areSameWeeks(w, week) && !currentSelection.some(sw => areSameWeeks(w, sw))) {
-            return w;
-          }
-          
-          // For the newly clicked week, use the week parameter directly
-          if (areSameWeeks(w, week)) {
-            return week;
-          }
-          
-          // For already selected weeks, return the exact same object from current selection
-          // to preserve any properties like selectedFlexDate
-          const matchingWeek = currentSelection.find(sw => areSameWeeks(w, sw));
-          if (matchingWeek) {
-            return matchingWeek;
-          }
-          
-          // Fallback (shouldn't happen)
-          return w;
-        });
-      } 
-      // If selecting a week in the middle, don't change the selection
-      else {
-        return currentSelection;
-      }
-
-      // Add detailed logging to show new selection
-      console.log('[Book2Page] New selection details:', newWeeks.map((w, idx) => ({
-        position: idx,
-        id: w.id,
-        start: formatDateForDisplay(w.startDate),
-        end: formatDateForDisplay(w.endDate),
-        hasFlexDate: !!w.selectedFlexDate,
-        flexDate: w.selectedFlexDate ? formatDateForDisplay(w.selectedFlexDate) : null
-      })));
-
-      // Check if we've exceeded the maximum number of allowed weeks
-      const MAX_WEEKS_ALLOWED = 12;
-      const totalWeeksDecimal = calculateTotalWeeksDecimal(newWeeks);
-      
-      if (totalWeeksDecimal > MAX_WEEKS_ALLOWED) {
-        console.log('[Book2Page] Maximum weeks limit reached:', {
-          weeksCount: newWeeks.length,
-          calculatedWeeks: totalWeeksDecimal,
-          max: MAX_WEEKS_ALLOWED
-        });
-        setShowMaxWeeksModal(true);
-        return currentSelection;
-      }
-
-      return newWeeks;
     });
-  }, [isAdminMode, weeks, isFirstOrLastSelectedHelper, selectedWeeks]);
+  }, []);
 
   // New handler for deselecting multiple weeks at once
   const handleWeeksDeselect = useCallback((weeksToDeselect: Week[]) => {
@@ -910,7 +798,7 @@ export function Book2Page() {
             {/* == START: New wrapper div with horizontal padding == */}
             <div>
               {/* Moved h1 inside wrapper - REMOVING px-* padding now */}
-              <h1 className="text-4xl lg:text-[78px] font-display mb-3 xs:mb-4 text-primary pt-14 leading-[1.1] tracking-[-0.02em]">WELCOME TO THIS <br />STRANGE ATTRACTOR</h1>
+              <h1 className="text-4xl lg:text-[78px] font-display mb-3 xs:mb-4 text-primary pt-14 leading-[1.1] tracking-[-0.02em]">THE GATES BECKON</h1>
               
               {/* Outer Note box keeps py-* padding - Setting bottom margin to 32px (mb-8) */}
               <div className="bg-surface/50 py-3 xs:py-4 sm:py-6 mb-8 shadow-sm rounded-sm">
@@ -919,19 +807,7 @@ export function Book2Page() {
                   <div className="flex flex-col gap-3 xs:gap-3 text-primary">
                     <p className="flex items-start gap-2 xs:gap-2.5 text-base font-lettra">
                       <span className="flex-shrink-0">❦</span>
-                      <span>Some weeks have themes – expect an injection of humans in that vector. Residents are welcome but not expected to participate in the facilitated or themed activities.</span>
-                    </p>
-                   <p className="flex items-start gap-2 xs:gap-2.5 text-base font-lettra">
-                      <span className="flex-shrink-0">❦</span>
-                      <span>The longer you stay, the less € per week you contribute on both lodging & base-rate.</span>
-                    </p>
-                    <p className="flex items-start gap-2 xs:gap-2.5 text-base font-lettra">
-                      <span className="flex-shrink-0">❦</span>
-                      <span>The quieter the time of year, the less € you contribute on lodging.</span>
-                    </p>
-                    <p className="flex items-start gap-2 xs:gap-2.5 text-base font-lettra">
-                      <span className="flex-shrink-0">❦</span>
-                      <span>If a low-income subsidy could support your participation, please let us know <a href="https://www.notion.so/gardening/1e981af59c8680e6a791c2a185d350fe" target="_blank" rel="noopener noreferrer" className="text-accent-primary hover:underline">here.</a></span>
+                      <span>Your admission grants passage through the threshold. This chamber selection weaves your dwelling into the tapestry of the greater pattern.</span>
                     </p>
                   </div>
                 </InfoBox>
@@ -1037,108 +913,14 @@ export function Book2Page() {
               {/* Moved Calendar card inside wrapper - CHANGING p-* to py-* now */}
               <div className="rounded-sm shadow-sm py-3 xs:py-4 sm:py-6 mb-4 xs:mb-5 sm:mb-6">
                 {/* REMOVING px-* padding from this inner div */}
-                <SeasonLegend />
                 <div className="flex flex-col gap-3 mb-4">
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     {/* Increased font size for the header */}
                     <h2 className="text-2xl sm:text-3xl font-display font-light text-primary">
-                      {selectedWeeks.length === 0 ? "When do you wish to arrive?" : 
-                       selectedWeeks.length === 1 ? <><span className="underline">One</span> week selected! Any more?</> : 
-                       "Set your timeline"}
+                      Castle Week · September 21-26, 2025
                     </h2>
-
-                    <div className="flex items-center gap-2 xxs:gap-3">
-                      {/* REMOVED Home button */}
-                      {/* <button 
-                        className="p-1 xxs:p-1.5 sm:p-2 rounded-full hover:bg-[var(--color-bg-surface-hover)] text-accent-primary"
-                        onClick={() => handleMonthChange(startOfMonthUTC(new Date()))} // Use handleMonthChange
-                        aria-label="Return to current month"
-                        title="Return to today"
-                      >
-                        <Home className="h-3.5 w-3.5 xxs:h-4 xxs:w-4 sm:h-5 sm:w-5" />
-                      </button> */}
-
-                      {/* UPDATED: Single border, bg, custom icons, rounded-sm */}
-                      <div className="flex items-center rounded-sm border border-shade-1 bg-surface-dark"> {/* Added bg, changed rounded-sm to rounded-sm */}
-                        <button 
-                          className="p-1 xxs:p-1.5 sm:p-2 rounded-l-sm hover:bg-[var(--color-bg-surface-hover)]" /* Removed border-r, changed rounded-l-lg to rounded-l-sm */
-                          onClick={() => handleMonthChange(subMonthsUTC(currentMonth, 1))} // Use handleMonthChange
-                          aria-label="Previous month"
-                        >
-                          {/* Replaced ChevronLeft with img */}
-                          <img src="/images/arrow-left.svg" alt="Previous month" className="h-3.5 w-3.5 xxs:h-4 xxs:w-4 sm:h-5 sm:w-5" />
-                        </button>
-                        {/* UPDATED styles to match header button, now bold, removed border/rounded */}
-                        <div 
-                          className="p-1.5 font-lettra-bold text-sm uppercase transition-colors bg-surface-dark text-primary hover:opacity-80 text-center whitespace-nowrap min-w-[120px] xxs:min-w-[140px] sm:min-w-[160px] cursor-pointer rounded-sm" /* Removed border, rounded-sm */
-                          onClick={() => {
-                            // [TIMEZONE_FIX] Use UTC-based date for "Today" button
-                            const today = new Date();
-                            const year = today.getUTCFullYear();
-                            const month = today.getUTCMonth();
-                            const todayMonth = new Date(Date.UTC(year, month, 1));
-                            handleMonthChange(todayMonth);
-                          }}
-                          title="Go to current month"
-                        >
-                          {formatInTimeZone(currentMonth, 'UTC', 'MMMM yyyy')}
-                        </div>
-                        <button 
-                          className="p-1 xxs:p-1.5 sm:p-2 rounded-r-sm hover:bg-[var(--color-bg-surface-hover)]" /* Removed border-l, changed rounded-r-lg to rounded-r-sm */
-                          onClick={() => {
-                            console.log('[MONTH_NAV_DEBUG] Next button clicked');
-                            console.log('[MONTH_NAV_DEBUG] Current month:', currentMonth.toISOString());
-                            const nextMonth = addMonthsUTC(currentMonth, 1);
-                            console.log('[MONTH_NAV_DEBUG] Next month calculated:', nextMonth.toISOString());
-                            handleMonthChange(nextMonth);
-                          }}
-                          aria-label="Next month"
-                        >
-                          {/* Replaced ChevronRight with img */}
-                          <img src="/images/arrow-right.svg" alt="Next month" className="h-3.5 w-3.5 xxs:h-4 xxs:w-4 sm:h-5 sm:w-5" />
-                        </button>
-                      </div>
-                    </div>
                   </div>
 
-                  {selectedWeeks.length > 0 && (
-                    <div className="flex flex-wrap items-center gap-1.5 xxs:gap-2">
-                      <Tooltip.Provider delayDuration={50}>
-                        <Tooltip.Root>
-                          <Tooltip.Trigger asChild>
-                            <button
-                              onClick={() => setShowDiscountModal(true)}
-                              className="group flex items-center gap-1 xxs:gap-1.5 px-2 xxs:px-2.5 py-1 xxs:py-1.5 text-sm font-medium border rounded-sm transition-colors duration-200 relative font-lettra-bold text-accent-primary bg-[color-mix(in_srgb,_var(--color-accent-primary)_10%,_transparent)] border-[color-mix(in_srgb,_var(--color-accent-primary)_30%,_transparent)] hover:bg-[color-mix(in_srgb,_var(--color-accent-primary)_20%,_transparent)] hover:border-[color-mix(in_srgb,_var(--color-accent-primary)_40%,_transparent)]"
-                            >
-                              <span>{combinedDiscount > 0 ? `Discount: ${seasonBreakdown?.hasMultipleSeasons ? '~' : ''}${Math.round(combinedDiscount * 100)}%` : 'DISCOUNTS'}</span>
-                              <HelpCircle className="w-3 h-3 xxs:w-3.5 xxs:h-3.5 sm:w-4 sm:h-4" />
-                            </button>
-                          </Tooltip.Trigger>
-                          <Tooltip.Portal>
-                            <Tooltip.Content
-                              sideOffset={5}
-                              className="tooltip-content !font-mono"
-                            >
-                              Click for detailed breakdown
-                              <Tooltip.Arrow className="tooltip-arrow" width={11} height={5} />
-                            </Tooltip.Content>
-                          </Tooltip.Portal>
-                        </Tooltip.Root>
-                      </Tooltip.Provider>
-                      <button
-                        onClick={handleClearSelection}
-                        className={clsx(
-                          "flex items-center gap-0.5 xxs:gap-1 px-2 xxs:px-2.5 py-1 xxs:py-1.5 text-sm border rounded-sm transition-colors duration-200",
-                          "font-lettra-bold",
-                          "text-accent-primary bg-[color-mix(in_srgb,_var(--color-accent-primary)_10%,_transparent)] border-[color-mix(in_srgb,_var(--color-accent-primary)_30%,_transparent)] hover:bg-[color-mix(in_srgb,_var(--color-accent-primary)_20%,_transparent)] hover:border-[color-mix(in_srgb,_var(--color-accent-primary)_40%,_transparent)]"
-                        )}
-                        aria-label="Clear week selection"
-                      >
-                        <X size={12} className="xxs:w-3.5 xxs:h-3.5 sm:w-4 sm:h-4" />
-                        <span>CLEAR DATES</span>
-                      </button>
-                    </div>
-                  )}
                 </div>
 
                 {isLoading ? (
@@ -1147,18 +929,10 @@ export function Book2Page() {
                   </div>
                 ) : (
                   <>
-                  <WeekSelector 
+                  <SimpleWeekSelector 
                     weeks={weeks}
                     selectedWeeks={selectedWeeks}
-                    onWeekSelect={handleWeekSelect}
-                    onWeeksDeselect={handleWeeksDeselect}
-                    isAdmin={isAdminMode}
-                    onDateSelect={handleFlexDateSelect}
-                    currentMonth={currentMonth}
-                    onMonthChange={handleMonthChange}
-                    accommodationTitle={accommodationTitle}
-                    onMaxWeeksReached={() => setShowMaxWeeksModal(true)}
-                    testMode={testMode}
+                    onWeekSelect={() => {}} // Disable selection - it's always selected
                   />
                   </>
                 )}

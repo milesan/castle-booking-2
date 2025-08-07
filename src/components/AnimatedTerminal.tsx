@@ -135,8 +135,14 @@ export function AnimatedTerminal({ onComplete }: Props) {
         }
       }
 
-      // STEP 2: Send magic link (works for both whitelisted and normal users now)
-      const { error } = await supabase.auth.signInWithOtp({ email: normalizedEmail });
+      // STEP 2: Send OTP code (works for both whitelisted and normal users now)
+      const { error } = await supabase.auth.signInWithOtp({ 
+        email: normalizedEmail,
+        options: {
+          shouldCreateUser: true,
+          emailRedirectTo: undefined // This ensures we get an OTP code, not a magic link
+        }
+      });
       if (error) throw error;
       setSuccess('Code sent! Check your email (and spam/junk folder).');
       setOtpSent(true);
@@ -218,11 +224,12 @@ export function AnimatedTerminal({ onComplete }: Props) {
           animate={showBorder ? { opacity: 1 } : {}}
           transition={{ duration: 1, ease: "easeOut" }}
         >
-          {/* Fluorescent border */}
+          {/* Castle golden border */}
           <div 
-            className="absolute inset-0 border-2 border-retro-accent/80 rounded-sm"
+            className="absolute inset-0 border-2 rounded-sm castle-border"
             style={{
-              boxShadow: '0 0 8px rgba(0, 255, 0, 0.3), inset 0 0 8px rgba(0, 255, 0, 0.1)',
+              borderColor: 'var(--castle-accent-gold)',
+              boxShadow: 'var(--castle-shadow-glow)',
             }}
           />
           
@@ -298,8 +305,8 @@ export function AnimatedTerminal({ onComplete }: Props) {
                     // Original login UI
                     <>
                       <div className="flex items-center justify-center gap-3 mb-8">
-                        <h1 className="text-lg font-display text-retro-accent whitespace-nowrap">
-                          Enter The Garden
+                        <h1 className="text-2xl" style={{ fontFamily: 'var(--castle-font-primary)', color: 'var(--castle-text-accent)' }}>
+                          Enter The Castle
                         </h1>
                       </div>
 
@@ -313,7 +320,7 @@ export function AnimatedTerminal({ onComplete }: Props) {
                               list="email-list"
                               value={email}
                               onChange={(e) => setEmail(e.target.value.trim())}
-                              className="w-full min-w-[200px] bg-black text-retro-accent border-2 border-retro-accent/70 p-3 font-mono focus:outline-none focus:ring-2 focus:ring-retro-accent/50 placeholder-retro-accent/30"
+                              className="castle-input w-full min-w-[200px]"
                               style={{
                                 clipPath: `polygon(
                                   0 4px, 4px 4px, 4px 0,
@@ -345,7 +352,7 @@ export function AnimatedTerminal({ onComplete }: Props) {
                               placeholder="Enter code"
                               required
                               disabled={isLoading}
-                              className="w-full min-w-[200px] bg-black text-retro-accent border-2 border-retro-accent/70 p-3 font-mono focus:outline-none focus:ring-2 focus:ring-retro-accent/50 placeholder-retro-accent/30 mt-2"
+                              className="castle-input w-full min-w-[200px] mt-2"
                               style={{
                                 clipPath: `polygon(
                                   0 4px, 4px 4px, 4px 0,
@@ -374,7 +381,7 @@ export function AnimatedTerminal({ onComplete }: Props) {
                         <button
                           type="submit"
                           disabled={isLoading}
-                          className="w-full bg-retro-accent text-black p-3 font-mono hover:bg-accent-secondary transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="castle-btn primary w-full"
                           style={{
                             clipPath: `polygon(
                               0 4px, 4px 4px, 4px 0,

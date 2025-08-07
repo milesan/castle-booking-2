@@ -62,40 +62,14 @@ export function usePricing({
         calculatedTotal: totalAccommodationCost // Result of integer * decimal
     });
 
-    // === Calculate BASE Food Cost using DISPLAY (rounded) weeks ===
-    const { totalBaseFoodCost, effectiveWeeklyRate } = calculateBaseFoodCost(
-        totalNights, // Pass totalNights
-        displayWeeks, // Pass rounded display weeks
-        foodContribution
-    );
-    console.log('[BookingSummary] useMemo: Calculated Base Food Cost (based on rounded display weeks):', { totalBaseFoodCost, effectiveWeeklyRate });
-
-    // === Determine Duration Discount % using COMPLETE weeks ===
+    // === Remove all food cost calculations ===
+    const finalFoodCost = 0;
+    const foodDiscountAmount = 0;
+    const effectiveWeeklyRate = 0;
     const rawDurationDiscountPercent = getDurationDiscount(completeWeeks);
-    // === NEW: Round the discount factor to match display (WYSIWYG) ===
-    console.log('[BookingSummary] useMemo: Determined Duration Discount % (using complete weeks):', { rawDurationDiscountPercent });
-
-    // === Apply ROUNDED Discount % to BASE Food Cost (which was calculated using rounded weeks) ===
-    // 1. Calculate the effective *integer* weekly F&F cost *after* discount (matching slider display)
-    const baseWeeklyRateForCalc = foodContribution ?? (totalNights <= 6 ? 345 : 240); // Get base rate from slider or default
-    const displayedWeeklyFFCost = Math.round(baseWeeklyRateForCalc * (1 - rawDurationDiscountPercent));
-    // 2. Multiply this displayed weekly cost by the displayed number of weeks
-    const finalFoodCost = parseFloat((displayedWeeklyFFCost * displayWeeks).toFixed(2));
-    // 3. Recalculate the discount amount based on the difference (for display/info purposes)
-    const foodDiscountAmount = parseFloat((totalBaseFoodCost - finalFoodCost).toFixed(2)); // Base cost (base rate * display weeks) - final cost
-
-    console.log('[BookingSummary] useMemo: Calculated Final Food Cost (WYSIWYG):', { 
-      baseWeeklyRateForCalc,
-      rawDurationDiscountPercent, 
-      displayedWeeklyFFCost, // Integer weekly cost after discount
-      displayWeeks, // Decimal weeks display
-      finalFoodCost, // displayedWeeklyFFCost * displayWeeks
-      totalBaseFoodCost, // For comparison
-      foodDiscountAmount // Recalculated difference
-    });
-
-    // 4. Combine results
-    const subtotal = parseFloat((+totalAccommodationCost + +finalFoodCost).toFixed(2));
+    
+    // 4. Subtotal is just accommodation cost
+    const subtotal = totalAccommodationCost;
     console.log('[BookingSummary] useMemo: Calculated Subtotal:', { totalAccommodationCost, finalFoodCost, subtotal });
 
     // --- START: Apply Discount Code --- 
@@ -112,7 +86,7 @@ export function usePricing({
         if (appliesTo === 'accommodation') {
             amountToDiscountFrom = totalAccommodationCost;
         } else if (appliesTo === 'food_facilities') {
-            amountToDiscountFrom = finalFoodCost; // This is F&F cost after duration discount but before code discount
+            amountToDiscountFrom = 0; // No food facilities cost anymore
         } else { // 'total' or any other fallback
             amountToDiscountFrom = subtotalBeforeDiscountCode;
         }
@@ -175,15 +149,6 @@ export function usePricing({
       totalWithVat,
     };
 
-    // ADDED LOG BLOCK: Values right before returning details
-    console.log('[BookingSummary] useMemo: Final Calculation Values for Food Cost', {
-      displayWeeks, // The rounded weeks used
-      foodContribution, // The input from the slider
-      totalBaseFoodCost, // displayWeeks * foodContribution
-      completeWeeks, // For discount lookup
-      rawDurationDiscountPercent, // Raw discount %
-      finalFoodCost_unrounded: finalFoodCost, // Base * (1 - Discount) BEFORE final display rounding
-    });
 
     // --- START TEST ACCOMMODATION OVERRIDE ---
     if (selectedAccommodation?.type === 'test') {

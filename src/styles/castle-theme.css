@@ -1,0 +1,547 @@
+/* Castle Theme - Medieval Luxury Styling System */
+
+/* Import Playfair Display as fallback - must be first */
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&display=swap');
+
+/* Font Definitions */
+@font-face {
+  font-family: 'Trajan Pro';
+  src: url('/fonts/trajan-pro/TrajanPro-Regular.woff2') format('woff2'),
+       url('/fonts/trajan-pro/TrajanPro-Regular.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Trajan Pro';
+  src: url('/fonts/trajan-pro/TrajanPro-Bold.otf') format('opentype');
+  font-weight: bold;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Root Variables - Castle Theme */
+:root {
+  /* Primary Colors - Deep Medieval Theme */
+  --castle-bg-primary: #0a0b14;
+  --castle-bg-secondary: #0f1419;
+  --castle-bg-tertiary: #242937;
+  --castle-bg-surface: #1a1d28;
+  --castle-bg-overlay: rgba(10, 11, 20, 0.95);
+  
+  /* Text Colors - Warm Gold/Cream Palette */
+  --castle-text-primary: #e8e3d8;
+  --castle-text-secondary: #d4c5a0;
+  --castle-text-muted: #a8a095;
+  --castle-text-accent: #f4e4c1;
+  
+  /* Accent Colors - Royal Gold */
+  --castle-accent-gold: #d4c5a0;
+  --castle-accent-gold-light: #e4d5b0;
+  --castle-accent-gold-dark: #b4a580;
+  --castle-accent-emerald: #4a7c59;
+  --castle-accent-ruby: #8b3a3a;
+  
+  /* Border Colors */
+  --castle-border-primary: rgba(212, 197, 160, 0.15);
+  --castle-border-hover: rgba(212, 197, 160, 0.3);
+  --castle-border-active: rgba(212, 197, 160, 0.5);
+  
+  /* Status Colors */
+  --castle-success: #10b981;
+  --castle-warning: #f59e0b;
+  --castle-error: #ef4444;
+  --castle-info: #3b82f6;
+  
+  /* Shadows */
+  --castle-shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.5);
+  --castle-shadow-md: 0 4px 15px rgba(0, 0, 0, 0.6);
+  --castle-shadow-lg: 0 10px 40px rgba(0, 0, 0, 0.7);
+  --castle-shadow-glow: 0 0 30px rgba(212, 197, 160, 0.3);
+  
+  /* Typography */
+  --castle-font-primary: 'Trajan Pro', 'Playfair Display', Georgia, serif;
+  --castle-font-body: 'Georgia', serif;
+  --castle-font-mono: 'PP Lettra Mono Regular', 'Courier New', monospace;
+  
+  /* Spacing */
+  --castle-spacing-xs: 4px;
+  --castle-spacing-sm: 8px;
+  --castle-spacing-md: 16px;
+  --castle-spacing-lg: 24px;
+  --castle-spacing-xl: 32px;
+  --castle-spacing-2xl: 48px;
+  
+  /* Border Radius */
+  --castle-radius-sm: 4px;
+  --castle-radius-md: 8px;
+  --castle-radius-lg: 12px;
+  --castle-radius-xl: 16px;
+  --castle-radius-round: 9999px;
+  
+  /* Transitions */
+  --castle-transition-fast: 150ms ease;
+  --castle-transition-base: 300ms ease;
+  --castle-transition-slow: 500ms ease;
+  
+  /* Z-index layers */
+  --castle-z-base: 1;
+  --castle-z-dropdown: 1000;
+  --castle-z-modal: 2000;
+  --castle-z-toast: 3000;
+  --castle-z-tooltip: 4000;
+}
+
+/* Global Reset and Base Styles */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  height: 100%;
+  background: var(--castle-bg-primary);
+  color: var(--castle-text-primary);
+  font-family: var(--castle-font-body);
+  font-size: 16px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  min-height: 100vh;
+  background: linear-gradient(
+    180deg,
+    var(--castle-bg-primary) 0%,
+    var(--castle-bg-secondary) 50%,
+    var(--castle-bg-primary) 100%
+  );
+  position: relative;
+  overflow-x: hidden;
+}
+
+/* Typography */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--castle-font-primary);
+  color: var(--castle-text-accent);
+  font-weight: normal;
+  letter-spacing: 0.05em;
+  margin-bottom: var(--castle-spacing-md);
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+h1 {
+  font-size: 3rem;
+  line-height: 1.2;
+  margin-bottom: var(--castle-spacing-xl);
+}
+
+h2 {
+  font-size: 2.25rem;
+  line-height: 1.3;
+}
+
+h3 {
+  font-size: 1.875rem;
+  line-height: 1.4;
+}
+
+h4 {
+  font-size: 1.5rem;
+  line-height: 1.4;
+}
+
+h5 {
+  font-size: 1.25rem;
+  line-height: 1.5;
+}
+
+h6 {
+  font-size: 1.125rem;
+  line-height: 1.5;
+}
+
+p {
+  margin-bottom: var(--castle-spacing-md);
+  color: var(--castle-text-primary);
+}
+
+a {
+  color: var(--castle-accent-gold);
+  text-decoration: none;
+  transition: color var(--castle-transition-base);
+}
+
+a:hover {
+  color: var(--castle-accent-gold-light);
+  text-shadow: 0 0 10px rgba(212, 197, 160, 0.5);
+}
+
+/* Castle Button System */
+.castle-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--castle-spacing-sm);
+  padding: var(--castle-spacing-md) var(--castle-spacing-lg);
+  background: var(--castle-bg-tertiary);
+  color: var(--castle-text-primary);
+  border: 2px solid var(--castle-border-primary);
+  border-radius: var(--castle-radius-md);
+  font-family: var(--castle-font-primary);
+  font-weight: 500;
+  font-size: 1rem;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  transition: all var(--castle-transition-base);
+  position: relative;
+  overflow: hidden;
+  text-decoration: none;
+  text-transform: uppercase;
+}
+
+.castle-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(212, 197, 160, 0.2),
+    transparent
+  );
+  transition: left var(--castle-transition-slow);
+}
+
+.castle-btn:hover {
+  background: var(--castle-accent-gold);
+  color: var(--castle-bg-primary);
+  border-color: var(--castle-accent-gold);
+  transform: translateY(-2px);
+  box-shadow: var(--castle-shadow-md), var(--castle-shadow-glow);
+}
+
+.castle-btn:hover::before {
+  left: 100%;
+}
+
+.castle-btn:active {
+  transform: translateY(0);
+}
+
+.castle-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+/* Button Variants */
+.castle-btn.primary {
+  background: var(--castle-accent-gold);
+  color: var(--castle-bg-primary);
+  border-color: var(--castle-accent-gold);
+}
+
+.castle-btn.primary:hover {
+  background: var(--castle-accent-gold-light);
+  border-color: var(--castle-accent-gold-light);
+}
+
+.castle-btn.success {
+  background: var(--castle-success);
+  color: white;
+  border-color: var(--castle-success);
+}
+
+.castle-btn.danger {
+  background: var(--castle-error);
+  color: white;
+  border-color: var(--castle-error);
+}
+
+.castle-btn.ghost {
+  background: transparent;
+  border-color: var(--castle-border-primary);
+}
+
+.castle-btn.ghost:hover {
+  background: rgba(212, 197, 160, 0.1);
+  border-color: var(--castle-accent-gold);
+  color: var(--castle-accent-gold);
+}
+
+/* Button Sizes */
+.castle-btn.small {
+  padding: var(--castle-spacing-sm) var(--castle-spacing-md);
+  font-size: 0.875rem;
+}
+
+.castle-btn.large {
+  padding: var(--castle-spacing-lg) var(--castle-spacing-2xl);
+  font-size: 1.125rem;
+}
+
+/* Castle Card Component */
+.castle-card {
+  background: var(--castle-bg-surface);
+  border: 1px solid var(--castle-border-primary);
+  border-radius: var(--castle-radius-lg);
+  padding: var(--castle-spacing-xl);
+  box-shadow: var(--castle-shadow-md);
+  position: relative;
+  transition: all var(--castle-transition-base);
+}
+
+.castle-card::before {
+  content: '';
+  position: absolute;
+  top: -1px;
+  left: -1px;
+  right: -1px;
+  bottom: -1px;
+  background: linear-gradient(
+    135deg,
+    var(--castle-accent-gold) 0%,
+    transparent 40%,
+    transparent 60%,
+    var(--castle-accent-gold) 100%
+  );
+  border-radius: var(--castle-radius-lg);
+  opacity: 0;
+  z-index: -1;
+  transition: opacity var(--castle-transition-base);
+}
+
+.castle-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--castle-shadow-lg);
+}
+
+.castle-card:hover::before {
+  opacity: 0.3;
+}
+
+/* Form Elements */
+.castle-input,
+.castle-select,
+.castle-textarea {
+  width: 100%;
+  padding: var(--castle-spacing-md);
+  background: var(--castle-bg-tertiary);
+  color: var(--castle-text-primary);
+  border: 2px solid var(--castle-border-primary);
+  border-radius: var(--castle-radius-md);
+  font-family: var(--castle-font-body);
+  font-size: 1rem;
+  transition: all var(--castle-transition-base);
+}
+
+.castle-input:focus,
+.castle-select:focus,
+.castle-textarea:focus {
+  outline: none;
+  border-color: var(--castle-accent-gold);
+  box-shadow: 0 0 0 3px rgba(212, 197, 160, 0.1);
+  background: var(--castle-bg-secondary);
+}
+
+.castle-input::placeholder,
+.castle-textarea::placeholder {
+  color: var(--castle-text-muted);
+}
+
+.castle-label {
+  display: block;
+  margin-bottom: var(--castle-spacing-sm);
+  color: var(--castle-text-secondary);
+  font-family: var(--castle-font-primary);
+  font-size: 0.875rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+/* Medieval Ornaments */
+.castle-ornament {
+  position: relative;
+  padding: var(--castle-spacing-xl) 0;
+}
+
+.castle-ornament::before,
+.castle-ornament::after {
+  content: '❦';
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  color: var(--castle-accent-gold);
+  font-size: 1.5rem;
+  opacity: 0.5;
+}
+
+.castle-ornament::before {
+  top: 0;
+}
+
+.castle-ornament::after {
+  bottom: 0;
+}
+
+/* Castle Grid System */
+.castle-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 var(--castle-spacing-xl);
+}
+
+.castle-grid {
+  display: grid;
+  gap: var(--castle-spacing-xl);
+}
+
+.castle-grid-2 {
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+}
+
+.castle-grid-3 {
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+}
+
+.castle-grid-4 {
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+}
+
+/* Animations */
+@keyframes castle-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes castle-glow {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(212, 197, 160, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 40px rgba(212, 197, 160, 0.6);
+  }
+}
+
+@keyframes castle-shimmer {
+  0% {
+    background-position: -1000px 0;
+  }
+  100% {
+    background-position: 1000px 0;
+  }
+}
+
+.castle-animate-fade {
+  animation: castle-fade-in 0.8s ease-out;
+}
+
+.castle-animate-glow {
+  animation: castle-glow 2s ease-in-out infinite;
+}
+
+/* Utility Classes */
+.castle-text-center {
+  text-align: center;
+}
+
+.castle-text-gold {
+  color: var(--castle-accent-gold);
+}
+
+.castle-text-muted {
+  color: var(--castle-text-muted);
+}
+
+.castle-bg-dark {
+  background: var(--castle-bg-primary);
+}
+
+.castle-bg-surface {
+  background: var(--castle-bg-surface);
+}
+
+.castle-shadow {
+  box-shadow: var(--castle-shadow-md);
+}
+
+.castle-rounded {
+  border-radius: var(--castle-radius-md);
+}
+
+.castle-border {
+  border: 1px solid var(--castle-border-primary);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  h1 {
+    font-size: 2rem;
+  }
+  
+  h2 {
+    font-size: 1.75rem;
+  }
+  
+  h3 {
+    font-size: 1.5rem;
+  }
+  
+  .castle-container {
+    padding: 0 var(--castle-spacing-md);
+  }
+  
+  .castle-btn {
+    padding: var(--castle-spacing-sm) var(--castle-spacing-md);
+    font-size: 0.875rem;
+  }
+  
+  .castle-card {
+    padding: var(--castle-spacing-lg);
+  }
+}
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--castle-bg-tertiary);
+  border-radius: var(--castle-radius-sm);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--castle-accent-gold-dark);
+  border-radius: var(--castle-radius-sm);
+  border: 2px solid var(--castle-bg-tertiary);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--castle-accent-gold);
+}
+
+/* Selection Styling */
+::selection {
+  background: var(--castle-accent-gold);
+  color: var(--castle-bg-primary);
+}
+
+::-moz-selection {
+  background: var(--castle-accent-gold);
+  color: var(--castle-bg-primary);
+}

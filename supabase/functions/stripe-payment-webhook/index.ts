@@ -149,17 +149,81 @@ serve(async (req) => {
         // Check if booking already exists (idempotency and frontend coordination)
         const { data: existingBooking } = await supabaseAdmin
           .from('bookings')
-          .select('id, user_id, created_at')
-          .eq('payment_intent_id', paymentIntent?.id || session.id)
+          .select('id, user_id, created_at, status')
+          .eq('stripe_payment_intent_id', paymentIntent?.id || session.id)
           .single();
 
         if (existingBooking) {
           log('Booking already exists for this payment, skipping webhook creation', {
             bookingId: existingBooking.id,
             paymentIntentId: paymentIntent?.id || session.id,
-            existingBookingAge: new Date().getTime() - new Date(existingBooking.created_at).getTime()
+            existingBookingAge: new Date().getTime() - new Date(existingBooking.created_at).getTime(),
+            status: existingBooking.status
           });
           break;
+        }
+        
+        // NEW: Check for pending bookings that might have been created by the frontend
+        // This handles the case where user closed the tab after payment but before frontend could update
+        if (paymentIntent?.metadata) {
+          const { data: pendingBooking } = await supabaseAdmin
+            .from('bookings')
+            .select('id, user_id, created_at, status')
+            .eq('status', 'pending')
+            .eq('accommodation_id', paymentIntent.metadata.accommodation_id)
+            .eq('check_in', paymentIntent.metadata.check_in)
+            .eq('check_out', paymentIntent.metadata.check_out)
+            .gte('created_at', new Date(Date.now() - 30 * 60 * 1000).toISOString()) // Created within last 30 minutes
+            .single();
+            
+          if (pendingBooking) {
+            log('Found pending booking to update', {
+              bookingId: pendingBooking.id,
+              paymentIntentId: paymentIntent.id
+            });
+            
+            // Update the pending booking to confirmed
+            const { error: updateError } = await supabaseAdmin
+              .from('bookings')
+              .update({
+                status: 'confirmed',
+                stripe_payment_intent_id: paymentIntent.id,
+                stripe_payment_status: 'succeeded',
+                updated_at: new Date().toISOString()
+              })
+              .eq('id', pendingBooking.id);
+              
+            if (updateError) {
+              log('ERROR: Failed to update pending booking', {
+                bookingId: pendingBooking.id,
+                error: updateError
+              });
+            } else {
+              log('Successfully updated pending booking to confirmed', {
+                bookingId: pendingBooking.id
+              });
+              
+              // Also update any related payment records
+              const { error: paymentUpdateError } = await supabaseAdmin
+                .from('payments')
+                .update({
+                  status: 'completed',  // Changed from 'paid' to 'completed' to match enum
+                  stripe_payment_intent_id: paymentIntent.id,
+                  updated_at: new Date().toISOString()
+                })
+                .eq('booking_id', pendingBooking.id)
+                .eq('status', 'pending');
+                
+              if (paymentUpdateError) {
+                log('WARNING: Failed to update payment record', {
+                  bookingId: pendingBooking.id,
+                  error: paymentUpdateError
+                });
+              }
+            }
+            
+            break; // Exit since we've handled the booking
+          }
         }
 
         // Try to use metadata first, fallback to description parsing

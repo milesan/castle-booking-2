@@ -100,18 +100,11 @@ export function PriceBreakdown({
       <div className="bg-surface space-y-4 p-4 rounded-sm"> {/* Increased spacing between items */}
         {selectedAccommodation ? (
           <>
-            <div className="flex justify-between items-end"> {/* Outer flex - changed to end */}
-              <div className="flex flex-col"> {/* Left block */}
-                <span className="text-xs text-shade-2 font-lettra-bold">ACCOMMODATION</span>
-                {/* Style duration like main dates, remove uppercase */}
-                <span className="text-2xl lg:text-xl xl:text-2xl text-primary font-display">
-                  {formatNumber(pricing.weeksStaying)} {pricing.weeksStaying === 1 ? 'week' : 'weeks'}
-                </span>
-              </div>
-              {/* Price: Updated size, font, color */}
-              <span className="text-xl lg:text-lg xl:text-xl font-display text-shade-1">{formatPriceDisplay(pricing.totalAccommodationCost)}</span> {/* Right block (price) */}
+            <div className="flex justify-between items-center"> {/* Simplified flex */}
+              <span className="text-lg text-primary font-display">Accommodation</span>
+              {/* Price: Make it larger and more prominent */}
+              <span className="text-2xl font-display text-primary">{formatPriceDisplay(pricing.totalAccommodationCost)}</span>
             </div>
-            <hr className="border-t border-border my-2 opacity-30" /> {/* Horizontal line */}
           </>
         ) : (
           <div className="flex items-baseline min-h-[1.25rem]">
@@ -119,86 +112,6 @@ export function PriceBreakdown({
           </div>
         )}
         
-        <>
-          {/* --- Wrap the whole row in Popover.Root --- */}
-          <div className="flex justify-between items-end"> {/* Align to bottom like Accommodation section */}
-            {/* Left block (label and sub-label) */}
-            <div className="flex flex-col flex-shrink-0"> {/* ADDED flex-shrink-0 HERE */}
-              <span className="text-xs text-shade-2 font-lettra-bold flex items-center">
-                FOOD AND FACILITIES
-              </span>
-              <span className="text-2xl lg:text-xl xl:text-2xl text-primary font-display">
-                  {formatNumber(pricing.weeksStaying)} {pricing.weeksStaying === 1 ? 'week' : 'weeks'}
-              </span>
-            </div>
-
-            {/* Right block (Icon Trigger + Price) */}
-            <div className="flex flex-col items-end"> {/* Column layout, align items to the end (right) */}
-              {/* Icon Trigger - Now HoverClickPopover */}
-              <HoverClickPopover
-                triggerContent={<Info className="w-4 h-4" />}
-                triggerWrapperClassName="text-accent-primary hover:text-accent-secondary mb-1 cursor-default"
-                popoverContentNode={<span className="text-primary">Community meals & operations costs</span>}
-                contentClassName="tooltip-content !font-mono text-sm z-50"
-                side="top"
-                align="end"
-                hoverCloseDelayMs={150}
-              />
-              {/* Price */}
-              <span className="text-xl lg:text-lg xl:text-xl font-display text-shade-1">
-                {formatPriceDisplay(pricing.totalFoodAndFacilitiesCost)}
-              </span>
-            </div>
-          </div>
-          <hr className="border-t border-border my-2 opacity-30" /> {/* Horizontal line */}
-        </>
-
-        {/* Optional Contribution Slider */}
-        {foodContribution !== null && selectedWeeks.length > 0 && (
-          <div className="pt-2"> {/* Reduced top padding */}
-             {/* --- Label row with space-between --- */}
-             <div className="flex justify-between items-center mb-2">
-               <label htmlFor="food-contribution" className="text-xs text-shade-2 font-lettra-bold"> {/* Label */}
-                  SLIDING CONTRIBUTION
-                </label>
-                {/* MODIFIED: Replaced with HoverClickPopover */}
-                <HoverClickPopover
-                  triggerContent={<Info className="w-4 h-4" />}
-                  triggerWrapperClassName="text-accent-primary hover:text-accent-secondary cursor-default"
-                  popoverContentNode="Adjust your contribution based on your means. Minimum varies by stay length."
-                  contentClassName="tooltip-content !font-mono text-sm z-50"
-                  side="top"
-                  align="end"
-                  hoverCloseDelayMs={150}
-                />
-              </div>
-
-             {/* --- Optimized Slider for smooth performance --- */}
-             <OptimizedSlider
-               id="food-contribution"
-               min={foodRange.min}
-               max={foodRange.max}
-               value={foodContribution ?? foodRange.defaultValue}
-               onChange={(value) => setFoodContribution(value)}
-               onDisplayValueChange={handleDisplayValueChange}
-             />
-              <div className="flex justify-between text-xs text-secondary mt-1 font-mono">
-                 {/* Apply requested styles to Min */}
-                 <span className="uppercase text-xs font-lettra-bold text-primary">
-                   Min: €{foodRange.min}
-                 </span>
-                 {/* Apply requested styles to Rate - Shows immediate feedback */}
-                 <span className="uppercase text-xs font-lettra-bold text-primary"> {/* Removed font-medium text-sm text-shade-1 font-mono */}
-                   {/* Show the display value for immediate feedback, fallback to actual value */}
-                   €{displayFoodContribution ?? foodContribution ?? foodRange.defaultValue} / week
-                 </span>
-                 {/* Apply requested styles to Max */}
-                 <span className="uppercase text-xs font-lettra-bold text-primary">
-                   Max: €{foodRange.max}
-                 </span>
-              </div>
-           </div>
-        )}
       </div>
     </div>
   );

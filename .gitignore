@@ -42,3 +42,9 @@ supabase/.temp/
 
 # Temporary or untracked directories
 templates/
+
+# Large files and PostgreSQL tools
+postgresql-tools.zip
+pgsql/
+*.backup
+*.dump

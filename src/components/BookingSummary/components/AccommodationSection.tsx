@@ -40,12 +40,7 @@ export function AccommodationSection({ selectedAccommodation, onClearAccommodati
             {/* REMOVE intermediate divs and padding/margin */}
             {/* Add block to ensure span takes up vertical space */}
             <span className="text-primary font-display text-2xl block"> 
-                {selectedAccommodation.title === 'Van Parking' || 
-                selectedAccommodation.title === 'Your Own Tent' || 
-                selectedAccommodation.title === 'Staying with somebody' || 
-                selectedAccommodation.title === 'The Hearth' 
-                ? selectedAccommodation.title
-                : `The ${selectedAccommodation.title}`}
+                {selectedAccommodation.title}
             </span>
         </div>
       </div>
