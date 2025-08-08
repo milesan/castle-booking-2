@@ -46,6 +46,122 @@ const getAllImages = (accommodation: ExtendedAccommodation): AccommodationImage[
   return [...accommodation.images].sort((a, b) => a.display_order - b.display_order);
 };
 
+// Image Gallery Component
+const ImageGallery: React.FC<{ 
+  accommodation: ExtendedAccommodation;
+  currentImageIndices: Record<string, number>;
+  setCurrentImageIndices: React.Dispatch<React.SetStateAction<Record<string, number>>>;
+  onImageClick?: (imageUrl: string) => void;
+}> = ({ accommodation, currentImageIndices, setCurrentImageIndices, onImageClick }) => {
+  const allImages = getAllImages(accommodation);
+  const currentIndex = currentImageIndices[accommodation.id] || 0;
+  
+  // Helper function to get current image
+  const getCurrentImage = (): string | null => {
+    if (allImages.length === 0) return null;
+    const validIndex = Math.min(currentIndex, allImages.length - 1);
+    return allImages[validIndex]?.image_url || null;
+  };
+  
+  const currentImageUrl = getCurrentImage();
+
+  if (allImages.length === 0) {
+    return (
+      <div className="w-32 h-32 flex items-center justify-center text-secondary bg-surface/50 rounded-lg">
+        <BedDouble size={32} />
+      </div>
+    );
+  }
+
+  const handlePrevious = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setCurrentImageIndices(prev => {
+      const currentIdx = prev[accommodation.id] || 0;
+      const newIndex = currentIdx === 0 ? allImages.length - 1 : currentIdx - 1;
+      return {
+        ...prev,
+        [accommodation.id]: newIndex
+      };
+    });
+  };
+
+  const handleNext = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setCurrentImageIndices(prev => {
+      const currentIdx = prev[accommodation.id] || 0;
+      const newIndex = (currentIdx + 1) % allImages.length;
+      return {
+        ...prev,
+        [accommodation.id]: newIndex
+      };
+    });
+  };
+
+  const handleDotClick = (e: React.MouseEvent, index: number) => {
+    e.stopPropagation();
+    setCurrentImageIndices(prev => ({
+      ...prev,
+      [accommodation.id]: index
+    }));
+  };
+
+  return (
+    <div className="relative w-32 h-32 group/gallery">
+      {/* Main Image */}
+      <button
+        onClick={() => onImageClick?.(currentImageUrl || '')}
+        className="w-full h-full focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary focus-visible:ring-offset-2 rounded-lg transition-opacity hover:opacity-80"
+      >
+        <img 
+          src={currentImageUrl || ''} 
+          alt={`${accommodation.title} ${currentIndex + 1}`} 
+          className="w-full h-full object-cover rounded-lg cursor-pointer"
+          loading="lazy"
+        />
+      </button>
+
+      {/* Navigation arrows - show on hover when more than 1 image */}
+      {allImages.length > 1 && (
+        <>
+          <button
+            onClick={handlePrevious}
+            className="absolute left-1 top-1/2 transform -translate-y-1/2 bg-black/80 hover:bg-black/90 text-white rounded-md p-0.5 transition-all duration-200 hover:scale-110 shadow-lg z-20 opacity-0 group-hover/gallery:opacity-100"
+            aria-label="Previous image"
+          >
+            <ChevronLeft size={12} />
+          </button>
+          <button
+            onClick={handleNext}
+            className="absolute right-1 top-1/2 transform -translate-y-1/2 bg-black/80 hover:bg-black/90 text-white rounded-md p-0.5 transition-all duration-200 hover:scale-110 shadow-lg z-20 opacity-0 group-hover/gallery:opacity-100"
+            aria-label="Next image"
+          >
+            <ChevronRight size={12} />
+          </button>
+        </>
+      )}
+
+      {/* Dots indicator - only show if more than 1 image */}
+      {allImages.length > 1 && (
+        <div className="absolute bottom-1 left-1/2 transform -translate-x-1/2 flex space-x-0.5 z-10">
+          {allImages.map((_, index) => (
+            <button
+              key={index}
+              onClick={(e) => handleDotClick(e, index)}
+              className={clsx(
+                "w-1.5 h-1.5 rounded-full transition-all duration-200 border border-white/30",
+                index === currentIndex 
+                  ? "bg-white shadow-sm scale-110" 
+                  : "bg-white/30 hover:bg-white/60 hover:scale-105"
+              )}
+              aria-label={`Go to image ${index + 1}`}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
 export function MyBookings() {
   const navigate = useNavigate();
   const [bookings, setBookings] = React.useState<Booking[]>([]);
@@ -53,6 +169,7 @@ export function MyBookings() {
   const [currentImageIndices, setCurrentImageIndices] = React.useState<Record<string, number>>({});
   const [error, setError] = React.useState<string | null>(null);
   const [enlargedImageUrl, setEnlargedImageUrl] = React.useState<string | null>(null);
+  const [enlargedAccommodation, setEnlargedAccommodation] = React.useState<ExtendedAccommodation | null>(null);
   const [extendingBooking, setExtendingBooking] = React.useState<Booking | null>(null);
   const [extensionWeeks, setExtensionWeeks] = React.useState<any[]>([]);
   const [originalCheckIn, setOriginalCheckIn] = React.useState<Date | null>(null);
@@ -851,21 +968,6 @@ export function MyBookings() {
                 <p className="text-sm font-mono">{session?.session?.user?.email}</p>
               </div>
             </div>
-            <button
-              onClick={() => navigate('/')}
-              className="castle-btn ghost small"
-              style={{
-                border: '1px solid var(--castle-accent-gold)',
-                color: 'var(--castle-accent-gold)',
-                padding: '8px 20px',
-                fontSize: '14px',
-                fontFamily: 'var(--castle-font-primary)',
-                letterSpacing: '0.05em',
-                transition: 'all 0.3s ease',
-              }}
-            >
-              Back to Castle
-            </button>
           </div>
           
           {bookings.length === 0 ? (
@@ -938,17 +1040,16 @@ export function MyBookings() {
                         </a>
                       </div>
                     </div>
-                    {booking.accommodation?.image_url && (
-                      <button
-                        onClick={() => setEnlargedImageUrl(booking.accommodation?.image_url || null)}
-                        className="focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary focus-visible:ring-offset-2 rounded-lg transition-opacity hover:opacity-80"
-                      >
-                        <img
-                          src={booking.accommodation.image_url}
-                          alt={booking.accommodation.title}
-                          className="w-32 h-32 object-cover rounded-lg cursor-pointer"
-                        />
-                      </button>
+                    {booking.accommodation && (
+                      <ImageGallery
+                        accommodation={booking.accommodation as ExtendedAccommodation}
+                        currentImageIndices={currentImageIndices}
+                        setCurrentImageIndices={setCurrentImageIndices}
+                        onImageClick={(imageUrl) => {
+                          setEnlargedImageUrl(imageUrl);
+                          setEnlargedAccommodation(booking.accommodation as ExtendedAccommodation);
+                        }}
+                      />
                     )}
                   </div>
                 </motion.div>
@@ -958,22 +1059,112 @@ export function MyBookings() {
         </div>
       </div>
 
-      {enlargedImageUrl && (
+      {enlargedImageUrl && enlargedAccommodation && (
         <div
           className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4"
-          onClick={() => setEnlargedImageUrl(null)}
+          onClick={() => {
+            setEnlargedImageUrl(null);
+            setEnlargedAccommodation(null);
+          }}
         >
           <div
-            className="relative"
+            className="relative max-w-[90vw] max-h-[90vh]"
             onClick={(e) => e.stopPropagation()}
           >
-            <img
-              src={enlargedImageUrl}
-              alt="Enlarged booking accommodation"
-              className="max-w-full max-h-[80vh] w-auto h-auto object-contain rounded-lg shadow-2xl"
-            />
+            {(() => {
+              const allImages = getAllImages(enlargedAccommodation);
+              const currentIndex = currentImageIndices[enlargedAccommodation.id] || 0;
+              const currentImage = allImages[currentIndex];
+              
+              const handlePrevious = () => {
+                setCurrentImageIndices(prev => {
+                  const currentIdx = prev[enlargedAccommodation.id] || 0;
+                  const newIndex = currentIdx === 0 ? allImages.length - 1 : currentIdx - 1;
+                  const newImageUrl = allImages[newIndex]?.image_url;
+                  if (newImageUrl) setEnlargedImageUrl(newImageUrl);
+                  return {
+                    ...prev,
+                    [enlargedAccommodation.id]: newIndex
+                  };
+                });
+              };
+
+              const handleNext = () => {
+                setCurrentImageIndices(prev => {
+                  const currentIdx = prev[enlargedAccommodation.id] || 0;
+                  const newIndex = (currentIdx + 1) % allImages.length;
+                  const newImageUrl = allImages[newIndex]?.image_url;
+                  if (newImageUrl) setEnlargedImageUrl(newImageUrl);
+                  return {
+                    ...prev,
+                    [enlargedAccommodation.id]: newIndex
+                  };
+                });
+              };
+
+              return (
+                <>
+                  <img
+                    src={enlargedImageUrl}
+                    alt={`${enlargedAccommodation.title} ${currentIndex + 1}`}
+                    className="max-w-full max-h-[80vh] w-auto h-auto object-contain rounded-lg shadow-2xl"
+                  />
+                  
+                  {/* Navigation arrows for enlarged view */}
+                  {allImages.length > 1 && (
+                    <>
+                      <button
+                        onClick={handlePrevious}
+                        className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-black/80 hover:bg-black/90 text-white rounded-full p-2 transition-all duration-200 hover:scale-110 shadow-lg"
+                        aria-label="Previous image"
+                      >
+                        <ChevronLeft size={24} />
+                      </button>
+                      <button
+                        onClick={handleNext}
+                        className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-black/80 hover:bg-black/90 text-white rounded-full p-2 transition-all duration-200 hover:scale-110 shadow-lg"
+                        aria-label="Next image"
+                      >
+                        <ChevronRight size={24} />
+                      </button>
+                    </>
+                  )}
+
+                  {/* Dots indicator for enlarged view */}
+                  {allImages.length > 1 && (
+                    <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2 z-10">
+                      {allImages.map((_, index) => (
+                        <button
+                          key={index}
+                          onClick={() => {
+                            setCurrentImageIndices(prev => ({
+                              ...prev,
+                              [enlargedAccommodation.id]: index
+                            }));
+                            const newImageUrl = allImages[index]?.image_url;
+                            if (newImageUrl) setEnlargedImageUrl(newImageUrl);
+                          }}
+                          className={clsx(
+                            "w-2 h-2 rounded-full transition-all duration-200 border border-white/50",
+                            index === currentIndex 
+                              ? "bg-white shadow-lg scale-125" 
+                              : "bg-white/40 hover:bg-white/70 hover:scale-110"
+                          )}
+                          aria-label={`Go to image ${index + 1}`}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </>
+              );
+            })()}
+            
+            {/* Close button */}
             <button
-              onClick={() => setEnlargedImageUrl(null)}
+              onClick={() => {
+                setEnlargedImageUrl(null);
+                setEnlargedAccommodation(null);
+              }}
               className="absolute -top-2 -right-2 bg-surface rounded-full p-1 text-secondary hover:text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary"
               aria-label="Close enlarged image"
             >
