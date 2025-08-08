@@ -483,6 +483,7 @@ class BookingService {
         .select(`
           *,
           accommodation:accommodations (
+            id,
             title,
             type,
             image_url,
@@ -498,6 +499,37 @@ class BookingService {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
+      
+      // Fetch accommodation images for all accommodations
+      if (data && data.length > 0) {
+        const accommodationIds = [...new Set(data.map(b => b.accommodation?.id).filter(Boolean))];
+        
+        if (accommodationIds.length > 0) {
+          const { data: images, error: imagesError } = await supabase
+            .from('accommodation_images')
+            .select('*')
+            .in('accommodation_id', accommodationIds)
+            .order('display_order');
+          
+          if (!imagesError && images) {
+            // Group images by accommodation_id
+            const imagesByAccommodation: Record<string, any[]> = {};
+            images.forEach(img => {
+              if (!imagesByAccommodation[img.accommodation_id]) {
+                imagesByAccommodation[img.accommodation_id] = [];
+              }
+              imagesByAccommodation[img.accommodation_id].push(img);
+            });
+            
+            // Attach images to accommodations
+            data.forEach(booking => {
+              if (booking.accommodation && booking.accommodation.id) {
+                booking.accommodation.images = imagesByAccommodation[booking.accommodation.id] || [];
+              }
+            });
+          }
+        }
+      }
       
       // Transform the data to calculate payment totals
       const transformedData = data?.map(booking => {
@@ -565,7 +597,7 @@ class BookingService {
         booking_id: bookingId,
         status: 'completed',  // Changed from 'paid' to 'completed' to match enum
         stripe_payment_intent_id: stripePaymentId,  // Changed to match actual column name
-        metadata: supabase.sql`metadata || '{"updated_at": "${new Date().toISOString()}"}'::jsonb`  // Merge with existing metadata
+        metadata: { updated_at: new Date().toISOString() }  // Simple metadata update
       })
       .eq('id', paymentRowId)
       .select('*')
@@ -576,6 +608,38 @@ class BookingService {
     }
     console.log('[BookingService] [DEBUG] Payment row updated successfully:', data);
     return data;
+  }
+
+  /**
+   * Get booking associated with a payment
+   */
+  async getBookingByPaymentId(paymentRowId: string): Promise<any | null> {
+    console.log('[BookingService] Getting booking by payment ID:', paymentRowId);
+    const { data, error } = await supabase
+      .from('payments')
+      .select('booking_id')
+      .eq('id', paymentRowId)
+      .single();
+    
+    if (error || !data?.booking_id) {
+      console.log('[BookingService] No booking found for payment:', paymentRowId);
+      return null;
+    }
+    
+    // Now get the actual booking
+    const { data: booking, error: bookingError } = await supabase
+      .from('bookings')
+      .select('*')
+      .eq('id', data.booking_id)
+      .single();
+    
+    if (bookingError) {
+      console.error('[BookingService] Error fetching booking:', bookingError);
+      return null;
+    }
+    
+    console.log('[BookingService] Found booking for payment:', booking);
+    return booking;
   }
 
   /**

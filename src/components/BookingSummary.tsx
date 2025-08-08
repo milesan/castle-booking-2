@@ -11,7 +11,6 @@ import { supabase } from '../lib/supabase';
 import { StripeCheckoutForm } from './StripeCheckoutForm';
 import { useSession } from '../hooks/useSession';
 import { formatInTimeZone } from 'date-fns-tz';
-import { DiscountModal } from './DiscountModal';
 import { CancellationPolicyModal } from './CancellationPolicyModal';
 import { useUserPermissions } from '../hooks/useUserPermissions';
 import { useCredits } from '../hooks/useCredits';
@@ -19,7 +18,7 @@ import { calculateTotalNights, calculateTotalDays } from '../utils/dates';
 import { Fireflies } from './Fireflies';
 
 // Import types
-import type { BookingSummaryProps, SeasonBreakdown, AppliedDiscount } from './BookingSummary/BookingSummary.types';
+import type { BookingSummaryProps, SeasonBreakdown } from './BookingSummary/BookingSummary.types';
 import type { PaymentBreakdown } from '../types/payment';
 
 // Import hooks
@@ -28,14 +27,11 @@ import { usePricing } from './BookingSummary/BookingSummary.hooks';
 // Import components
 import { StayDetails } from './BookingSummary/components/StayDetails';
 import { AccommodationSection } from './BookingSummary/components/AccommodationSection';
-import { PriceBreakdown } from './BookingSummary/components/PriceBreakdown';
-import { DiscountCodeSection } from './BookingSummary/components/DiscountCodeSection';
 import { CreditsSection } from './BookingSummary/components/CreditsSection';
 import { ConfirmButtons } from './BookingSummary/components/ConfirmButtons';
 
 // Import utils
-import { formatPriceDisplay, calculateFoodContributionRange } from './BookingSummary/BookingSummary.utils';
-import { useDiscountCode } from '../hooks/useDiscountCode';
+import { formatPriceDisplay } from './BookingSummary/BookingSummary.utils';
 
 export function BookingSummary({
   selectedWeeks,
@@ -107,23 +103,12 @@ export function BookingSummary({
   const [foodContribution, setFoodContribution] = useState<number | null>(null);
   const [showDiscountDetails, setShowDiscountDetails] = useState(false);
   const [testPaymentAmount, setTestPaymentAmount] = useState<number | null>(null);
-  const [showDiscountModal, setShowDiscountModal] = useState(false);
   const [showCancellationModal, setShowCancellationModal] = useState(false);
   
   // State for celebration fireflies
   const [showCelebrationFireflies, setShowCelebrationFireflies] = useState(false);
 
-  // --- Discount Code functionality using reusable hook ---
-  const {
-    discountCodeInput,
-    setDiscountCodeInput,
-    appliedDiscount,
-    discountError,
-    isApplyingDiscount,
-    handleApplyDiscount,
-    handleRemoveDiscount
-  } = useDiscountCode();
-  // --- End Discount Code State ---
+  // No discount codes needed
 
   // --- State for Credits ---
   const [creditsToUse, setCreditsToUse] = useState<number>(0);
@@ -259,7 +244,7 @@ export function BookingSummary({
   const [seasonBreakdownState, setSeasonBreakdownState] = useState<SeasonBreakdown | undefined>(initialSeasonBreakdown);
   const [accommodations, setAccommodations] = useState<any[]>([]);
   console.log('[BookingSummary] Initial State Values:', {
-      isBooking, error, showStripeModal, authToken: !!authToken, selectedCheckInDate, showDatePicker, foodContribution, showDiscountDetails, testPaymentAmount, showDiscountModal,
+      isBooking, error, showStripeModal, authToken: !!authToken, selectedCheckInDate, showDatePicker, foodContribution, showDiscountDetails, testPaymentAmount,
       seasonBreakdownStateExists: !!seasonBreakdownState,
       accommodationsCount: accommodations.length, // Log initial count
   });
@@ -361,8 +346,7 @@ export function BookingSummary({
     selectedWeeksLength: selectedWeeks.length,
     selectedAccommodationId: selectedAccommodation?.id,
     calculatedWeeklyAccommodationPrice,
-    foodContribution,
-    appliedDiscountCode: appliedDiscount?.code
+    foodContribution
   });
   
   const pricing = usePricing({
@@ -370,7 +354,7 @@ export function BookingSummary({
     selectedAccommodation,
     calculatedWeeklyAccommodationPrice,
     foodContribution,
-    appliedDiscount
+    appliedDiscount: null
   });
   
   console.log('[FLICKER_DEBUG] 🎯 usePricing result:', {
@@ -424,24 +408,8 @@ export function BookingSummary({
       const totalNights = calculateTotalNights(selectedWeeks);
       
       // Use the utility function to get the discounted range
-      const foodRange = calculateFoodContributionRange(totalNights, pricing.durationDiscountPercent / 100);
-      
-      // Only set to default if not already set or if current value is outside the valid range
-      setFoodContribution(current => {
-        if (current === null || current < foodRange.min || current > foodRange.max) {
-          console.log('[BookingSummary] Food contribution reset to default:', {
-            previousValue: current,
-            newValue: foodRange.defaultValue,
-            reason: current === null ? 'not set' : 'outside range',
-            validRange: `${foodRange.min}-${foodRange.max}`,
-            totalNights,
-            durationDiscountPercent: pricing.durationDiscountPercent + '%'
-          });
-          return foodRange.defaultValue;
-        }
-        console.log('[BookingSummary] Keeping existing food contribution:', current);
-        return current;
-      });
+      // No food contribution calculations needed
+      setFoodContribution(0);
     } else {
       setFoodContribution(null);
       console.log('[BookingSummary] Clearing food contribution');
@@ -579,7 +547,7 @@ export function BookingSummary({
     const endDate = selectedWeeks[selectedWeeks.length - 1].endDate;
     
     console.log('[Booking Summary] Checking availability for:', {
-      accommodation: selectedAccommodation.title,
+      accommodation: selectedAccommodation?.title || 'Accommodation',
       startDate: startDate.toISOString(),
       endDate: endDate.toISOString()
     });
@@ -746,12 +714,7 @@ export function BookingSummary({
           paymentRowId: paymentRowIdToUse,
         };
 
-        if (appliedDiscount?.code) {
-          bookingPayload.appliedDiscountCode = appliedDiscount.code;
-          bookingPayload.discountCodePercent = appliedDiscount.percentage_discount / 100; // Store as decimal (0.5 for 50%)
-          bookingPayload.discountCodeAppliesTo = appliedDiscount.applies_to; // NEW: Save what the discount applies to
-          console.log("[Booking Summary] Adding applied discount code to booking payload:", appliedDiscount.code, "with", appliedDiscount.percentage_discount, "% discount, applies to:", appliedDiscount.applies_to);
-        }
+        // No discount codes
 
         // Add credits used if any
         if (creditsToUse > 0) {
@@ -790,14 +753,27 @@ export function BookingSummary({
 
         // Check if we have a pending booking to update or need to create a new one
         let booking;
-        if (pendingBookingId) {
+        let bookingIdToUpdate = pendingBookingId;
+        
+        // If we don't have pendingBookingId in state (e.g., after page refresh), 
+        // try to retrieve it from the payment record
+        if (!bookingIdToUpdate && paymentRowIdToUse) {
+          console.log("[BOOKING_FLOW] No pendingBookingId in state, checking payment record:", paymentRowIdToUse);
+          const existingBooking = await bookingService.getBookingByPaymentId(paymentRowIdToUse);
+          if (existingBooking && existingBooking.status === 'pending') {
+            bookingIdToUpdate = existingBooking.id;
+            console.log("[BOOKING_FLOW] Found pending booking from payment record:", bookingIdToUpdate);
+          }
+        }
+        
+        if (bookingIdToUpdate) {
           console.log("[BOOKING_FLOW] === STEP 6: Updating PENDING booking to CONFIRMED ===");
-          console.log("[BOOKING_FLOW] Updating booking ID:", pendingBookingId);
+          console.log("[BOOKING_FLOW] Updating booking ID:", bookingIdToUpdate);
           console.log("[BOOKING_FLOW] With payment intent ID:", paymentIntentId);
           
           // Update the existing pending booking to confirmed status
           booking = await bookingService.updateBookingStatus(
-            pendingBookingId,
+            bookingIdToUpdate,
             'confirmed',
             {
               paymentIntentId: paymentIntentId || undefined,
@@ -867,6 +843,8 @@ export function BookingSummary({
         // Trigger celebration fireflies
         setShowCelebrationFireflies(true);
         setPendingPaymentRowId(null); // Clear after booking completes
+        setShowStripeModalWithLogging(false); // Close the Stripe modal
+        setIsBookingWithLogging(false); // Clear booking state
         
         // Refresh credits manually to ensure UI updates immediately
         if (creditsToUse > 0) {
@@ -897,7 +875,7 @@ export function BookingSummary({
         }
         
         // Delay navigation slightly to show fireflies
-        setTimeout(() => {
+        setTimeout(async () => {
           console.log("[FLICKER_DEBUG] 🎯 NAVIGATION TIMEOUT STARTING");
           console.log("[BOOKING_FLOW] === STEP 9: Navigating to confirmation ===");
           // Calculate actual amount donated (after credits)
@@ -927,15 +905,34 @@ export function BookingSummary({
             creditsToUse
           });
           
+          // Retrieve accommodation details from the booking if selectedAccommodation is null
+          let accommodationTitle = selectedAccommodation?.title;
+          let guests = selectedAccommodation?.inventory;
+          
+          if (!accommodationTitle && booking.accommodation_id) {
+            // Try to get accommodation info from the database
+            const { data: accommodationData } = await supabase
+              .from('accommodations')
+              .select('title, inventory')
+              .eq('id', booking.accommodation_id)
+              .single();
+            
+            if (accommodationData) {
+              accommodationTitle = accommodationData.title;
+              guests = accommodationData.inventory;
+              console.log('[BOOKING_FLOW] Retrieved accommodation from database:', accommodationTitle);
+            }
+          }
+          
           navigate('/confirmation', { 
             state: { 
               booking: {
                 ...booking,
-                accommodation: selectedAccommodation.title,
-                guests: selectedAccommodation.inventory,
+                accommodation: accommodationTitle || 'Accommodation',
+                guests: guests || 1,
                 totalPrice: actualDonationAmount, // Show actual amount donated after credits
-                checkIn: selectedCheckInDate,
-                checkOut: checkOut
+                checkIn: selectedCheckInDate || booking.check_in,
+                checkOut: checkOut || booking.check_out
               }
             } 
           });
@@ -960,13 +957,13 @@ export function BookingSummary({
           error: err instanceof Error ? err.message : 'Unknown error',
           errorStack: err instanceof Error ? err.stack : undefined,
           bookingDetails: {
-            accommodation: selectedAccommodation.title,
+            accommodation: selectedAccommodation?.title || 'Accommodation',
             checkIn: formatInTimeZone(selectedCheckInDate, 'UTC', 'yyyy-MM-dd'),
             checkOut: formatInTimeZone(addDays(selectedCheckInDate, calculateTotalDays(selectedWeeks)-1), 'UTC', 'yyyy-MM-dd'),
             totalPaid: Math.max(0, pricing.totalAmount - (creditsToUse || 0)), // Actual payment amount after credits
             originalTotal: pricing.totalAmount, // Include original total for admin reference
             creditsUsed: creditsToUse > 0 ? creditsToUse : undefined,
-            discountCode: appliedDiscount?.code || undefined
+            discountCode: undefined
           },
           // CRITICAL STATUS TRACKING
           systemStatus: {
@@ -998,7 +995,7 @@ export function BookingSummary({
                 bookingId: tempBookingId,
                 checkIn: formattedCheckIn,
                 checkOut: formattedCheckOut,
-                accommodation: selectedAccommodation.title,
+                accommodation: selectedAccommodation?.title || 'Accommodation',
                 totalPrice: actualPaymentAmount, // Use actual payment amount after credits
                 frontendUrl: window.location.origin
               }
@@ -1138,12 +1135,12 @@ export function BookingSummary({
           
 Payment Intent: ${paymentIntentId || 'N/A'}
 User Email: ${userEmail || 'Unknown'}
-Accommodation: ${selectedAccommodation.title}
+Accommodation: ${selectedAccommodation?.title || 'Accommodation'}
 Check-in: ${updatedErrorDetails.bookingDetails.checkIn}
 Check-out: ${updatedErrorDetails.bookingDetails.checkOut}
 Amount Paid: €${Math.max(0, pricing.totalAmount - (creditsToUse || 0))}
 Credits Used: ${creditsToUse}
-Discount Code: ${appliedDiscount?.code || 'None'}
+Discount Code: None
 
 SYSTEM STATUS:
 - Confirmation Email Sent: ${confirmationEmailSent ? 'YES' : 'NO'}
@@ -1184,7 +1181,7 @@ Please manually create the booking for this user or process a refund.`;
         const actualPaymentAmount = Math.max(0, pricing.totalAmount - (creditsToUse || 0));
         const bookingForConfirmation = {
           id: bookingExistsFromWebhook ? `webhook-booking-${paymentIntentId}` : `pending-booking-${Date.now()}`,
-          accommodation: selectedAccommodation.title,
+          accommodation: selectedAccommodation?.title || 'Accommodation',
           guests: selectedAccommodation.inventory,
           totalPrice: actualPaymentAmount, // Show actual payment amount after credits
           checkIn: selectedCheckInDate,
@@ -1226,7 +1223,7 @@ Please manually create the booking for this user or process a refund.`;
       setErrorWithLogging('An error occurred. Please try again.');
       setIsBookingWithLogging(false);
     }
-  }, [selectedAccommodation, selectedWeeks, selectedCheckInDate, navigate, pricing.totalAmount, appliedDiscount, creditsToUse, refreshCreditsWithLogging, userEmail, onClearWeeks, onClearAccommodation, bookingService, finalAmountAfterCredits]);
+  }, [selectedAccommodation, selectedWeeks, selectedCheckInDate, navigate, pricing.totalAmount, creditsToUse, refreshCreditsWithLogging, userEmail, onClearWeeks, onClearAccommodation, bookingService, finalAmountAfterCredits]);
 
   const handleConfirmClick = async () => {
     console.log('[FLICKER_DEBUG] 🎯 CONFIRM BUTTON CLICKED');
@@ -1296,9 +1293,9 @@ Please manually create the booking for this user or process a refund.`;
             accommodation_original: baseAccommodationPrice, // Original accommodation price before all discounts
             duration_discount_percent: pricing.durationDiscountPercent / 100, // Convert to decimal (e.g., 0.18 for 18%)
             seasonal_discount_percent: avgSeasonalDiscountPercent, // Already in decimal (e.g., 0.08 for 8%)
-            discount_code: appliedDiscount?.code || null,
-            discount_code_percent: appliedDiscount?.percentage_discount ? appliedDiscount.percentage_discount / 100 : null, // Store as decimal (0.5 for 50%)
-            discount_code_applies_to: (appliedDiscount?.applies_to as 'accommodation' | 'food_facilities' | 'total') || null,
+            discount_code: null,
+            discount_code_percent: null,
+            discount_code_applies_to: null,
             discount_code_amount: parseFloat(exactDiscountCodeAmount.toFixed(2)), // FIXED: Store exact discount code amount
             credits_used: creditsToUse, // Include credits in the breakdown
             subtotal_before_discounts: pricing.subtotal,
@@ -1314,7 +1311,7 @@ Please manually create the booking for this user or process a refund.`;
             endDate,
             amountPaid: finalAmountAfterCredits, // This will be 0 for credits-only bookings
             breakdownJson,
-            discountCode: appliedDiscount?.code || undefined,
+            discountCode: undefined,
             paymentType: 'initial'
           });
 
@@ -1344,7 +1341,7 @@ Please manually create the booking for this user or process a refund.`;
               totalPrice: pricing.totalAmount,
               status: 'pending' as const, // Create as pending, will update to confirmed after payment
               paymentIntentId: null, // Will be updated after Stripe payment
-              appliedDiscountCode: appliedDiscount?.code || null,
+              appliedDiscountCode: null,
               creditsUsed: creditsToUse || 0,
               accommodationPrice: parseFloat(baseAccommodationPrice.toFixed(2)),
               foodContribution: pricing.totalFoodAndFacilitiesCost || 0,
@@ -1352,8 +1349,8 @@ Please manually create the booking for this user or process a refund.`;
               seasonalDiscountPercent: Math.round(avgSeasonalDiscountPercent * 100), // Store as percentage
               durationDiscountPercent: pricing.durationDiscountPercent,
               discountAmount: parseFloat((accommodationDurationDiscountAmount + pricing.durationDiscountAmount + pricing.appliedCodeDiscountValue + seasonalDiscountAmount).toFixed(2)),
-              discountCodePercent: appliedDiscount?.percentage_discount ? appliedDiscount.percentage_discount / 100 : null,
-              discountCodeAppliesTo: appliedDiscount?.applies_to || null,
+              discountCodePercent: null,
+              discountCodeAppliesTo: null,
               discountCodeAmount: parseFloat(pricing.appliedCodeDiscountValue.toFixed(2)),
               accommodationPricePaid: pricing.totalAccommodationCost,
               accommodationPriceAfterSeasonalDuration: parseFloat(pricing.totalAccommodationCost.toFixed(2)),
@@ -1464,9 +1461,7 @@ Please manually create the booking for this user or process a refund.`;
       }
   };
 
-  // --- Placeholder Handlers for Discount Code ---
-  // Now using handlers from useDiscountCode hook
-  // --- End Placeholder Handlers ---
+  // No discount code handlers needed
 
   // --- LOGGING: Final Render Values ---
   console.log('[BookingSummary] --- Final Render Values ---');
@@ -1561,7 +1556,7 @@ Please manually create the booking for this user or process a refund.`;
                   checkOut: selectedCheckInDate ? formatInTimeZone(addDays(selectedCheckInDate, calculateTotalDays(selectedWeeks)-1), 'UTC', 'yyyy-MM-dd') : undefined,
                   originalTotal: pricing.totalAmount,
                   creditsUsed: creditsToUse > 0 ? creditsToUse : 0,
-                  discountCode: appliedDiscount?.code
+                  discountCode: null
                 } : undefined}
                 onSuccess={handleBookingSuccess}
                 paymentRowId={pendingPaymentRowId || undefined}
@@ -1625,26 +1620,12 @@ Please manually create the booking for this user or process a refund.`;
 
               {/* NEW Wrapper for Solid Background Sections - Make sure this is TRANSPARENT */}
               <div className="bg-transparent"> {/* Removed mt-6 */}
-                {/* Price Breakdown */}
-                <PriceBreakdown
-                  selectedAccommodation={selectedAccommodation}
-                  pricing={pricing}
-                  foodContribution={foodContribution}
-                  setFoodContribution={setFoodContribution}
-                  isStateOfTheArtist={isStateOfTheArtist}
-                  selectedWeeks={selectedWeeks}
-                  onShowDiscountModal={() => setShowDiscountModal(true)}
-                />
-
-                {/* Add HR before Total */}
-                <hr className="border-t border-border my-2 opacity-30" /> 
-
                 {/* Total Donated - Shows value being donated to the garden */}
                 <div className="pt-4 mt-4">
                   <div className="flex font-mono justify-between items-baseline">
                     <span className="uppercase text-primary font-display text-2xl">Total</span>
                     {/* Show original price if discount applied */}
-                    {(appliedDiscount && pricing.appliedCodeDiscountValue > 0) ? (
+                    {false ? (
                         <div className="text-right">
                             <span className="text-sm line-through text-secondary mr-2">
                                 {formatPriceDisplay(pricing.subtotal)}
@@ -1659,23 +1640,7 @@ Please manually create the booking for this user or process a refund.`;
                         </span>
                     )}
                   </div>
-                   <p className="text-sm text-shade-1 mt-1 font-display">
-                     Accommodation price with any applicable discounts.
-                   </p>
                 </div>
-
-
-
-                {/* Discount Code Section */}
-                <DiscountCodeSection
-                  appliedDiscount={appliedDiscount}
-                  discountCodeInput={discountCodeInput}
-                  setDiscountCodeInput={setDiscountCodeInput}
-                  discountError={discountError}
-                  isApplyingDiscount={isApplyingDiscount}
-                  onApplyDiscount={handleApplyDiscount}
-                  onRemoveDiscount={handleRemoveDiscount}
-                />
 
                 {/* Credits Section */}
                                   <CreditsSection
@@ -1721,21 +1686,7 @@ Please manually create the booking for this user or process a refund.`;
         onClose={() => setShowCancellationModal(false)}
       />
 
-      {/* Discount Modal */}
-      <DiscountModal
-        isOpen={showDiscountModal}
-        onClose={() => setShowDiscountModal(false)}
-        checkInDate={selectedWeeks[0]?.startDate || fallbackDate}
-        checkOutDate={selectedWeeks[selectedWeeks.length - 1]?.endDate || fallbackDate}
-        accommodationName={selectedAccommodation?.title || ''}
-        basePrice={selectedAccommodation?.base_price || 0}
-        calculatedWeeklyPrice={calculatedWeeklyAccommodationPrice}
-        averageSeasonalDiscount={seasonBreakdownState && seasonBreakdownState.seasons.length > 0 
-          ? Math.round(seasonBreakdownState.seasons.reduce((sum, season) => sum + (season.discount * season.nights), 0) / 
-            seasonBreakdownState.seasons.reduce((sum, season) => sum + season.nights, 0) * 100) / 100
-          : null}
-        selectedWeeks={selectedWeeks}
-      />
+      {/* No discount modal needed */}
     </>
   );
 }

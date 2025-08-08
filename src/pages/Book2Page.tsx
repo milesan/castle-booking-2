@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { Calendar, ChevronLeft, ChevronRight, Home, X, HelpCircle } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { isSameWeek, addWeeks, isAfter, isBefore, format, addMonths, subMonths, startOfDay, isSameDay, addDays, differenceInDays } from 'date-fns';
 import { formatInTimeZone } from 'date-fns-tz';
 // import { WeekSelector } from '../components/WeekSelector';
@@ -73,6 +74,7 @@ const SeasonLegend = () => {
 
 export function Book2Page() {
   // console.log(`📊 [BOOK2] Render`); // Debug logging disabled
+  const navigate = useNavigate();
   
   // Get current date and set the initial month
   const today = new Date();
@@ -774,6 +776,8 @@ export function Book2Page() {
   return (
     <div className="min-h-screen">
       <FireflyPortal />
+      
+      
       {/* Accommodation selection fireflies */}
       {showAccommodationFireflies && (
         <Fireflies 
@@ -800,18 +804,7 @@ export function Book2Page() {
               {/* Moved h1 inside wrapper - REMOVING px-* padding now */}
               <h1 className="text-4xl lg:text-[78px] font-display mb-3 xs:mb-4 text-primary pt-14 leading-[1.1] tracking-[-0.02em]">THE GATES BECKON</h1>
               
-              {/* Outer Note box keeps py-* padding - Setting bottom margin to 32px (mb-8) */}
-              <div className="bg-surface/50 py-3 xs:py-4 sm:py-6 mb-8 shadow-sm rounded-sm">
-                {/* Using InfoBox component, passing specific padding and max-width */}
-                <InfoBox className="px-3 xs:px-4 sm:px-6 max-w-3xl">
-                  <div className="flex flex-col gap-3 xs:gap-3 text-primary">
-                    <p className="flex items-start gap-2 xs:gap-2.5 text-base font-lettra">
-                      <span className="flex-shrink-0">❦</span>
-                      <span>Your admission grants passage through the threshold. This chamber selection weaves your dwelling into the tapestry of the greater pattern.</span>
-                    </p>
-                  </div>
-                </InfoBox>
-              </div>
+
               {/* == END: Moved Admin controls inside wrapper == */}
 
               {/* Add the admin controls block here */}

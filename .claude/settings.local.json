@@ -8,7 +8,8 @@
       "Bash(find:*)",
       "Bash(mkdir:*)",
       "Bash(cp:*)",
-      "Bash(true)"
+      "Bash(true)",
+      "Bash(npm run dev:*)"
     ],
     "deny": []
   }

@@ -1,10 +1,11 @@
 import React from 'react';
 import { format, parseISO, isAfter, isBefore, addMonths, isSameDay } from 'date-fns';
+import { useNavigate } from 'react-router-dom';
 import { calculateTotalWeeksDecimal, formatDateForDisplay, normalizeToUTCDate, calculateTotalNights, calculateDurationDiscountWeeks, isWeekSelectable, calculateDisplayWeeks, formatWeeksForDisplay, calculateAndFormatDisplayWeeks, calculateTotalDays } from '../utils/dates';
 import { getSeasonBreakdown, getDurationDiscount, calculateWeeklyAccommodationPrice } from '../utils/pricing';
 import { bookingService } from '../services/BookingService';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ExternalLink, X, Info, Tag } from 'lucide-react';
+import { ExternalLink, X, Info, Tag, ChevronLeft, ChevronRight, BedDouble } from 'lucide-react';
 import { useSession } from '../hooks/useSession';
 import type { Booking, Accommodation } from '../types';
 import type { AppliedDiscount } from './BookingSummary/BookingSummary.types';
@@ -13,22 +14,43 @@ import { useWeeklyAccommodations } from '../hooks/useWeeklyAccommodations';
 import { WeekSelector } from './WeekSelector';
 import { useCalendar } from '../hooks/useCalendar';
 import { createPortal } from 'react-dom';
+import clsx from 'clsx';
 
 import { StripeCheckoutForm } from './StripeCheckoutForm';
-import { DiscountCodeSection } from './BookingSummary/components/DiscountCodeSection';
-import { DiscountModal } from './DiscountModal';
 import { supabase } from '../lib/supabase';
 import * as Tooltip from '@radix-ui/react-tooltip';
-import { calculateBaseFoodCost, calculateFoodContributionRange } from './BookingSummary/BookingSummary.utils';
-import { useDiscountCode } from '../hooks/useDiscountCode';
+import { calculateBaseFoodCost } from './BookingSummary/BookingSummary.utils';
 import { OptimizedSlider } from './shared/OptimizedSlider';
 import { useCredits } from '../hooks/useCredits';
 import { CreditsSection } from './BookingSummary/components/CreditsSection';
 import { formatPriceDisplay } from './BookingSummary/BookingSummary.utils';
 
+// Interface for accommodation images
+interface AccommodationImage {
+  id: string;
+  accommodation_id: string;
+  image_url: string;
+  display_order: number;
+  is_primary: boolean;
+  created_at: string;
+}
+
+// Extend accommodation type to include images
+interface ExtendedAccommodation extends Accommodation {
+  images?: AccommodationImage[];
+}
+
+// Helper function to get all images sorted by display order
+const getAllImages = (accommodation: ExtendedAccommodation): AccommodationImage[] => {
+  if (!accommodation.images || accommodation.images.length === 0) return [];
+  return [...accommodation.images].sort((a, b) => a.display_order - b.display_order);
+};
+
 export function MyBookings() {
+  const navigate = useNavigate();
   const [bookings, setBookings] = React.useState<Booking[]>([]);
   const [loading, setLoading] = React.useState(true);
+  const [currentImageIndices, setCurrentImageIndices] = React.useState<Record<string, number>>({});
   const [error, setError] = React.useState<string | null>(null);
   const [enlargedImageUrl, setEnlargedImageUrl] = React.useState<string | null>(null);
   const [extendingBooking, setExtendingBooking] = React.useState<Booking | null>(null);
@@ -56,15 +78,8 @@ export function MyBookings() {
   const [userHasMadeCreditsChoice, setUserHasMadeCreditsChoice] = React.useState(false);
 
   // Discount code functionality for extensions
-  const {
-    discountCodeInput,
-    setDiscountCodeInput,
-    appliedDiscount,
-    discountError,
-    isApplyingDiscount,
-    handleApplyDiscount,
-    handleRemoveDiscount
-  } = useDiscountCode();
+  // No discount codes needed anymore
+  const appliedDiscount = null; // No discounts in simplified version
 
   // Credits functionality for extensions - allows users to use their available credits
   // to reduce the amount they need to pay for their booking extension
@@ -88,6 +103,7 @@ export function MyBookings() {
   const extensionWeeksLoading = calendar.isLoading;
 
   React.useEffect(() => {
+    console.log('[MyBookings] Component mounted, loading bookings...');
     loadBookings();
   }, []);
 
@@ -298,19 +314,12 @@ export function MyBookings() {
   console.log('[DEBUG] originalWeeks IDs:', originalWeeks.map(w => w.id));
   console.log('[DEBUG] Display weeks - original:', originalWeeksDecimal.toFixed(2), 'total:', totalWeeksDecimal.toFixed(2));
 
-  // Calculate food contribution range with duration discount for slider
+  // Fixed food contribution range - no discounts
   const foodContributionRange = React.useMemo(() => {
     if (extensionOnlyWeeks.length === 0) return null;
-    
-    const totalStayWeeks = [...originalWeeks, ...extensionOnlyWeeks];
-    const totalNightsForRange = calculateTotalNights(totalStayWeeks);
-    const completeWeeksForDiscount = calculateDurationDiscountWeeks(totalStayWeeks);
-    const durationDiscountPercent = getDurationDiscount(completeWeeksForDiscount);
-    
-    // Use total nights for the combined stay to calculate the food contribution range
-    // This ensures the extension gets the same weekly rate as if they had booked the full period upfront
-    return calculateFoodContributionRange(totalNightsForRange, durationDiscountPercent);
-  }, [extensionOnlyWeeks, originalWeeks]);
+    // Simple fixed range without any discount calculations
+    return { min: 345, max: 390, defaultValue: 367 };
+  }, [extensionOnlyWeeks]);
   
   // Handle display value changes during drag
   const handleDisplayValueChange = React.useCallback((value: number) => {
@@ -520,34 +529,8 @@ export function MyBookings() {
     // Calculate subtotal before discount codes
     const subtotalBeforeDiscount = extensionAccommodationPrice + extensionFoodCost;
     
-            // Apply discount code if present
+            // No discount codes in simplified version
         let discountAmount = 0;
-        if (appliedDiscount && subtotalBeforeDiscount > 0) {
-          const discountPercentage = appliedDiscount.percentage_discount / 100; // Convert to decimal (0.5 for 50%)
-          const appliesTo = appliedDiscount.applies_to || 'total';
-
-          let amountToDiscountFrom = 0;
-          
-          if (appliesTo === 'accommodation') {
-            amountToDiscountFrom = extensionAccommodationPrice;
-          } else if (appliesTo === 'food_facilities') {
-            amountToDiscountFrom = extensionFoodCost;
-          } else { // 'total' or fallback
-            amountToDiscountFrom = subtotalBeforeDiscount;
-          }
-
-          if (amountToDiscountFrom > 0) {
-            discountAmount = parseFloat((amountToDiscountFrom * discountPercentage).toFixed(2));
-          }
-
-          console.log('[EXTENSION_PRICING] Discount code applied:', {
-            code: appliedDiscount.code,
-            percentage: appliedDiscount.percentage_discount,
-            appliesTo,
-            amountDiscountedFrom: amountToDiscountFrom,
-            discountAmount
-          });
-        }
     
     // Calculate final extension price after discount (use precise discount amount)
     const finalExtensionPrice = Math.max(0, subtotalBeforeDiscount - discountAmount);
@@ -868,6 +851,21 @@ export function MyBookings() {
                 <p className="text-sm font-mono">{session?.session?.user?.email}</p>
               </div>
             </div>
+            <button
+              onClick={() => navigate('/')}
+              className="castle-btn ghost small"
+              style={{
+                border: '1px solid var(--castle-accent-gold)',
+                color: 'var(--castle-accent-gold)',
+                padding: '8px 20px',
+                fontSize: '14px',
+                fontFamily: 'var(--castle-font-primary)',
+                letterSpacing: '0.05em',
+                transition: 'all 0.3s ease',
+              }}
+            >
+              Back to Castle
+            </button>
           </div>
           
           {bookings.length === 0 ? (

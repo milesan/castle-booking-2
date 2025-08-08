@@ -117,7 +117,7 @@ export function BookingsList() {
   async function loadQuestions() {
     try {
       const { data, error } = await supabase
-        .from('application_questions')
+        .from('application_questions_2')
         .select('*')
         .order('order_number');
 
@@ -163,40 +163,19 @@ export function BookingsList() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
 
-      // Single optimized query to get bookings with payments
+      // Simplified query - just get essential booking info
       const { data: bookingsData, error: bookingsError } = await supabase
         .from('bookings_with_emails')
         .select(`
-          *,
-          applied_discount_code,
-          accommodation_price,
-          accommodation_price_paid,
-          food_contribution,
-          seasonal_adjustment,
-          seasonal_discount_percent,
-          duration_discount_percent,
-          discount_amount,
-          credits_used,
-          discount_code_percent,
-          discount_code_applies_to,
-          accommodation_price_after_seasonal_duration,
-          subtotal_after_discount_code,
-          accommodations ( title ),
-          payments (
-            id,
-            booking_id,
-            user_id,
-            start_date,
-            end_date,
-            amount_paid,
-            breakdown_json,
-            discount_code,
-            payment_type,
-            stripe_payment_id,
-            created_at,
-            updated_at,
-            status
-          )
+          id,
+          user_id,
+          user_email,
+          check_in,
+          check_out,
+          total_price,
+          created_at,
+          status,
+          accommodations ( title )
         `)
         .neq('status', 'cancelled')
         .order(sortConfig.field, { ascending: sortConfig.direction === 'asc' });

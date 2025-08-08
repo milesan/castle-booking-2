@@ -219,8 +219,16 @@ export function Retro2Page() {
 
   if (loading) {
     return (
-      <div className="fixed inset-0 bg-black flex justify-center items-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-retro-accent"></div>
+      <div className="fixed inset-0 bg-black flex flex-col justify-center items-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-retro-accent mb-4"></div>
+        <button
+          onClick={async () => {
+            await supabase.auth.signOut();
+          }}
+          className="text-retro-accent hover:text-white underline text-sm"
+        >
+          Sign Out
+        </button>
       </div>
     );
   }

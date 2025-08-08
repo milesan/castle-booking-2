@@ -54,7 +54,7 @@ serve(async (req) => {
     console.log('Sending booking confirmation to:', email)
 
     // Create a Supabase client with service role key
-    const supabaseUrl = Deno.env.get('BACKEND_URL')
+    const supabaseUrl = Deno.env.get('BACKEND_URL') || Deno.env.get('SUPABASE_URL')
     const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
     const resendApiKey = Deno.env.get('RESEND_API_KEY')
     
@@ -70,12 +70,11 @@ serve(async (req) => {
     
     console.log('Using frontend URL:', frontendUrl, '(source: ' + (requestUrl ? 'request' : 'environment') + ')')
     
-    if (!supabaseUrl || !serviceRoleKey || !resendApiKey || !frontendUrl) {
+    if (!supabaseUrl || !serviceRoleKey || !resendApiKey) {
       console.error('Missing environment variables:', {
         hasSupabaseUrl: !!supabaseUrl,
         hasServiceRoleKey: !!serviceRoleKey,
-        hasResendApiKey: !!resendApiKey,
-        hasFrontendUrl: !!frontendUrl
+        hasResendApiKey: !!resendApiKey
       })
       throw new Error('Missing required environment variables')
     }
@@ -96,10 +95,10 @@ serve(async (req) => {
     
     // Send email using Resend
     const { error } = await resendClient.emails.send({
-      from: 'The Garden <echo@echo.thegarden.pt>',
+      from: 'Castle Booking <echo@echo.thegarden.pt>',
       to: email,
-      replyTo: 'living@thegarden.pt',
-      subject: 'Your Booking Confirmation - The Garden',
+      replyTo: 'echo@echo.thegarden.pt',
+      subject: 'Booking Confirmed - The Castle Awaits',
       html: generateBookingConfirmationEmail({
         accommodation,
         formattedCheckIn,

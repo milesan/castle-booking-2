@@ -189,17 +189,24 @@ export function MainAppLayout({ children }: MainAppLayoutProps) {
       }}
     >
       {/* === Header Start === */}
-      <header className={`fixed top-0 left-0 right-0 z-50 castle-bg-surface border-b transition-all duration-300 ease-in-out ${!showHeader ? '-translate-y-full' : ''}`}
+      <header className="fixed top-0 left-0 right-0 z-50 castle-bg-surface border-b transition-all duration-300 ease-in-out"
               style={{ borderColor: 'var(--castle-border-primary)', background: 'var(--castle-bg-surface)', backdropFilter: 'blur(10px)' }}>
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between h-10 sm:h-14">
             <button
               // Navigate to root, AuthenticatedApp will handle the '/' route
               onClick={() => handleHeaderNavigation('/')} 
-              className="text-primary flex items-center gap-3 hover:opacity-80 transition-opacity"
+              className="text-primary flex items-center gap-3 hover:opacity-80 transition-opacity group"
             >
               <div>
-                <h1 className="text-xl sm:text-2xl" style={{ fontFamily: 'var(--castle-font-primary)', color: 'var(--castle-text-accent)' }}>The Castle</h1>
+                <h1 className="text-2xl sm:text-3xl group-hover:text-yellow-400 transition-colors" 
+                    style={{ 
+                      fontFamily: 'var(--castle-font-primary)', 
+                      color: 'var(--castle-text-accent)',
+                      textShadow: '2px 2px 4px rgba(0,0,0,0.5)'
+                    }}>
+                  The Castle
+                </h1>
               </div>
             </button>
 

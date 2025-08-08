@@ -812,7 +812,21 @@ export function Accommodations() {
     try {
       console.log('🎯 Setting primary image:', { imageId, accommodationId });
       
-      // First, unset all primary flags for this accommodation
+      // Get all images for this accommodation to reorder them
+      const { data: currentImages, error: fetchError } = await supabase
+        .from('accommodation_images')
+        .select('*')
+        .eq('accommodation_id', accommodationId)
+        .order('display_order');
+
+      if (fetchError) throw fetchError;
+      if (!currentImages) throw new Error('No images found');
+
+      // Find the image that will become primary
+      const newPrimaryImage = currentImages.find(img => img.id === imageId);
+      if (!newPrimaryImage) throw new Error('Image not found');
+
+      // IMPORTANT: First unset ALL primary flags to avoid unique constraint violation
       const { error: unsetError } = await supabase
         .from('accommodation_images')
         .update({ is_primary: false })
@@ -820,14 +834,53 @@ export function Accommodations() {
 
       if (unsetError) throw unsetError;
 
-      // Then set the selected image as primary
-      const { error: setPrimaryError } = await supabase
-        .from('accommodation_images')
-        .update({ is_primary: true })
-        .eq('id', imageId);
+      // Now we can safely update the images with new display_order and primary flag
+      // Reorder: Set the new primary to display_order 0, and shift others
+      const updates = currentImages.map(img => {
+        if (img.id === imageId) {
+          // This becomes primary with display_order 0
+          return {
+            id: img.id,
+            is_primary: true,
+            display_order: 0
+          };
+        } else {
+          // Others: not primary, and shift display_order up if needed
+          let newOrder = img.display_order;
+          if (img.display_order < newPrimaryImage.display_order) {
+            // Images that were before the new primary get shifted up by 1
+            newOrder = img.display_order + 1;
+          }
+          return {
+            id: img.id,
+            is_primary: false,
+            display_order: newOrder
+          };
+        }
+      });
 
-      if (setPrimaryError) throw setPrimaryError;
-      console.log('✅ Primary image set:', { imageId });
+      // Sort updates to set the primary image last (after all others are updated)
+      // This ensures we don't violate the constraint
+      updates.sort((a, b) => {
+        if (a.is_primary) return 1;  // Primary goes last
+        if (b.is_primary) return -1;
+        return 0;
+      });
+
+      // Apply all updates
+      for (const update of updates) {
+        const { error: updateError } = await supabase
+          .from('accommodation_images')
+          .update({ 
+            is_primary: update.is_primary,
+            display_order: update.display_order
+          })
+          .eq('id', update.id);
+
+        if (updateError) throw updateError;
+      }
+
+      console.log('✅ Primary image set and reordered:', { imageId });
 
       // Update local state
       await fetchAccommodations();

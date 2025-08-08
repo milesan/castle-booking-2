@@ -12,13 +12,7 @@ export const Footer: React.FC<FooterProps> = ({ wrapperClassName }) => {
     <footer className={finalClasses}>
       <div className="container mx-auto px-4 text-center text-secondary text-sm font-lettra">
         <p>
-          Questions? Email {' '}
-          <a
-            href="mailto:living@thegarden.pt"
-            className="text-accent-primary hover:text-accent-hover underline"
-          >
-            living@thegarden.pt
-          </a>
+          For questions of the heart, contact the person who nominated you
         </p>
         {/* You could add more footer content here later, like copyright or other links */}
       </div>

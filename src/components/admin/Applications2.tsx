@@ -122,15 +122,7 @@ export function Applications2() {
           data,
           status,
           created_at,
-          user_email,
-          linked_name,
-          linked_email,
-          linked_application_id,
-          last_sign_in_at,
-          raw_user_meta_data,
-          admin_verdicts,
-          credits,
-          final_action
+          user_email
         `, { count: 'exact' });
 
       if (filter !== 'all') {

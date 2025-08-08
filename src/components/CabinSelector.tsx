@@ -339,7 +339,42 @@ export function CabinSelector({
 
       return true;
     })
-    .sort((a, b) => a.base_price - b.base_price); // Sort by base price in ascending order
+    .sort((a, b) => {
+      // Define accommodation categories
+      const getCategory = (acc: typeof a) => {
+        const title = acc.title.toLowerCase();
+        const type = acc.type?.toLowerCase() || '';
+        
+        // Category 1: Own accommodation (own tent, own van, van parking)
+        if (title.includes('own tent') || title.includes('own van') || title.includes('van parking')) {
+          return 1;
+        }
+        
+        // Category 2: Camping/Tents (tipi, bell tent, other tents)
+        if (type === 'tent' || title.includes('tipi') || title.includes('bell tent') || title.includes('tent')) {
+          return 2;
+        }
+        
+        // Category 3: Dorms
+        if (title.includes('dorm')) {
+          return 3;
+        }
+        
+        // Category 4: All other rooms (cabins, suites, etc.)
+        return 4;
+      };
+      
+      const aCat = getCategory(a);
+      const bCat = getCategory(b);
+      
+      // First sort by category
+      if (aCat !== bCat) {
+        return aCat - bCat;
+      }
+      
+      // Within same category, sort by price ascending
+      return a.base_price - b.base_price;
+    });
 
   // Convert selectedWeeks to dates for comparison
   const selectedDates = selectedWeeks?.map(w => w.startDate || w) || [];

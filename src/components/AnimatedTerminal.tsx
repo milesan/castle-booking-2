@@ -48,6 +48,7 @@ export function AnimatedTerminal({ onComplete }: Props) {
   const navigate = useNavigate();
   const isMobile = window.innerWidth < 768;
   const [serverDown, setServerDown] = useState(false);
+  const [lastOtpRequest, setLastOtpRequest] = useState<number>(0);
 
   useEffect(() => {
     const updateDimensions = () => {
@@ -110,40 +111,48 @@ export function AnimatedTerminal({ onComplete }: Props) {
     setIsLoading(true);
     setOtpSent(false);
 
+    // Rate limiting - prevent requests more than once per 60 seconds
+    const now = Date.now();
+    if (now - lastOtpRequest < 60000) {
+      const waitTime = Math.ceil((60000 - (now - lastOtpRequest)) / 1000);
+      setError(`Please wait ${waitTime} seconds before requesting another code.`);
+      setIsLoading(false);
+      return;
+    }
+
     // Normalize email to lowercase to match Supabase Auth behavior
     const normalizedEmail = email.toLowerCase().trim();
 
     try {
       console.log('[AnimatedTerminal] Requesting code for:', normalizedEmail);
       
-      // STEP 1: Check if this email is whitelisted and create auth user if needed
+      // STEP 1: Check if user is in whitelist (includes both active and pending)
       console.log('[AnimatedTerminal] Checking whitelist status...');
-      const { data: whitelistResult, error: whitelistError } = await supabase.functions.invoke('create-whitelisted-auth-user', {
-        body: { email: normalizedEmail }
-      });
+      const { data: whitelistData, error: whitelistError } = await supabase
+        .from('whitelist_all')
+        .select('email, status')
+        .eq('email', normalizedEmail)
+        .single();
 
-      if (whitelistError) {
-        // This is now only for unexpected errors (e.g., function down, network issues).
-        console.warn('[AnimatedTerminal] Whitelist check failed unexpectedly, continuing with normal signup flow:', whitelistError);
-      } else if (whitelistResult) {
-        // We got a 200 response, now check the payload.
-        if (whitelistResult.isWhitelisted && whitelistResult.success) {
-          console.log(`[AnimatedTerminal] Whitelisted user auth account ${whitelistResult.operation}: ${whitelistResult.userId}`);
-        } else {
-          // This covers the isWhitelisted: false case, which is an expected flow.
-          console.log('[AnimatedTerminal] Email not whitelisted, proceeding with normal signup flow.');
-        }
+      if (whitelistError || !whitelistData) {
+        console.log('[AnimatedTerminal] User not in whitelist:', normalizedEmail);
+        throw new Error('Access denied. Please contact an administrator to be added to the whitelist.');
       }
 
-      // STEP 2: Send OTP code (works for both whitelisted and normal users now)
+      console.log('[AnimatedTerminal] User is whitelisted (status:', whitelistData.status, '), sending OTP...');
+
+      // STEP 2: Send OTP code for ALL whitelisted users
+      // Don't use shouldCreateUser - let Supabase handle it based on whether user exists
       const { error } = await supabase.auth.signInWithOtp({ 
         email: normalizedEmail,
         options: {
-          shouldCreateUser: true,
-          emailRedirectTo: undefined // This ensures we get an OTP code, not a magic link
+          // Don't specify shouldCreateUser - let Supabase decide
+          emailRedirectTo: undefined // No redirect, just OTP code
         }
       });
+      
       if (error) throw error;
+      setLastOtpRequest(now); // Update last request time
       setSuccess('Code sent! Check your email (and spam/junk folder).');
       setOtpSent(true);
       console.log('[AnimatedTerminal] OTP request successful for:', normalizedEmail);
@@ -206,7 +215,7 @@ export function AnimatedTerminal({ onComplete }: Props) {
     <div 
       className="h-[100dvh] bg-cover bg-center bg-no-repeat flex items-center justify-center"
       style={{
-        backgroundImage: `url('https://guquxpxxycfmmlqajdyw.supabase.co/storage/v1/object/public/background-image//login-background.png')`
+        backgroundImage: `url('https://guquxpxxycfmmlqajdyw.supabase.co/storage/v1/object/public/accommodations/castle-main.jpg')`
       }}
     >
       <div className="w-full h-full max-w-[1000px] relative flex items-center justify-center px-4" ref={containerRef}>
@@ -280,14 +289,7 @@ export function AnimatedTerminal({ onComplete }: Props) {
                           Come back later.
                         </p>
                         <p className="font-mono text-retro-accent/60 text-xs">
-                          Message{' '}
-                          <a 
-                            href="mailto:living@thegarden.pt" 
-                            className="text-retro-accent hover:text-accent-secondary underline"
-                          >
-                            living@thegarden.pt
-                          </a>
-                          {' '}for the time being.
+                          For questions of the heart, contact the person who nominated you.
                         </p>
                       </div>
 
@@ -304,8 +306,8 @@ export function AnimatedTerminal({ onComplete }: Props) {
                   ) : (
                     // Original login UI
                     <>
-                      <div className="flex items-center justify-center gap-3 mb-8">
-                        <h1 className="text-2xl" style={{ fontFamily: 'var(--castle-font-primary)', color: 'var(--castle-text-accent)' }}>
+                      <div className="flex items-center justify-center mb-8">
+                        <h1 className="text-2xl whitespace-nowrap" style={{ fontFamily: 'var(--castle-font-primary)', color: 'var(--castle-text-accent)' }}>
                           Enter The Castle
                         </h1>
                       </div>

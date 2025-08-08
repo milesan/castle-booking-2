@@ -1,7 +1,7 @@
 import type { Week } from '../../types/calendar';
 import type { Accommodation } from '../../types';
 
-// Define the season breakdown type
+// Define the season breakdown type (simplified - no seasons/discounts)
 export interface SeasonBreakdown {
   hasMultipleSeasons: boolean;
   seasons: Array<{
@@ -29,20 +29,14 @@ export interface PricingDetails {
   totalAccommodationCost: number;
   totalFoodAndFacilitiesCost: number;
   subtotal: number;
-  durationDiscountAmount: number;
-  durationDiscountPercent: number;
-  weeksStaying: number; // This will now store the DISPLAY (rounded) weeks
+  durationDiscountAmount: number; // Always 0 now
+  durationDiscountPercent: number; // Always 0 now
+  weeksStaying: number; // For display only
   totalAmount: number;
-  appliedCodeDiscountValue: number;
-  seasonalDiscount: number;
+  appliedCodeDiscountValue: number; // Always 0 now
+  seasonalDiscount: number; // Always 0 now
   vatAmount: number;
   totalWithVat: number;
 }
 
-// --- Added Applied Discount Type ---
-export interface AppliedDiscount {
-  code: string;
-  percentage_discount: number;
-  applies_to: string; // Added new field
-}
-// --- End Added Type ---
+// AppliedDiscount type removed - no longer using discount codes

@@ -1,25 +1,22 @@
 import { useMemo } from 'react';
-import { getSeasonalDiscount, getDurationDiscount, getSeasonBreakdown } from '../../utils/pricing';
-import { calculateTotalNights, calculateDurationDiscountWeeks, calculateTotalDays, calculateTotalWeeksDecimal } from '../../utils/dates';
+import { calculateTotalNights, calculateTotalWeeksDecimal } from '../../utils/dates';
 import { calculateBaseFoodCost } from './BookingSummary.utils';
 import type { Week } from '../../types/calendar';
 import type { Accommodation } from '../../types';
-import type { PricingDetails, AppliedDiscount } from './BookingSummary.types';
+import type { PricingDetails } from './BookingSummary.types';
 
 interface UsePricingProps {
   selectedWeeks: Week[];
   selectedAccommodation: Accommodation | null;
   calculatedWeeklyAccommodationPrice: number | null;
   foodContribution: number | null;
-  appliedDiscount: AppliedDiscount | null;
 }
 
 export function usePricing({
   selectedWeeks,
   selectedAccommodation,
   calculatedWeeklyAccommodationPrice,
-  foodContribution,
-  appliedDiscount
+  foodContribution
 }: UsePricingProps): PricingDetails {
   return useMemo((): PricingDetails => {
     console.log('[BookingSummary] --- Recalculating Pricing (useMemo) ---');
@@ -28,94 +25,32 @@ export function usePricing({
       selectedAccommodationId_Prop: selectedAccommodation?.id,
       calculatedWeeklyAccommodationPrice_Prop: calculatedWeeklyAccommodationPrice,
       foodContribution,
-      appliedDiscount,
     });
     // --- ADDED LOGGING: Check prop value *inside* memo ---
     console.log('[BookingSummary] useMemo: Using calculatedWeeklyAccommodationPrice PROP:', calculatedWeeklyAccommodationPrice);
     // --- END ADDED LOGGING ---
 
-    // === Calculate fundamental values: nights, complete weeks (for discount), exact decimal weeks ===
+    // === Calculate nights for display ===
     const totalNights = calculateTotalNights(selectedWeeks);
-    const completeWeeks = calculateDurationDiscountWeeks(selectedWeeks); // Uses floor(days/7)
-    const exactWeeksDecimal = calculateTotalWeeksDecimal(selectedWeeks); // Returns full precision days/7
-
-    // === NEW: Calculate weeks rounded for display (WYSIWYG) ===
+    const exactWeeksDecimal = calculateTotalWeeksDecimal(selectedWeeks); // For display only
     const displayWeeks = selectedWeeks.length > 0 ? Math.round(exactWeeksDecimal * 10) / 10 : 0;
-    console.log('[BookingSummary] useMemo: Calculated Weeks:', { totalNights, completeWeeks, exactWeeksDecimal, displayWeeks });
+    
+    // === Use accommodation base price directly (castle week fixed price) ===
+    const totalAccommodationCost = selectedAccommodation?.base_price || 0;
+    console.log('[BookingSummary] Using accommodation base price directly:', totalAccommodationCost);
 
-    // === Calculate Accommodation Cost using DISPLAY (rounded) weeks for WYSIWYG ===
-    const weeklyAccPrice = calculatedWeeklyAccommodationPrice ?? 0;
-
-    // --- ADDED LOGGING: Check inputs before multiplication ---
-    console.log('[BookingSummary] useMemo: Inputs for Accommodation Cost CALCULATION:', {
-      weeklyAccPrice_Used: weeklyAccPrice, // Value used in calculation
-      displayWeeks_Multiplier: displayWeeks, // The multiplier
-    });
-    // --- END ADDED LOGGING ---
-
-    const totalAccommodationCost = parseFloat((weeklyAccPrice * displayWeeks).toFixed(2));
-    console.log('[BookingSummary] useMemo: Calculated Accommodation Cost (using DISPLAY weeks):', { weeklyAccPrice, displayWeeks, totalAccommodationCost });
-    // VERIFICATION LOG (keeping for now, should show integer * rounded_decimal)
-    console.log('[BookingSummary] useMemo: VERIFYING Cost Calc:', {
-        integerWeeklyRate: weeklyAccPrice, // Should be integer
-        decimalWeeks: exactWeeksDecimal, // Should be decimal
-        calculatedTotal: totalAccommodationCost // Result of integer * decimal
-    });
-
-    // === Remove all food cost calculations ===
+    // === No food cost or discounts ===
     const finalFoodCost = 0;
     const foodDiscountAmount = 0;
     const effectiveWeeklyRate = 0;
-    const rawDurationDiscountPercent = getDurationDiscount(completeWeeks);
     
     // 4. Subtotal is just accommodation cost
     const subtotal = totalAccommodationCost;
     console.log('[BookingSummary] useMemo: Calculated Subtotal:', { totalAccommodationCost, finalFoodCost, subtotal });
 
-    // --- START: Apply Discount Code --- 
+    // No discount codes - simplified pricing
     let finalTotalAmount = subtotal;
     let discountCodeAmount = 0;
-    let subtotalBeforeDiscountCode = subtotal; // Store the subtotal before this specific discount code
-
-    if (appliedDiscount && subtotalBeforeDiscountCode > 0) {
-        const discountPercentage = appliedDiscount.percentage_discount / 100;
-        const appliesTo = appliedDiscount.applies_to || 'total'; // Default to 'total' for safety
-
-        let amountToDiscountFrom = 0;
-
-        if (appliesTo === 'accommodation') {
-            amountToDiscountFrom = totalAccommodationCost;
-        } else if (appliesTo === 'food_facilities') {
-            amountToDiscountFrom = 0; // No food facilities cost anymore
-        } else { // 'total' or any other fallback
-            amountToDiscountFrom = subtotalBeforeDiscountCode;
-        }
-
-        if (amountToDiscountFrom > 0) { // Only calculate discount if the target component has a cost
-            discountCodeAmount = parseFloat((amountToDiscountFrom * discountPercentage).toFixed(2));
-        } else {
-            discountCodeAmount = 0; // No discount if the target component is free or N/A
-        }
-        
-        // The final total amount is the original subtotal (before this code) minus the calculated discount code amount.
-        finalTotalAmount = parseFloat((subtotalBeforeDiscountCode - discountCodeAmount).toFixed(2));
-
-        // Ensure total doesn't go below zero
-        if (finalTotalAmount < 0) finalTotalAmount = 0;
-
-        console.log('[BookingSummary] useMemo: Applied Discount Code:', {
-            code: appliedDiscount.code,
-            percentage: appliedDiscount.percentage_discount,
-            appliesTo: appliesTo,
-            amountComponentTargeted: amountToDiscountFrom, // Log the base amount for discount calculation
-            subtotalBeforeCodeDiscount: subtotalBeforeDiscountCode,
-            discountCodeAmountApplied: discountCodeAmount,
-            finalTotalAmountAfterCodeDiscount: finalTotalAmount
-        });
-    } else {
-         console.log('[BookingSummary] useMemo: No discount code applied or subtotal is zero.');
-    }
-    // --- END: Apply Discount Code ---
 
     // --- START: Calculate VAT (24%) ---
     const vatRate = 0.24; // 24% VAT
@@ -142,8 +77,8 @@ export function usePricing({
       effectiveBaseRate: effectiveWeeklyRate,
       nightlyAccommodationRate: totalNights > 0 ? +(totalAccommodationCost / totalNights).toFixed(2) : 0,
       baseAccommodationRate: selectedAccommodation?.base_price || 0,
-      durationDiscountAmount: foodDiscountAmount,
-      durationDiscountPercent: rawDurationDiscountPercent * 100,
+      durationDiscountAmount: 0,
+      durationDiscountPercent: 0,
       seasonalDiscount: 0,
       vatAmount,
       totalWithVat,
@@ -167,5 +102,5 @@ export function usePricing({
     console.log('[BookingSummary] --- Finished Pricing Recalculation (useMemo) ---');
     return calculatedPricingDetails;
 
-  }, [selectedWeeks, calculatedWeeklyAccommodationPrice, foodContribution, selectedAccommodation, appliedDiscount]);
+  }, [selectedWeeks, calculatedWeeklyAccommodationPrice, foodContribution, selectedAccommodation]);
 }

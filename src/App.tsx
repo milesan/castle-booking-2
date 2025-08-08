@@ -7,6 +7,9 @@ import { PendingPage } from './pages/PendingPage';
 import { AuthenticatedApp } from './components/AuthenticatedApp';
 import { ConfirmationPage } from './pages/ConfirmationPage';
 import { Retro2Page } from './pages/Retro2Page';
+import { Book2Page } from './pages/Book2Page';
+import { MyBookings } from './components/MyBookings';
+import { AdminPage } from './pages/AdminPage';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { supabase } from './lib/supabase';
@@ -88,41 +91,20 @@ function AppRouterLogic({
 
 
 
-  // --- Admin Routes ---
-  if (isAdminCheck) {
+  // --- Whitelisted Users (including admins) get direct Book2Page access ---
+  // Check whitelist first - this catches both regular whitelisted users AND admins
+  if (isWhitelisted === true) {
+    console.log('AppRouterLogic: Whitelisted user detected - routing to Book2Page');
     return (
-      <Routes>
-        <Route path="/accept" element={<AcceptInvitePage />} /> 
-        <Route path="/accept-invite" element={<AcceptInvitePage isWhitelist={true} />} />
-        <Route path="/confirmation" element={<MainAppLayout><ConfirmationPage /></MainAppLayout>} /> 
-        <Route path="/*" element={<MainAppLayout><AuthenticatedApp /></MainAppLayout>} /> 
-      </Routes>
-    );
-  }
-
-  // --- Approved User Routes ---
-  if (isApprovedCheck) {
-     return (
+      <MainAppLayout>
         <Routes>
-          <Route path="/accept" element={<AcceptInvitePage />} />
-          <Route path="/accept-invite" element={<AcceptInvitePage isWhitelist={true} />} />
-          <Route path="/confirmation" element={<MainAppLayout><ConfirmationPage /></MainAppLayout>} />
-          <Route path="/*" element={<MainAppLayout><AuthenticatedApp /></MainAppLayout>} />
+          <Route path="/" element={<Book2Page />} />
+          <Route path="/confirmation" element={<ConfirmationPage />} />
+          <Route path="/my-bookings" element={<MyBookings />} />
+          <Route path="/admin" element={isAdminCheck ? <AdminPage /> : <Navigate to="/" />} />
+          <Route path="/*" element={<Book2Page />} />
         </Routes>
-    );
-  }
-
-  // --- NEW: Whitelisted User NEEDS Signup ---
-  // (isWhitelisted=true, hasApplicationRecord=false) -> Force signup page
-  if (isWhitelisted === true && hasApplicationRecord === false) {
-    console.log('AppRouterLogic: Whitelisted user MISSING application record. Forcing /whitelist-signup.');
-    return (
-      <Routes>
-        <Route path="/whitelist-signup" element={<WhitelistSignupPage />} />
-        {/* Redirect root and any other path to the signup page */}
-        <Route path="/" element={<Navigate to="/whitelist-signup" replace />} />
-        <Route path="/*" element={<Navigate to="/whitelist-signup" replace />} />
-      </Routes>
+      </MainAppLayout>
     );
   }
   
@@ -189,37 +171,30 @@ export default function App() {
 
       const checkCombinedStatus = async () => {
         try {
-          console.log('App: Calling get_user_app_entry_status_v2 RPC', { userId, userEmail });
-          const { data: statusData, error: rpcError } = await supabase.rpc('get_user_app_entry_status_v2', {
-            p_user_id: userId,
-            p_email: userEmail
-          });
+          console.log('App: Checking whitelist status directly', { userId, userEmail });
+          
+          // Simple whitelist check instead of complex RPC
+          const { data: whitelistData, error: whitelistError } = await supabase
+            .from('whitelist_all')
+            .select('email, status')
+            .eq('email', userEmail)
+            .single();
 
           if (!mounted) return; // Component unmounted during async call
 
-          if (rpcError) {
-            console.error('App: Error calling get_user_app_entry_status_v2 RPC:', rpcError);
+          if (whitelistError || !whitelistData) {
+            console.log('App: User not in whitelist:', userEmail);
             setIsWhitelisted(false);
             setNeedsWelcomeCheckResult(false);
             setHasApplicationRecord(false);
-          } else if (statusData) {
-            console.log('App: RPC returned status data', { 
-              isWhitelisted: statusData.is_whitelisted,
-              needsWelcome: statusData.needs_welcome,
-              hasApplicationRecord: statusData.has_application_record
-            });
-            setIsWhitelisted(statusData.is_whitelisted);
-            setNeedsWelcomeCheckResult(statusData.needs_welcome); // Use the 'needs_welcome' field
-            setHasApplicationRecord(statusData.has_application_record);
           } else {
-            // Should not happen if RPCError is not set, but good to handle
-            console.warn('App: get_user_app_entry_status_v2 RPC returned no data and no error.');
-            setIsWhitelisted(false);
-            setNeedsWelcomeCheckResult(false);
-            setHasApplicationRecord(false);
+            console.log('App: User is whitelisted (status:', whitelistData.status, ')');
+            setIsWhitelisted(true);
+            setNeedsWelcomeCheckResult(false); // Skip welcome modal for now
+            setHasApplicationRecord(true); // Assume they have completed signup
           }
         } catch (err) {
-          console.error('App: Exception during get_user_app_entry_status_v2 call:', err);
+          console.error('App: Exception during whitelist check:', err);
           if (mounted) {
             setIsWhitelisted(false);
             setNeedsWelcomeCheckResult(false);

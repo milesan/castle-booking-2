@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { supabase } from '../../lib/supabase';
 // motion can be removed if not used after this change, but let's keep it for now
 // import { motion } from 'framer-motion';
 

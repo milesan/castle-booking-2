@@ -869,9 +869,6 @@ export function WeekSelector({
             </div>
           </div>
           );
-          
-          const monthRenderEnd = performance.now();
-          console.log(`[PERF] Month ${monthKey} render DONE: ${(monthRenderEnd - monthRenderStart).toFixed(2)}ms`);
         })}
       </div>
 
