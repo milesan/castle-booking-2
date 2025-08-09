@@ -36,7 +36,7 @@ export function StayDetails({ selectedWeeks }: StayDetailsProps) {
             </h4>
             <div className="space-y-1">
               <p className="uppercase text-2xl text-primary font-display">{formatDateWithDay(selectedWeeks[0].startDate)}</p>
-              <p className="font-lettra text-shade-1 text-sm">2PM-5PM</p> 
+ 
             </div>
           </div>
           
@@ -47,7 +47,6 @@ export function StayDetails({ selectedWeeks }: StayDetailsProps) {
             </h4>
             <div className="space-y-1">
               <p className="uppercase text-2xl text-primary font-display">{formatDateWithDay(selectedWeeks[selectedWeeks.length - 1].endDate)}</p>
-              <p className="font-lettra text-shade-1 text-sm">11AM</p>
             </div>
           </div>
           

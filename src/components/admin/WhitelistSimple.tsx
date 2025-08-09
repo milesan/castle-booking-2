@@ -164,7 +164,7 @@ export function WhitelistSimple() {
     if (!csvText.trim()) return;
 
     try {
-      // Parse CSV (expecting: email,first_name,last_name,is_admin)
+      // Parse CSV - now handles both single column (email only) and multi-column formats
       const lines = csvText.trim().split('\n');
       const users = [];
       
@@ -175,14 +175,28 @@ export function WhitelistSimple() {
         // Skip header if it looks like one
         if (i === 0 && line.toLowerCase().includes('email')) continue;
         
-        const parts = line.split(',').map(p => p.trim());
-        if (parts[0] && parts[0].includes('@')) {
-          users.push({
-            email: parts[0],
-            first_name: parts[1] || null,
-            last_name: parts[2] || null,
-            is_admin: parts[3] === 'true' || parts[3] === '1' || parts[3] === 'yes'
-          });
+        // Check if line contains commas (multi-column) or not (single column)
+        if (line.includes(',')) {
+          // Multi-column format: email,first_name,last_name,is_admin
+          const parts = line.split(',').map(p => p.trim());
+          if (parts[0] && parts[0].includes('@')) {
+            users.push({
+              email: parts[0],
+              first_name: parts[1] || null,
+              last_name: parts[2] || null,
+              is_admin: parts[3] === 'true' || parts[3] === '1' || parts[3] === 'yes'
+            });
+          }
+        } else {
+          // Single column format: just email
+          if (line.includes('@')) {
+            users.push({
+              email: line.trim(),
+              first_name: null,
+              last_name: null,
+              is_admin: false
+            });
+          }
         }
       }
 
@@ -420,9 +434,13 @@ export function WhitelistSimple() {
             </div>
             
             <p className="text-sm text-gray-600 mb-4">
-              Format: email,first_name,last_name,is_admin
+              <strong>Supported formats:</strong>
               <br />
-              Example: john@example.com,John,Doe,false
+              <span className="text-xs">Single column:</span> email@example.com
+              <br />
+              <span className="text-xs">Multi-column:</span> email,first_name,last_name,is_admin
+              <br />
+              <span className="text-xs mt-1 block text-gray-500">Single column imports default to: no name, non-admin</span>
             </p>
             
             <textarea

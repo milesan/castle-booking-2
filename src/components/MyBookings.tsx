@@ -170,9 +170,6 @@ export function MyBookings() {
   const [error, setError] = React.useState<string | null>(null);
   const [enlargedImageUrl, setEnlargedImageUrl] = React.useState<string | null>(null);
   const [enlargedAccommodation, setEnlargedAccommodation] = React.useState<ExtendedAccommodation | null>(null);
-  const [extendingBooking, setExtendingBooking] = React.useState<Booking | null>(null);
-  const [extensionWeeks, setExtensionWeeks] = React.useState<any[]>([]);
-  const [originalCheckIn, setOriginalCheckIn] = React.useState<Date | null>(null);
   const [originalCheckOut, setOriginalCheckOut] = React.useState<Date | null>(null);
 
   const [showPaymentModal, setShowPaymentModal] = React.useState(false);
@@ -201,16 +198,6 @@ export function MyBookings() {
   // Credits functionality for extensions - allows users to use their available credits
   // to reduce the amount they need to pay for their booking extension
 
-  const checkIn = extendingBooking
-    ? typeof extendingBooking.check_in === 'string'
-      ? parseISO(extendingBooking.check_in)
-      : extendingBooking.check_in
-    : new Date();
-  const checkOut = extendingBooking
-    ? typeof extendingBooking.check_out === 'string'
-      ? parseISO(extendingBooking.check_out)
-      : extendingBooking.check_out
-    : new Date();
   const calendar = useCalendar({
     startDate: checkIn,
     endDate: addMonths(checkOut, 6),
@@ -236,15 +223,6 @@ export function MyBookings() {
 
 
 
-  React.useEffect(() => {
-    if (extendingBooking) {
-      const checkIn = typeof extendingBooking.check_in === 'string' ? parseISO(extendingBooking.check_in) : extendingBooking.check_in;
-      const checkOut = typeof extendingBooking.check_out === 'string' ? parseISO(extendingBooking.check_out) : extendingBooking.check_out;
-      setOriginalCheckIn(checkIn);
-      setOriginalCheckOut(checkOut);
-      setExtensionWeeks([{ startDate: checkIn, endDate: checkOut }]);
-    }
-  }, [extendingBooking]);
 
 
 
@@ -1002,23 +980,6 @@ export function MyBookings() {
                               return format(parsedDate, 'PPP');
                             })()}
                           </span>
-                          {isEligibleForExtension(booking) && (
-                            <button
-                              className="ml-2 px-2 py-0.5 text-xs font-mono border border-green-600/30 text-accent-primary bg-transparent rounded-sm transition-colors hover:bg-green-900/20 hover:text-green-300 hover:border-green-500/50 focus:outline-none focus:ring-2 focus:ring-green-600 shadow-sm"
-                              onClick={() => {
-                                console.log('[EXTENSION_FLOW] === STEP 0: Extend button clicked ===');
-                                console.log('[EXTENSION_FLOW] Opening extension modal for booking:', {
-                                  bookingId: booking.id,
-                                  accommodationTitle: booking.accommodation?.title,
-                                  checkIn: booking.check_in,
-                                  checkOut: booking.check_out
-                                });
-                                setExtendingBooking(booking);
-                              }}
-                            >
-                              Extend
-                            </button>
-                          )}
                         </p>
                         <p>
                           <span className="text-primary">Total Donated:</span>{' '}
@@ -1029,15 +990,6 @@ export function MyBookings() {
                             })()}
                           </span>
                         </p>
-                        <a 
-                          href="https://gardening.notion.site/Welcome-to-The-Garden-2684f446b48e4b43b3f003d7fca33664?pvs=4"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 text-accent-primary hover:text-accent-secondary hover:underline font-mono transition-colors mt-2"
-                        >
-                          Welcome Guide
-                          <ExternalLink className="w-3 h-3" />
-                        </a>
                       </div>
                     </div>
                     {booking.accommodation && (
@@ -1930,9 +1882,4 @@ export function MyBookings() {
   );
 }
 
-function isEligibleForExtension(booking: Booking): boolean {
-  const now = new Date();
-  const checkOut = typeof booking.check_out === 'string' ? parseISO(booking.check_out) : booking.check_out;
-  if (checkOut <= now) return false;
-  return true;
-}
+// Extension feature removed

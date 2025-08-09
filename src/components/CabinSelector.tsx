@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { BedDouble, Bath, Percent, Info, Ear, ChevronLeft, ChevronRight, Users } from 'lucide-react';
+import { BedDouble, Bath, Percent, Info, Ear, ChevronLeft, ChevronRight, Users, Clock } from 'lucide-react';
 import clsx from 'clsx';
 import type { Accommodation } from '../types';
 import { Week } from '../types/calendar';
@@ -13,6 +13,7 @@ import { calculateTotalNights, calculateDurationDiscountWeeks, normalizeToUTCDat
 import { useSession } from '../hooks/useSession';
 import { HoverClickPopover } from './HoverClickPopover';
 import { useUserPermissions } from '../hooks/useUserPermissions';
+import { usePendingBookings } from '../hooks/usePendingBookings';
 
 // Local interface for accommodation images
 interface AccommodationImage {
@@ -95,6 +96,7 @@ export function CabinSelector({
 
   const { session } = useSession();
   const { isAdmin, isLoading: permissionsLoading } = useUserPermissions(session);
+  const { pendingBookings } = usePendingBookings(selectedWeeks);
 
   // State to track current image index for each accommodation
   const [currentImageIndices, setCurrentImageIndices] = useState<Record<string, number>>({});
@@ -512,7 +514,7 @@ export function CabinSelector({
                     Select dates first
                   </StatusOverlay>
                   <StatusOverlay isVisible={!testMode && !isDisabled && isFullyBooked} zIndex={3}>
-                    Booked out
+                    {pendingBookings[acc.id] && pendingBookings[acc.id].count > 0 ? 'Being booked' : 'Booked out'}
                   </StatusOverlay>
                   <StatusOverlay 
                     isVisible={!testMode && !isDisabled && isOutOfSeason && !isFullyBooked} 
@@ -524,6 +526,20 @@ export function CabinSelector({
 
                   {/* Badge container - place above overlays */}
                   <div className="absolute top-2 left-2 z-[5] flex flex-col gap-2"> 
+                    {/* Pending Booking Indicator */}
+                    {pendingBookings[acc.id] && pendingBookings[acc.id].count > 0 && (
+                      <div className="text-xs font-medium px-3 py-1 rounded-full shadow-lg bg-amber-600/90 text-white border border-amber-300/30 font-mono flex items-center gap-1">
+                        <Clock size={12} className="animate-pulse" />
+                        <span>
+                          Being booked now
+                          {pendingBookings[acc.id].minutesRemaining > 0 && (
+                            <span className="opacity-90">
+                              {' '}(available in {pendingBookings[acc.id].minutesRemaining}m)
+                            </span>
+                          )}
+                        </span>
+                      </div>
+                    )}
                     {/* Spots Available Indicator */}
                     {spotsAvailable !== undefined && spotsAvailable !== null && spotsAvailable < (acc.inventory ?? Infinity) && !isFullyBooked && !isOutOfSeason && !isDisabled && acc.type !== 'tent' && (
                       <div className="text-xs font-medium px-3 py-1 rounded-full shadow-lg bg-gray-600/90 text-white border border-white/30 font-mono">{spotsAvailable} {spotsAvailable === 1 ? 'spot' : 'spots'} available</div>
