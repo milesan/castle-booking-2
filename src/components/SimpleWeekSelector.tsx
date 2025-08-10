@@ -26,9 +26,6 @@ export function SimpleWeekSelector({ weeks, selectedWeeks, onWeekSelect }: Simpl
           }}
         >
           <div className="text-xl mb-2" style={{ fontFamily: 'var(--castle-font-primary)', color: 'var(--castle-text-accent)' }}>
-            Castle Week
-          </div>
-          <div className="text-lg" style={{ color: 'var(--castle-text-primary)' }}>
             September 21-26, 2025
           </div>
           <div className="text-sm mt-2" style={{ color: 'var(--castle-text-muted)' }}>

@@ -17,6 +17,7 @@ export interface Accommodation {
   inventory: number;
   capacity: number | null;
   bathrooms: number;
+  bathroom_type?: 'none' | 'private' | 'shared';
   has_wifi: boolean;
   has_electricity: boolean;
   bed_size: string | null;
