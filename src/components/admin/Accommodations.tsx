@@ -1893,9 +1893,9 @@ export function Accommodations() {
                   <option value="">All Sizes</option>
                   <option value="2">2 - 2.2m Tipi (Single)</option>
                   <option value="3">3 - 3m Tipi (Double)</option>
-                  <option value="4">4 - 4m Bell tent</option>
-                  <option value="5">5 - 5m Bell tent</option>
-                  <option value="6">6 - 6m Bell tent</option>
+                  <option value="4">4 - 4m Bell Tent</option>
+                  <option value="5">5 - 5m Bell Tent</option>
+                  <option value="6">6 - 6m Bell Tent</option>
                   <option value="tent">Tent - Your Own Tent</option>
                   <option value="van">Van - Van Parking</option>
                 </select>
@@ -2042,9 +2042,9 @@ export function Accommodations() {
                     >
                       <option value="2">2 - 2.2m Tipi (Single)</option>
                       <option value="3">3 - 3m Tipi (Double)</option>
-                      <option value="4">4 - 4m Bell tent</option>
-                      <option value="5">5 - 5m Bell tent</option>
-                      <option value="6">6 - 6m Bell tent</option>
+                      <option value="4">4 - 4m Bell Tent</option>
+                      <option value="5">5 - 5m Bell Tent</option>
+                      <option value="6">6 - 6m Bell Tent</option>
                       <option value="tent">Tent - Your Own Tent</option>
                       <option value="van">Van - Van Parking</option>
                     </select>
