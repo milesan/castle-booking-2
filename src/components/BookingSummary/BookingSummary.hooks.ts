@@ -3,20 +3,22 @@ import { calculateTotalNights, calculateTotalWeeksDecimal } from '../../utils/da
 import { calculateBaseFoodCost } from './BookingSummary.utils';
 import type { Week } from '../../types/calendar';
 import type { Accommodation } from '../../types';
-import type { PricingDetails } from './BookingSummary.types';
+import type { PricingDetails, GardenAddon } from './BookingSummary.types';
 
 interface UsePricingProps {
   selectedWeeks: Week[];
   selectedAccommodation: Accommodation | null;
   calculatedWeeklyAccommodationPrice: number | null;
   foodContribution: number | null;
+  gardenAddon?: GardenAddon | null;
 }
 
 export function usePricing({
   selectedWeeks,
   selectedAccommodation,
   calculatedWeeklyAccommodationPrice,
-  foodContribution
+  foodContribution,
+  gardenAddon
 }: UsePricingProps): PricingDetails {
   return useMemo((): PricingDetails => {
     console.log('[BookingSummary] --- Recalculating Pricing (useMemo) ---');
@@ -44,9 +46,10 @@ export function usePricing({
     const foodDiscountAmount = 0;
     const effectiveWeeklyRate = 0;
     
-    // 4. Subtotal is just accommodation cost
-    const subtotal = totalAccommodationCost;
-    console.log('[BookingSummary] useMemo: Calculated Subtotal:', { totalAccommodationCost, finalFoodCost, subtotal });
+    // 4. Subtotal is accommodation cost + garden addon
+    const gardenAddonCost = gardenAddon?.price || 0;
+    const subtotal = totalAccommodationCost + gardenAddonCost;
+    console.log('[BookingSummary] useMemo: Calculated Subtotal:', { totalAccommodationCost, gardenAddonCost, finalFoodCost, subtotal });
 
     // No discount codes - simplified pricing
     let finalTotalAmount = subtotal;
@@ -70,6 +73,7 @@ export function usePricing({
       totalNights,
       totalAccommodationCost,
       totalFoodAndFacilitiesCost: finalFoodCost,
+      gardenAddonCost,
       subtotal,
       totalAmount: finalTotalAmount,
       appliedCodeDiscountValue: discountCodeAmount,

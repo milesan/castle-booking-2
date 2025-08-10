@@ -11,6 +11,7 @@
     "export-data": "node scripts/export-to-notion.js"
   },
   "dependencies": {
+    "2": "^3.0.0",
     "@fullcalendar/core": "^6.1.11",
     "@fullcalendar/daygrid": "^6.1.11",
     "@fullcalendar/interaction": "^6.1.11",
