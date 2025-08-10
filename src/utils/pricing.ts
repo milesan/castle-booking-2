@@ -100,11 +100,6 @@ export function getSeasonBreakdown(checkIn: Date, checkOut: Date): { hasMultiple
     const seasonName = seasonInfo.name;
     const baseDiscount = seasonInfo.baseDiscount;
     const key = `${seasonName}-${baseDiscount}`; // Key based on name and base discount
-    console.log('[pricing] night:', night.toISOString());
-    console.log('[pricing] seasonInfo:', seasonInfo);
-    console.log('[pricing] seasonName:', seasonName);
-    console.log('[pricing] baseDiscount:', baseDiscount);
-    console.log('[pricing] key:', key);
     if (seasonMap[key]) {
       seasonMap[key].nights++;
     } else {
@@ -117,7 +112,6 @@ export function getSeasonBreakdown(checkIn: Date, checkOut: Date): { hasMultiple
   const seasonsWithNights = Object.values(seasonMap).filter(s => s.nights > 0);
   const hasMultipleSeasons = seasonsWithNights.length > 1;
 
-  console.log('[pricing] Season breakdown calculated:', {
     hasMultipleSeasons,
     seasons: seasonsWithNights, // Return only seasons that actually occur in the interval
     totalNights,
