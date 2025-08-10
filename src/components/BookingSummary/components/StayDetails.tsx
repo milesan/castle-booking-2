@@ -12,7 +12,6 @@ export function StayDetails({ selectedWeeks }: StayDetailsProps) {
   // --- Calculate display weeks using utility function ---
   // --- Use DECIMAL weeks for display --- 
   const totalWeeksDisplay = calculateTotalWeeksDecimal(selectedWeeks);
-  console.log('[BookingSummary] Calculated display weeks (decimal):', { totalWeeksDecimal: totalWeeksDisplay });
   // --- END Calculation ---
 
   return (

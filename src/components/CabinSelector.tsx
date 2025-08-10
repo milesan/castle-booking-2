@@ -48,17 +48,35 @@ interface Props {
 
 // Helper function to get primary image (NEW IMAGES TABLE ONLY)
 const getPrimaryImageUrl = (accommodation: ExtendedAccommodation): string | null => {
-  // Only check new images table for primary image
+  // Check new images table for primary image
   const primaryImage = accommodation.images?.find(img => img.is_primary);
   if (primaryImage) return primaryImage.image_url;
   
-  // No fallback to old image_url field - only use new table
-  return null;
+  // If images exist but no primary, use first image
+  if (accommodation.images && accommodation.images.length > 0) {
+    return accommodation.images[0].image_url;
+  }
+  
+  // Fallback to old image_url field if no images array
+  return accommodation.image_url || null;
 };
 
 // Helper function to get all images sorted by display order
 const getAllImages = (accommodation: ExtendedAccommodation): AccommodationImage[] => {
-  if (!accommodation.images || accommodation.images.length === 0) return [];
+  if (!accommodation.images || accommodation.images.length === 0) {
+    // Fallback: if no images array but has image_url, create a single image entry
+    if (accommodation.image_url) {
+      return [{
+        id: `${accommodation.id}-primary`,
+        accommodation_id: accommodation.id,
+        image_url: accommodation.image_url,
+        display_order: 0,
+        is_primary: true,
+        created_at: new Date().toISOString()
+      }];
+    }
+    return [];
+  }
   return [...accommodation.images].sort((a, b) => a.display_order - b.display_order);
 };
 
@@ -150,14 +168,22 @@ export function CabinSelector({
 
   // Handler to open masonry gallery
   const handleOpenGallery = (accommodation: ExtendedAccommodation, e?: React.MouseEvent) => {
+    console.log('🔍 Opening gallery for:', accommodation.title);
+    
     if (e) {
       e.stopPropagation();
     }
+    
     const images = getAllImages(accommodation);
+    console.log('🔍 Found', images.length, 'images');
+    
     if (images.length > 0) {
       setGalleryImages(images);
       setGalleryTitle(accommodation.title);
       setGalleryOpen(true);
+      console.log('✅ Gallery opened');
+    } else {
+      console.log('❌ No images found, gallery not opening');
     }
   };
 
@@ -197,21 +223,25 @@ export function CabinSelector({
     }
 
     const handlePrevious = (e: React.MouseEvent) => {
-      e.stopPropagation();
+      console.log('⬅️ Previous button clicked');
+      // Don't stop propagation - let parent handle it
       setImageLoading(true);
       navigateToImage(accommodation.id, 'prev', allImages.length);
       setTimeout(() => setImageLoading(false), 50);
+      console.log('⬅️ Navigated to previous image');
     };
 
     const handleNext = (e: React.MouseEvent) => {
-      e.stopPropagation();
+      console.log('➡️ Next button clicked');
+      // Don't stop propagation - let parent handle it
       setImageLoading(true);
       navigateToImage(accommodation.id, 'next', allImages.length);
       setTimeout(() => setImageLoading(false), 50);
+      console.log('➡️ Navigated to next image');
     };
 
     const handleDotClick = (e: React.MouseEvent, index: number) => {
-      e.stopPropagation();
+      // Don't stop propagation - let parent handle it
       setImageLoading(true);
       setImageIndex(accommodation.id, index);
       setTimeout(() => setImageLoading(false), 50);
@@ -227,37 +257,37 @@ export function CabinSelector({
     return (
       <div className="relative w-full h-full group/gallery bg-gray-100">
         {/* Main Image - clickable to open masonry gallery, with anti-flash loading */}
-        <div 
-          className="w-full h-full cursor-pointer relative"
-          onClick={(e) => handleOpenGallery(accommodation, e)}
-        >
-          <img 
-            key={currentImageUrl} // Force remount for clean transitions
-            src={currentImageUrl || ''} 
-            alt="" // Remove alt text to prevent flash
-            className={`w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 ease-in-out ${
-              imageLoading || !loadedImages.has(currentImageUrl || '') ? 'opacity-0' : 'opacity-100'
-            }`}
-            onLoad={handleImageLoad}
-            loading="eager" // Change to eager for gallery images
-          />
-          {/* Subtle expand indicator on hover */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
-        </div>
+        <img 
+          key={currentImageUrl} // Force remount for clean transitions
+          src={currentImageUrl || ''} 
+          alt="" // Remove alt text to prevent flash
+          className={`w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 ease-in-out cursor-pointer ${
+            imageLoading || !loadedImages.has(currentImageUrl || '') ? 'opacity-0' : 'opacity-100'
+          }`}
+          onLoad={handleImageLoad}
+          onClick={(e) => {
+            console.log('🖼️ IMAGE clicked!');
+            // Don't stop propagation - let the parent card handle blocking its own selection
+            handleOpenGallery(accommodation);
+          }}
+          loading="eager" // Change to eager for gallery images
+        />
+        {/* Subtle expand indicator on hover */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
 
         {/* Navigation arrows - always visible when more than 1 image */}
         {allImages.length > 1 && (
           <>
             <button
               onClick={handlePrevious}
-              className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-black/80 hover:bg-black/90 text-white rounded-md p-1 transition-all duration-200 hover:scale-110 shadow-lg z-20"
+              className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-black/80 hover:bg-black/90 text-white rounded-md p-1 transition-all duration-200 hover:scale-110 shadow-lg z-30"
               aria-label="Previous image"
             >
               <ChevronLeft size={16} />
             </button>
             <button
               onClick={handleNext}
-              className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-black/80 hover:bg-black/90 text-white rounded-md p-1 transition-all duration-200 hover:scale-110 shadow-lg z-20"
+              className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-black/80 hover:bg-black/90 text-white rounded-md p-1 transition-all duration-200 hover:scale-110 shadow-lg z-30"
               aria-label="Next image"
             >
               <ChevronRight size={16} />
@@ -267,7 +297,7 @@ export function CabinSelector({
 
         {/* Dots indicator - only show if more than 1 image */}
         {allImages.length > 1 && (
-          <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 flex space-x-1 z-10">
+          <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 flex space-x-1 z-30">
             {allImages.map((_, index) => (
               <button
                 key={index}
@@ -679,6 +709,20 @@ export function CabinSelector({
                     (testMode || (finalCanSelect && !isDisabled)) && 'cursor-pointer'
                   )}
                   onClick={(e) => {
+                    // Check if the click target is part of the image gallery
+                    const target = e.target as HTMLElement;
+                    const isImageClick = target.tagName === 'IMG' || 
+                                        target.closest('.group\\/gallery') !== null ||
+                                        target.closest('button') !== null;
+                    
+                    console.log('🎯 Card clicked, isImageClick:', isImageClick);
+                    
+                    // If clicking on image gallery elements, don't select the accommodation
+                    if (isImageClick) {
+                      console.log('🛑 Blocking card selection for image/button click');
+                      return;
+                    }
+                    
                     // Prevent event bubbling to parent elements
                     e.stopPropagation();
                     
@@ -881,7 +925,10 @@ export function CabinSelector({
       <MasonryGallery
         images={galleryImages}
         isOpen={galleryOpen}
-        onClose={() => setGalleryOpen(false)}
+        onClose={() => {
+          console.log('❌ Gallery closing');
+          setGalleryOpen(false);
+        }}
         title={galleryTitle}
       />
     </div>

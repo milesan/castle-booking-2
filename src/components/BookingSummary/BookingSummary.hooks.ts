@@ -21,15 +21,12 @@ export function usePricing({
   gardenAddon
 }: UsePricingProps): PricingDetails {
   return useMemo((): PricingDetails => {
-    console.log('[BookingSummary] --- Recalculating Pricing (useMemo) ---');
-    console.log('[BookingSummary] useMemo Inputs:', {
       selectedWeeksLength: selectedWeeks.length,
       selectedAccommodationId_Prop: selectedAccommodation?.id,
       calculatedWeeklyAccommodationPrice_Prop: calculatedWeeklyAccommodationPrice,
       foodContribution,
     });
     // --- ADDED LOGGING: Check prop value *inside* memo ---
-    console.log('[BookingSummary] useMemo: Using calculatedWeeklyAccommodationPrice PROP:', calculatedWeeklyAccommodationPrice);
     // --- END ADDED LOGGING ---
 
     // === Calculate nights for display ===
@@ -37,9 +34,8 @@ export function usePricing({
     const exactWeeksDecimal = calculateTotalWeeksDecimal(selectedWeeks); // For display only
     const displayWeeks = selectedWeeks.length > 0 ? Math.round(exactWeeksDecimal * 10) / 10 : 0;
     
-    // === Use accommodation base price directly (castle week fixed price) ===
+    // === Use accommodation base price directly (The Castle fixed price) ===
     const totalAccommodationCost = selectedAccommodation?.base_price || 0;
-    console.log('[BookingSummary] Using accommodation base price directly:', totalAccommodationCost);
 
     // === No food cost or discounts ===
     const finalFoodCost = 0;
@@ -49,7 +45,6 @@ export function usePricing({
     // 4. Subtotal is accommodation cost + garden addon
     const gardenAddonCost = gardenAddon?.price || 0;
     const subtotal = totalAccommodationCost + gardenAddonCost;
-    console.log('[BookingSummary] useMemo: Calculated Subtotal:', { totalAccommodationCost, gardenAddonCost, finalFoodCost, subtotal });
 
     // No discount codes - simplified pricing
     let finalTotalAmount = subtotal;
@@ -60,7 +55,6 @@ export function usePricing({
     const vatAmount = parseFloat((finalTotalAmount * vatRate).toFixed(2));
     const totalWithVat = parseFloat((finalTotalAmount + vatAmount).toFixed(2));
     
-    console.log('[BookingSummary] useMemo: VAT Calculation:', {
       finalTotalAmount,
       vatRate,
       vatAmount,
@@ -91,7 +85,6 @@ export function usePricing({
 
     // --- START TEST ACCOMMODATION OVERRIDE ---
     if (selectedAccommodation?.type === 'test') {
-      console.log('[BookingSummary] useMemo: OVERRIDING costs for TEST accommodation.');
       calculatedPricingDetails.totalFoodAndFacilitiesCost = 0;
       calculatedPricingDetails.subtotal = calculatedPricingDetails.totalAccommodationCost; // Keep accom cost, just zero out food
       calculatedPricingDetails.totalAmount = calculatedPricingDetails.totalAccommodationCost; // Total is just accom cost
@@ -102,8 +95,6 @@ export function usePricing({
     }
     // --- END TEST ACCOMMODATION OVERRIDE ---
 
-    console.log('[BookingSummary] useMemo: Pricing calculation COMPLETE. Result:', calculatedPricingDetails);
-    console.log('[BookingSummary] --- Finished Pricing Recalculation (useMemo) ---');
     return calculatedPricingDetails;
 
   }, [selectedWeeks, calculatedWeeklyAccommodationPrice, foodContribution, selectedAccommodation]);

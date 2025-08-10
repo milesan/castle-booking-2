@@ -15,7 +15,6 @@ export const formatNumber = (num: number, decimals: number = 1): string => {
 // Helper function to format price display, showing "Free" for zero
 // UPDATED: Dont round, but add thousand separators
 export const formatPriceDisplay = (price: number): React.ReactNode => {
-  console.log('[formatPriceDisplay] Input price:', price);
   if (price === 0) {
     return <span className="text-accent-primary text-xl font-mono">Free</span>;
   }

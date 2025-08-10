@@ -43,7 +43,20 @@ interface ExtendedAccommodation extends Accommodation {
 
 // Helper function to get all images sorted by display order
 const getAllImages = (accommodation: ExtendedAccommodation): AccommodationImage[] => {
-  if (!accommodation.images || accommodation.images.length === 0) return [];
+  if (!accommodation.images || accommodation.images.length === 0) {
+    // Fallback: if no images array but has image_url, create a single image entry
+    if (accommodation.image_url) {
+      return [{
+        id: `${accommodation.id}-primary`,
+        accommodation_id: accommodation.id,
+        image_url: accommodation.image_url,
+        display_order: 0,
+        is_primary: true,
+        created_at: new Date().toISOString()
+      }];
+    }
+    return [];
+  }
   return [...accommodation.images].sort((a, b) => a.display_order - b.display_order);
 };
 
