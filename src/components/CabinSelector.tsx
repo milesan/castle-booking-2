@@ -445,7 +445,7 @@ export function CabinSelector({
       }
 
       // Filter by bathroom if enabled
-      if (showOnlyWithBathrooms && (!acc.bathrooms || acc.bathrooms === 0)) {
+      if (showOnlyWithBathrooms && acc.bathroom_type !== 'private') {
         return false;
       }
 
@@ -595,7 +595,7 @@ export function CabinSelector({
           <span>Private Bathrooms</span>
           {showOnlyWithBathrooms && (
             <span className="ml-1 text-xs opacity-90">
-              ({accommodations.filter(acc => acc.bathrooms && acc.bathrooms > 0 && !(acc as any).parent_accommodation_id).length})
+              ({accommodations.filter(acc => acc.bathroom_type === 'private' && !(acc as any).parent_accommodation_id).length})
             </span>
           )}
         </button>
@@ -826,10 +826,31 @@ export function CabinSelector({
                           </span>
                         </div>
                       )}
-                      {/* Additional Info - Display as text */}
+                      {/* Additional Info - Display as formatted text with icons */}
                       {acc.additional_info && (
-                        <div className="text-secondary text-xs mb-3">
-                          {acc.additional_info}
+                        <div className="text-secondary text-xs mb-3 space-y-1">
+                          {acc.additional_info.split('•').map((info, idx) => {
+                            const trimmedInfo = info.trim();
+                            if (!trimmedInfo) return null;
+                            
+                            // Add icons for specific amenities
+                            let icon = null;
+                            if (trimmedInfo.toLowerCase().includes('bed')) {
+                              icon = <BedDouble size={12} className="inline mr-1" />;
+                            } else if (trimmedInfo.toLowerCase().includes('bath')) {
+                              icon = <Bath size={12} className="inline mr-1" />;
+                            }
+                            
+                            return (
+                              <div key={idx} className="flex items-start">
+                                <span className="mr-1">•</span>
+                                <span>
+                                  {icon}
+                                  {trimmedInfo}
+                                </span>
+                              </div>
+                            );
+                          })}
                         </div>
                       )}
                       
