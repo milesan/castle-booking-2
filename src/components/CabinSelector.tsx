@@ -244,7 +244,7 @@ export function CabinSelector({
 
     const handlePrevious = (e: React.MouseEvent) => {
       console.log('⬅️ Previous button clicked');
-      e.stopPropagation();
+      // Don't stop propagation - let parent handle it
       setImageLoading(true);
       navigateToImage(accommodation.id, 'prev', allImages.length);
       setTimeout(() => setImageLoading(false), 50);
@@ -253,7 +253,7 @@ export function CabinSelector({
 
     const handleNext = (e: React.MouseEvent) => {
       console.log('➡️ Next button clicked');
-      e.stopPropagation();
+      // Don't stop propagation - let parent handle it
       setImageLoading(true);
       navigateToImage(accommodation.id, 'next', allImages.length);
       setTimeout(() => setImageLoading(false), 50);
@@ -261,7 +261,7 @@ export function CabinSelector({
     };
 
     const handleDotClick = (e: React.MouseEvent, index: number) => {
-      e.stopPropagation();
+      // Don't stop propagation - let parent handle it
       setImageLoading(true);
       setImageIndex(accommodation.id, index);
       setTimeout(() => setImageLoading(false), 50);
@@ -277,31 +277,23 @@ export function CabinSelector({
     return (
       <div className="relative w-full h-full group/gallery bg-gray-100">
         {/* Main Image - clickable to open masonry gallery, with anti-flash loading */}
-        <div 
-          className="w-full h-full cursor-pointer relative"
+        <img 
+          key={currentImageUrl} // Force remount for clean transitions
+          src={currentImageUrl || ''} 
+          alt="" // Remove alt text to prevent flash
+          className={`w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 ease-in-out cursor-pointer ${
+            imageLoading || !loadedImages.has(currentImageUrl || '') ? 'opacity-0' : 'opacity-100'
+          }`}
+          onLoad={handleImageLoad}
           onClick={(e) => {
-            console.log('🖱️ DIV clicked!');
-            handleOpenGallery(accommodation, e);
+            console.log('🖼️ IMAGE clicked!');
+            // Don't stop propagation - let the parent card handle blocking its own selection
+            handleOpenGallery(accommodation);
           }}
-        >
-          <img 
-            key={currentImageUrl} // Force remount for clean transitions
-            src={currentImageUrl || ''} 
-            alt="" // Remove alt text to prevent flash
-            className={`w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 ease-in-out ${
-              imageLoading || !loadedImages.has(currentImageUrl || '') ? 'opacity-0' : 'opacity-100'
-            }`}
-            onLoad={handleImageLoad}
-            onClick={(e) => {
-              console.log('🖼️ IMAGE clicked directly!');
-              e.stopPropagation();
-              handleOpenGallery(accommodation, e);
-            }}
-            loading="eager" // Change to eager for gallery images
-          />
-          {/* Subtle expand indicator on hover */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
-        </div>
+          loading="eager" // Change to eager for gallery images
+        />
+        {/* Subtle expand indicator on hover */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
 
         {/* Navigation arrows - always visible when more than 1 image */}
         {allImages.length > 1 && (
@@ -737,6 +729,20 @@ export function CabinSelector({
                     (testMode || (finalCanSelect && !isDisabled)) && 'cursor-pointer'
                   )}
                   onClick={(e) => {
+                    // Check if the click target is part of the image gallery
+                    const target = e.target as HTMLElement;
+                    const isImageClick = target.tagName === 'IMG' || 
+                                        target.closest('.group\\/gallery') !== null ||
+                                        target.closest('button') !== null;
+                    
+                    console.log('🎯 Card clicked, isImageClick:', isImageClick);
+                    
+                    // If clicking on image gallery elements, don't select the accommodation
+                    if (isImageClick) {
+                      console.log('🛑 Blocking card selection for image/button click');
+                      return;
+                    }
+                    
                     // Prevent event bubbling to parent elements
                     e.stopPropagation();
                     
