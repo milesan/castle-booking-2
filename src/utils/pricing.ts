@@ -112,13 +112,6 @@ export function getSeasonBreakdown(checkIn: Date, checkOut: Date): { hasMultiple
   const seasonsWithNights = Object.values(seasonMap).filter(s => s.nights > 0);
   const hasMultipleSeasons = seasonsWithNights.length > 1;
 
-    hasMultipleSeasons,
-    seasons: seasonsWithNights, // Return only seasons that actually occur in the interval
-    totalNights,
-    calculatedNights: seasonsWithNights.reduce((sum, s) => sum + s.nights, 0), // Sanity check
-    checkIn: normCheckIn.toISOString(),
-    checkOut: normCheckOut.toISOString()
-  });
 
   // Return only the seasons that actually have nights in the stay
   return { hasMultipleSeasons, seasons: seasonsWithNights };

@@ -14,7 +14,7 @@ import { useSession } from '../hooks/useSession';
 import { HoverClickPopover } from './HoverClickPopover';
 import { useUserPermissions } from '../hooks/useUserPermissions';
 import { usePendingBookings } from '../hooks/usePendingBookings';
-import { MasonryGallery } from './shared/MasonryGallery';
+import { FullScreenMasonry } from './FullScreenMasonry';
 
 // Local interface for accommodation images
 interface AccommodationImage {
@@ -125,7 +125,7 @@ export function CabinSelector({
   const [showOnlyWithBathrooms, setShowOnlyWithBathrooms] = useState(false);
   const [showOnlySharedBathrooms, setShowOnlySharedBathrooms] = useState(false);
   
-  // State for masonry gallery
+  // State for full-screen masonry gallery
   const [galleryOpen, setGalleryOpen] = useState(false);
   const [galleryImages, setGalleryImages] = useState<AccommodationImage[]>([]);
   const [galleryTitle, setGalleryTitle] = useState<string>('');
@@ -166,7 +166,7 @@ export function CabinSelector({
     }));
   };
 
-  // Handler to open masonry gallery
+  // Handler to open full-screen masonry gallery
   const handleOpenGallery = (accommodation: ExtendedAccommodation, e?: React.MouseEvent) => {
     if (e) {
       e.stopPropagation();
@@ -246,7 +246,7 @@ export function CabinSelector({
 
     return (
       <div className="relative w-full h-full group/gallery bg-gray-100">
-        {/* Main Image - clickable to open masonry gallery, with anti-flash loading */}
+        {/* Main Image - clickable to open full-screen masonry */}
         <img 
           key={currentImageUrl} // Force remount for clean transitions
           src={currentImageUrl || ''} 
@@ -894,14 +894,11 @@ export function CabinSelector({
         </div>
       )}
       
-      {/* Masonry Gallery Modal */}
-      <MasonryGallery
+      {/* Full-Screen Masonry Gallery */}
+      <FullScreenMasonry
         images={galleryImages}
         isOpen={galleryOpen}
-        onClose={() => {
-          console.log('❌ Gallery closing');
-          setGalleryOpen(false);
-        }}
+        onClose={() => setGalleryOpen(false)}
         title={galleryTitle}
       />
     </div>

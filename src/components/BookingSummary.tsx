@@ -671,20 +671,21 @@ export function BookingSummary({
             }
           }
           
-          navigate('/confirmation', { 
-            state: { 
-              booking: {
-                ...booking,
-                accommodation: accommodationTitle || 'Accommodation',
-                guests: guests || 1,
-                totalPrice: actualDonationAmount, // Show actual amount donated after credits
-                checkIn: selectedCheckInDate || booking.check_in,
-                checkOut: checkOut || booking.check_out
-              }
-            } 
-          });
-          console.log("[BOOKING_FLOW] STEP 9 SUCCESS: Navigation completed");
-        }, 1500);
+          setTimeout(() => {
+            navigate('/confirmation', { 
+              state: { 
+                booking: {
+                  ...booking,
+                  accommodation: accommodationTitle || 'Accommodation',
+                  guests: guests || 1,
+                  totalPrice: actualDonationAmount, // Show actual amount donated after credits
+                  checkIn: selectedCheckInDate || booking.check_in,
+                  checkOut: checkOut || booking.check_out
+                }
+              } 
+            });
+            console.log("[BOOKING_FLOW] STEP 9 SUCCESS: Navigation completed");
+          }, 1500);
       } catch (err) {
         console.error('[BOOKING_FLOW] === STEP 6 FAILED: Error creating booking ===');
         console.error('[BOOKING_FLOW] Error details:', err);
@@ -969,12 +970,6 @@ Please manually create the booking for this user or process a refund.`;
       selectedWeeksCount: selectedWeeks.length,
       authToken: !!authToken
     });
-      creditsToUse,
-      finalAmountAfterCredits,
-      isBooking,
-      showStripeModal,
-      pendingPaymentRowId
-    });
     
     setErrorWithLogging(null); // Clear previous errors
 
@@ -1119,10 +1114,6 @@ Please manually create the booking for this user or process a refund.`;
               finalAmountAfterCredits,
               isFreeAccommodation: pricing.totalAccommodationCost === 0,
               isCreditsOnly: creditsToUse > 0
-            });
-              paymentId: payment.id,
-              creditsToUse,
-              finalAmountAfterCredits
             });
             await handleBookingSuccess(undefined, payment.id);
             return;

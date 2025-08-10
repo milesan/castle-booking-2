@@ -48,8 +48,6 @@ export function Fireflies({
   localizedRadius = 150,
   contained = false
 }: FireflyProps) {
-    count, color, minSize, maxSize, fadeIn, fadeOut, duration, clickTrigger, ambient, visible, position, localized, localizedRadius, contained
-  });
   
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationRef = useRef<number>();
@@ -107,24 +105,9 @@ export function Fireflies({
         canvas.style.top = `${viewportY - localizedRadius}px`;
         canvas.style.width = `${localizedRadius * 2}px`;
         canvas.style.height = `${localizedRadius * 2}px`;
-          pageX: clickPosition.x,
-          pageY: clickPosition.y,
-          viewportX: viewportX,
-          viewportY: viewportY,
-          left: viewportX - localizedRadius,
-          top: viewportY - localizedRadius,
-          scrollX,
-          scrollY
-        });
         
         // Debug: Check if canvas is visible in viewport
         const rect = canvas.getBoundingClientRect();
-          top: rect.top,
-          left: rect.left,
-          bottom: rect.bottom,
-          right: rect.right,
-          isVisible: rect.top < window.innerHeight && rect.bottom > 0
-        });
       } else if (contained) {
         // For contained mode, size canvas to match its parent container
         const parent = canvas.parentElement;
