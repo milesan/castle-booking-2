@@ -15,6 +15,13 @@ interface MasonryGalleryProps {
 }
 
 export function MasonryGallery({ images, isOpen, onClose, title }: MasonryGalleryProps) {
+  console.log('🎨 MasonryGallery component called with:', {
+    isOpen,
+    imagesCount: images.length,
+    title,
+    images: images.slice(0, 2) // Show first 2 images for debugging
+  });
+  
   const [columns, setColumns] = useState(3);
   const [imagesLoaded, setImagesLoaded] = useState<Set<string>>(new Set());
   const galleryRef = useRef<HTMLDivElement>(null);
