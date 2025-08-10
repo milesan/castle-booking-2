@@ -11,6 +11,15 @@ export interface SeasonBreakdown {
   }>;
 }
 
+export interface GardenAddon {
+  id: string;
+  name: string;
+  startDate: Date;
+  endDate: Date;
+  price: number;
+  description: string;
+}
+
 export interface BookingSummaryProps {
   selectedWeeks: Week[];
   selectedAccommodation: Accommodation | null;
@@ -18,6 +27,8 @@ export interface BookingSummaryProps {
   onClearAccommodation: () => void;
   seasonBreakdown?: SeasonBreakdown; // Optional for backward compatibility
   calculatedWeeklyAccommodationPrice: number | null;
+  gardenAddon?: GardenAddon | null;
+  onClearGardenAddon?: () => void;
 }
 
 // Helper function to calculate pricing details
@@ -28,6 +39,7 @@ export interface PricingDetails {
   effectiveBaseRate: number;
   totalAccommodationCost: number;
   totalFoodAndFacilitiesCost: number;
+  gardenAddonCost?: number;
   subtotal: number;
   durationDiscountAmount: number; // Always 0 now
   durationDiscountPercent: number; // Always 0 now

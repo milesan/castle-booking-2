@@ -14,6 +14,7 @@ import { useSession } from '../hooks/useSession';
 import { HoverClickPopover } from './HoverClickPopover';
 import { useUserPermissions } from '../hooks/useUserPermissions';
 import { usePendingBookings } from '../hooks/usePendingBookings';
+import { MasonryGallery } from './shared/MasonryGallery';
 
 // Local interface for accommodation images
 interface AccommodationImage {
@@ -105,6 +106,11 @@ export function CabinSelector({
   // State for bathroom filters
   const [showOnlyWithBathrooms, setShowOnlyWithBathrooms] = useState(false);
   const [showOnlySharedBathrooms, setShowOnlySharedBathrooms] = useState(false);
+  
+  // State for masonry gallery
+  const [galleryOpen, setGalleryOpen] = useState(false);
+  const [galleryImages, setGalleryImages] = useState<AccommodationImage[]>([]);
+  const [galleryTitle, setGalleryTitle] = useState<string>('');
 
   // Helper function to get current image for an accommodation
   const getCurrentImage = (accommodation: ExtendedAccommodation): string | null => {
@@ -140,6 +146,19 @@ export function CabinSelector({
       ...prev,
       [accommodationId]: index
     }));
+  };
+
+  // Handler to open masonry gallery
+  const handleOpenGallery = (accommodation: ExtendedAccommodation, e?: React.MouseEvent) => {
+    if (e) {
+      e.stopPropagation();
+    }
+    const images = getAllImages(accommodation);
+    if (images.length > 0) {
+      setGalleryImages(images);
+      setGalleryTitle(accommodation.title);
+      setGalleryOpen(true);
+    }
   };
 
   // Image Gallery Component
@@ -207,17 +226,24 @@ export function CabinSelector({
 
     return (
       <div className="relative w-full h-full group/gallery bg-gray-100">
-        {/* Main Image - hide alt text with opacity trick */}
-        <img 
-          key={currentImageUrl} // Force remount for clean transitions
-          src={currentImageUrl || ''} 
-          alt="" // Remove alt text to prevent flash
-          className={`w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 ease-in-out ${
-            imageLoading || !loadedImages.has(currentImageUrl || '') ? 'opacity-0' : 'opacity-100'
-          }`}
-          onLoad={handleImageLoad}
-          loading="eager" // Change to eager for gallery images
-        />
+        {/* Main Image - clickable to open masonry gallery, with anti-flash loading */}
+        <div 
+          className="w-full h-full cursor-pointer relative"
+          onClick={(e) => handleOpenGallery(accommodation, e)}
+        >
+          <img 
+            key={currentImageUrl} // Force remount for clean transitions
+            src={currentImageUrl || ''} 
+            alt="" // Remove alt text to prevent flash
+            className={`w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 ease-in-out ${
+              imageLoading || !loadedImages.has(currentImageUrl || '') ? 'opacity-0' : 'opacity-100'
+            }`}
+            onLoad={handleImageLoad}
+            loading="eager" // Change to eager for gallery images
+          />
+          {/* Subtle expand indicator on hover */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
+        </div>
 
         {/* Navigation arrows - always visible when more than 1 image */}
         {allImages.length > 1 && (
@@ -844,6 +870,14 @@ export function CabinSelector({
           </div>
         </div>
       )}
+      
+      {/* Masonry Gallery Modal */}
+      <MasonryGallery
+        images={galleryImages}
+        isOpen={galleryOpen}
+        onClose={() => setGalleryOpen(false)}
+        title={galleryTitle}
+      />
     </div>
   );
 }

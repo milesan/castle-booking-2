@@ -27,6 +27,7 @@ import { usePricing } from './BookingSummary/BookingSummary.hooks';
 // Import components
 import { StayDetails } from './BookingSummary/components/StayDetails';
 import { AccommodationSection } from './BookingSummary/components/AccommodationSection';
+import { GardenAddonSection } from './BookingSummary/components/GardenAddonSection';
 import { CreditsSection } from './BookingSummary/components/CreditsSection';
 import { ConfirmButtons } from './BookingSummary/components/ConfirmButtons';
 
@@ -39,7 +40,9 @@ export function BookingSummary({
   onClearWeeks,
   onClearAccommodation,
   seasonBreakdown: initialSeasonBreakdown,
-  calculatedWeeklyAccommodationPrice
+  calculatedWeeklyAccommodationPrice,
+  gardenAddon,
+  onClearGardenAddon
 }: BookingSummaryProps) {
   // --- REMOVED: Track component renders (no longer needed) ---
   // Helper function to format dates consistently (needed for the modal)
@@ -354,6 +357,7 @@ export function BookingSummary({
     selectedAccommodation,
     calculatedWeeklyAccommodationPrice,
     foodContribution,
+    gardenAddon,
     appliedDiscount: null
   });
   
@@ -1612,6 +1616,14 @@ Please manually create the booking for this user or process a refund.`;
                 <AccommodationSection 
                   selectedAccommodation={selectedAccommodation}
                   onClearAccommodation={onClearAccommodation}
+                />
+              )}
+
+              {/* Garden Addon Section */}
+              {gardenAddon && (
+                <GardenAddonSection 
+                  gardenAddon={gardenAddon}
+                  onClearGardenAddon={onClearGardenAddon}
                 />
               )}
 
