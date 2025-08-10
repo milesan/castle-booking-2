@@ -63,15 +63,9 @@ const getPrimaryImageUrl = (accommodation: ExtendedAccommodation): string | null
 
 // Helper function to get all images sorted by display order
 const getAllImages = (accommodation: ExtendedAccommodation): AccommodationImage[] => {
-  console.log('🔎 getAllImages called for:', accommodation.title);
-  console.log('🔎 Images array:', accommodation.images);
-  console.log('🔎 Image URL:', accommodation.image_url);
-  
   if (!accommodation.images || accommodation.images.length === 0) {
-    console.log('🔎 No images array, checking for image_url fallback');
     // Fallback: if no images array but has image_url, create a single image entry
     if (accommodation.image_url) {
-      console.log('✅ Using image_url fallback:', accommodation.image_url);
       return [{
         id: `${accommodation.id}-primary`,
         accommodation_id: accommodation.id,
@@ -81,10 +75,8 @@ const getAllImages = (accommodation: ExtendedAccommodation): AccommodationImage[
         created_at: new Date().toISOString()
       }];
     }
-    console.log('❌ No images and no image_url, returning empty array');
     return [];
   }
-  console.log('✅ Found', accommodation.images.length, 'images in array');
   return [...accommodation.images].sort((a, b) => a.display_order - b.display_order);
 };
 
@@ -176,32 +168,20 @@ export function CabinSelector({
 
   // Handler to open masonry gallery
   const handleOpenGallery = (accommodation: ExtendedAccommodation, e?: React.MouseEvent) => {
-    console.log('🔍 handleOpenGallery called for:', accommodation.title);
-    console.log('🔍 Accommodation data:', {
-      id: accommodation.id,
-      title: accommodation.title,
-      images: accommodation.images,
-      image_url: accommodation.image_url,
-      hasImages: !!accommodation.images,
-      imagesLength: accommodation.images?.length || 0,
-      hasImageUrl: !!accommodation.image_url
-    });
+    console.log('🔍 Opening gallery for:', accommodation.title);
     
     if (e) {
       e.stopPropagation();
-      console.log('🔍 Event stopped propagation');
     }
     
     const images = getAllImages(accommodation);
-    console.log('🔍 getAllImages returned:', images);
-    console.log('🔍 Images length:', images.length);
+    console.log('🔍 Found', images.length, 'images');
     
     if (images.length > 0) {
-      console.log('✅ Setting gallery state with', images.length, 'images');
       setGalleryImages(images);
       setGalleryTitle(accommodation.title);
       setGalleryOpen(true);
-      console.log('✅ Gallery state set to open');
+      console.log('✅ Gallery opened');
     } else {
       console.log('❌ No images found, gallery not opening');
     }
@@ -942,11 +922,6 @@ export function CabinSelector({
       )}
       
       {/* Masonry Gallery Modal */}
-      {console.log('🎭 MasonryGallery render state:', { 
-        isOpen: galleryOpen, 
-        imagesCount: galleryImages.length,
-        title: galleryTitle 
-      })}
       <MasonryGallery
         images={galleryImages}
         isOpen={galleryOpen}
