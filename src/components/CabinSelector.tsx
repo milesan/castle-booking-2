@@ -326,8 +326,14 @@ export function CabinSelector({
     if (price === 0.5) return '0.5'; // Preserve specific edge case
     if (isTest) return price.toString(); // Show exact value for test accommodations
 
-    // For regular accommodations, show integer if whole number, otherwise two decimals
-    return Number.isInteger(price) ? price.toString() : price.toFixed(2);
+    // For regular accommodations, format with thousand separators
+    if (Number.isInteger(price)) {
+      // Format integer prices with comma as thousand separator
+      return price.toLocaleString('en-US');
+    } else {
+      // For decimal prices, format with thousand separators and 2 decimal places
+      return price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
   };
 
   // Clear selection if selected accommodation becomes unavailable (unless in test mode)

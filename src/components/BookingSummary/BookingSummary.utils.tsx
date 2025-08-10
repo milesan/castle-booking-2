@@ -13,7 +13,7 @@ export const formatNumber = (num: number, decimals: number = 1): string => {
 };
 
 // Helper function to format price display, showing "Free" for zero
-// UPDATED: Dont round
+// UPDATED: Dont round, but add thousand separators
 export const formatPriceDisplay = (price: number): React.ReactNode => {
   console.log('[formatPriceDisplay] Input price:', price);
   if (price === 0) {
@@ -22,11 +22,12 @@ export const formatPriceDisplay = (price: number): React.ReactNode => {
 
   // Check if the price is a whole number
   if (Number.isInteger(price)) {
-    return `€${price}`;
+    // Format with thousand separators
+    return `€${price.toLocaleString('en-US')}`;
   }
 
-  // Return the price with two decimal places
-  return `€${price.toFixed(2)}`;
+  // Return the price with two decimal places and thousand separators
+  return `€${price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 };
 
 // === REVISED HELPER ===
