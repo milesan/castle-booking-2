@@ -1,10 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Clock, TrendingDown, Users, Lock, ChevronLeft, ChevronRight, Crown, Shield, Home } from 'lucide-react';
+import { Clock, TrendingDown, Lock, ChevronLeft, ChevronRight, Crown, Shield, Home, ShoppingCart } from 'lucide-react';
 import { useDutchAuction } from '../hooks/useDutchAuction';
 import { useSession } from '../hooks/useSession';
 import { useNavigate } from 'react-router-dom';
-import { format } from 'date-fns';
 
 const TIER_CONFIG = {
   tower_suite: {
@@ -36,18 +35,17 @@ const TIER_CONFIG = {
 export function DutchAuctionPage() {
   const navigate = useNavigate();
   const { session } = useSession();
-  const { rooms, config, loading, timeToNextDrop, reserveRoom, cancelReservation } = useDutchAuction();
+  const { rooms, config, loading, timeToNextDrop, buyRoom } = useDutchAuction();
   
   const [selectedTier, setSelectedTier] = useState<keyof typeof TIER_CONFIG>('tower_suite');
   const [currentRoomIndex, setCurrentRoomIndex] = useState(0);
-  const [showingRoom, setShowingRoom] = useState<string | null>(null);
-  const [maxBid, setMaxBid] = useState<number>(0);
-  const [isReserving, setIsReserving] = useState(false);
+  const [confirmingPurchase, setConfirmingPurchase] = useState<string | null>(null);
+  const [isPurchasing, setIsPurchasing] = useState(false);
 
   // Filter rooms by tier
   const tierRooms = rooms.filter(room => room.auction_tier === selectedTier);
   const availableRooms = tierRooms.filter(room => !room.auction_buyer_id);
-  const reservedRooms = tierRooms.filter(room => room.auction_buyer_id);
+  const soldRooms = tierRooms.filter(room => room.auction_buyer_id);
   
   // Get current batch of 4 rooms
   const roomsPerPage = 4;
@@ -57,37 +55,25 @@ export function DutchAuctionPage() {
     (currentRoomIndex + 1) * roomsPerPage
   );
 
-  // Get user's reservations
-  const userReservations = rooms.filter(room => room.auction_buyer_id === session?.user?.id);
+  // Get user's purchases
+  const userPurchases = rooms.filter(room => room.auction_buyer_id === session?.user?.id);
 
-  const handleReserveRoom = async (roomId: string) => {
+  const handleBuyRoom = async (roomId: string) => {
     if (!session?.user) {
       navigate('/login');
       return;
     }
 
-    setIsReserving(true);
-    const result = await reserveRoom(roomId, maxBid, session.user.id);
+    setIsPurchasing(true);
+    const result = await buyRoom(roomId, session.user.id);
     
     if (result.success) {
-      alert('Room reserved successfully! You will pay the final auction price plus €100.');
-      setShowingRoom(null);
-      setMaxBid(0);
+      alert('Room purchased successfully!');
+      setConfirmingPurchase(null);
     } else {
-      alert(result.error || 'Failed to reserve room');
+      alert(result.error || 'Failed to purchase room');
     }
-    setIsReserving(false);
-  };
-
-  const handleCancelReservation = async (roomId: string) => {
-    if (!session?.user) return;
-    
-    if (confirm('Are you sure you want to cancel this reservation?')) {
-      const result = await cancelReservation(roomId, session.user.id);
-      if (!result.success) {
-        alert(result.error || 'Failed to cancel reservation');
-      }
-    }
+    setIsPurchasing(false);
   };
 
   if (loading) {
@@ -136,26 +122,18 @@ export function DutchAuctionPage() {
         </div>
       </div>
 
-      {/* Your Reservations */}
-      {userReservations.length > 0 && (
+      {/* Your Purchases */}
+      {userPurchases.length > 0 && (
         <div className="max-w-7xl mx-auto px-4 py-6">
           <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-            <h2 className="font-bold text-green-800 mb-2">Your Reservations</h2>
+            <h2 className="font-bold text-green-800 mb-2">Your Purchases</h2>
             <div className="space-y-2">
-              {userReservations.map(room => (
+              {userPurchases.map(room => (
                 <div key={room.id} className="flex items-center justify-between">
-                  <div>
-                    <span className="font-medium">{room.title}</span>
-                    <span className="ml-2 text-sm text-gray-600">
-                      Max bid: €{room.auction_max_bid?.toLocaleString()}
-                    </span>
-                  </div>
-                  <button
-                    onClick={() => handleCancelReservation(room.id)}
-                    className="text-red-600 hover:text-red-700 text-sm"
-                  >
-                    Cancel
-                  </button>
+                  <span className="font-medium">{room.title}</span>
+                  <span className="text-sm text-gray-600">
+                    Purchased for: €{room.auction_purchase_price?.toLocaleString()}
+                  </span>
                 </div>
               ))}
             </div>
@@ -170,7 +148,7 @@ export function DutchAuctionPage() {
             const Icon = config.icon;
             const tierData = tierRooms.filter(r => r.auction_tier === tier);
             const available = tierData.filter(r => !r.auction_buyer_id).length;
-            const reserved = tierData.filter(r => !!r.auction_buyer_id).length;
+            const sold = tierData.filter(r => !!r.auction_buyer_id).length;
             const lowestPrice = Math.min(...tierData.filter(r => !r.auction_buyer_id).map(r => r.auction_current_price || Infinity));
             
             return (
@@ -191,7 +169,9 @@ export function DutchAuctionPage() {
                 <div className="flex items-center justify-between mb-3">
                   <Icon className={`w-8 h-8 bg-gradient-to-r ${config.color} text-white p-1.5 rounded`} />
                   <div className="text-right">
-                    <p className="text-2xl font-bold">€{lowestPrice.toLocaleString()}</p>
+                    <p className="text-2xl font-bold">
+                      {available > 0 ? `€${lowestPrice.toLocaleString()}` : 'Sold Out'}
+                    </p>
                     <p className="text-xs text-gray-500">Current price</p>
                   </div>
                 </div>
@@ -199,7 +179,7 @@ export function DutchAuctionPage() {
                 <p className="text-sm text-gray-600 mb-3">{config.description}</p>
                 <div className="flex justify-between text-sm">
                   <span className="text-green-600">{available} available</span>
-                  <span className="text-gray-500">{reserved} reserved</span>
+                  <span className="text-gray-500">{sold} sold</span>
                 </div>
               </motion.button>
             );
@@ -244,7 +224,7 @@ export function DutchAuctionPage() {
           {currentBatch.length === 0 ? (
             <div className="text-center py-12 text-gray-500">
               <Lock className="w-12 h-12 mx-auto mb-3 opacity-50" />
-              <p>All rooms in this tier have been reserved</p>
+              <p>All rooms in this tier have been sold</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -275,7 +255,7 @@ export function DutchAuctionPage() {
                         <p className="text-2xl font-bold">€{room.auction_current_price?.toLocaleString()}</p>
                         <p className="text-xs text-gray-500">
                           <TrendingDown className="w-3 h-3 inline mr-1" />
-                          Next: €{(room.auction_current_price - 14).toLocaleString()}
+                          Dropping hourly
                         </p>
                       </div>
                       <div className="text-right text-sm">
@@ -284,13 +264,11 @@ export function DutchAuctionPage() {
                       </div>
                     </div>
                     <button
-                      onClick={() => {
-                        setShowingRoom(room.id);
-                        setMaxBid(room.auction_current_price || 0);
-                      }}
-                      className="w-full py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg hover:from-blue-600 hover:to-blue-700 transition-colors"
+                      onClick={() => setConfirmingPurchase(room.id)}
+                      className="w-full py-2 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg hover:from-green-600 hover:to-green-700 transition-colors flex items-center justify-center gap-2"
                     >
-                      Reserve Room
+                      <ShoppingCart className="w-4 h-4" />
+                      Buy Now
                     </button>
                   </div>
                 </motion.div>
@@ -300,30 +278,10 @@ export function DutchAuctionPage() {
         </div>
       </div>
 
-      {/* Commitment Board */}
-      <div className="max-w-7xl mx-auto px-4 py-6">
-        <div className="bg-white rounded-xl shadow-lg p-6">
-          <h2 className="text-xl font-bold mb-4">🏆 Commitment Board</h2>
-          <div className="space-y-2">
-            {reservedRooms.slice(0, 10).map(room => (
-              <div key={room.id} className="flex items-center justify-between py-2 border-b border-gray-100">
-                <span className="font-medium">{room.title}</span>
-                <span className="text-sm text-gray-600">
-                  Reserved at €{room.auction_current_price?.toLocaleString()} tier
-                </span>
-              </div>
-            ))}
-            {reservedRooms.length === 0 && (
-              <p className="text-gray-500 text-center py-4">No reservations yet</p>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Reservation Modal */}
+      {/* Purchase Confirmation Modal */}
       <AnimatePresence>
-        {showingRoom && (() => {
-          const room = rooms.find(r => r.id === showingRoom);
+        {confirmingPurchase && (() => {
+          const room = rooms.find(r => r.id === confirmingPurchase);
           if (!room) return null;
           
           return (
@@ -332,7 +290,7 @@ export function DutchAuctionPage() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
-              onClick={() => setShowingRoom(null)}
+              onClick={() => setConfirmingPurchase(null)}
             >
               <motion.div
                 initial={{ scale: 0.9, opacity: 0 }}
@@ -341,55 +299,48 @@ export function DutchAuctionPage() {
                 className="bg-white rounded-xl max-w-md w-full p-6"
                 onClick={e => e.stopPropagation()}
               >
-                <h3 className="text-xl font-bold mb-4">Secure {room.title}</h3>
+                <h3 className="text-xl font-bold mb-4">Confirm Purchase</h3>
                 
-                <div className="space-y-3 mb-6">
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Current Auction Price</span>
-                    <span className="font-bold">€{room.auction_current_price?.toLocaleString()}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Next Drop In</span>
-                    <span className="font-mono">{timeToNextDrop}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Floor Price</span>
-                    <span>€{room.auction_floor_price?.toLocaleString()}</span>
+                <div className="bg-gray-50 rounded-lg p-4 mb-6">
+                  <h4 className="font-semibold mb-2">{room.title}</h4>
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Current Price</span>
+                      <span className="font-bold text-lg">€{room.auction_current_price?.toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">Next Drop In</span>
+                      <span className="font-mono">{timeToNextDrop}</span>
+                    </div>
                   </div>
                 </div>
 
-                <div className="mb-6">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Set Your Maximum Bid
-                  </label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">€</span>
-                    <input
-                      type="number"
-                      value={maxBid}
-                      onChange={e => setMaxBid(Number(e.target.value))}
-                      min={room.auction_current_price}
-                      className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
-                  </div>
-                  <p className="mt-2 text-sm text-gray-600">
-                    💡 You'll pay the final auction price + €100 (never more than your maximum)
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-6">
+                  <p className="text-sm text-blue-800">
+                    ⚡ This purchase is final. Once you buy, the room is yours at this price.
                   </p>
                 </div>
 
                 <div className="flex gap-3">
                   <button
-                    onClick={() => setShowingRoom(null)}
+                    onClick={() => setConfirmingPurchase(null)}
                     className="flex-1 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
                   >
                     Cancel
                   </button>
                   <button
-                    onClick={() => handleReserveRoom(room.id)}
-                    disabled={isReserving || maxBid < room.auction_current_price}
-                    className="flex-1 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg hover:from-green-600 hover:to-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                    onClick={() => handleBuyRoom(room.id)}
+                    disabled={isPurchasing}
+                    className="flex-1 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg hover:from-green-600 hover:to-green-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                   >
-                    {isReserving ? 'Reserving...' : 'Commit to Room'}
+                    {isPurchasing ? (
+                      'Processing...'
+                    ) : (
+                      <>
+                        <ShoppingCart className="w-4 h-4" />
+                        Buy for €{room.auction_current_price?.toLocaleString()}
+                      </>
+                    )}
                   </button>
                 </div>
               </motion.div>

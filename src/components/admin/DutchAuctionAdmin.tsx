@@ -12,7 +12,8 @@ interface AccommodationAuction {
   auction_current_price: number | null;
   is_in_auction: boolean;
   auction_buyer_id: string | null;
-  auction_reserved_at: string | null;
+  auction_purchase_price: number | null;
+  auction_purchased_at: string | null;
 }
 
 interface AuctionConfig {
@@ -157,8 +158,8 @@ export function DutchAuctionAdmin() {
               .update({
                 auction_current_price: acc.auction_start_price,
                 auction_buyer_id: null,
-                auction_reserved_at: null,
-                auction_max_bid: null,
+                auction_purchase_price: null,
+                auction_purchased_at: null,
               })
               .eq('id', acc.id)
           );
@@ -369,7 +370,7 @@ export function DutchAuctionAdmin() {
                     <p className="text-sm text-gray-600">
                       €{acc.auction_current_price?.toLocaleString() || '—'} 
                       {acc.auction_buyer_id && (
-                        <span className="ml-2 text-green-600 font-medium">Reserved</span>
+                        <span className="ml-2 text-green-600 font-medium">Sold</span>
                       )}
                     </p>
                   </div>

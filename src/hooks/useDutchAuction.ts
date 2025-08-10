@@ -12,8 +12,8 @@ export interface AuctionRoom {
   auction_last_price_update: string | null;
   is_in_auction: boolean;
   auction_buyer_id: string | null;
-  auction_reserved_at: string | null;
-  auction_max_bid: number | null;
+  auction_purchase_price: number | null;
+  auction_purchased_at: string | null;
   base_price: number;
   type: string;
   capacity: number;
@@ -135,10 +135,9 @@ export function useDutchAuction() {
     }
   }, [calculateCurrentPrice, calculateNextPriceDrop]);
 
-  // Reserve a room
-  const reserveRoom = useCallback(async (
+  // Buy a room instantly at current price
+  const buyRoom = useCallback(async (
     roomId: string,
-    maxBid: number,
     userId: string
   ): Promise<{ success: boolean; error?: string }> => {
     try {
@@ -148,35 +147,37 @@ export function useDutchAuction() {
       }
 
       if (room.auction_buyer_id) {
-        return { success: false, error: 'Room already reserved' };
+        return { success: false, error: 'Room already sold' };
       }
 
-      if (maxBid < room.auction_current_price) {
-        return { success: false, error: 'Bid must be at least the current price' };
-      }
+      const currentPrice = room.auction_current_price;
 
-      // Reserve the room
-      const { error } = await supabase
+      // Purchase the room - use optimistic locking to ensure only one buyer
+      const { data, error } = await supabase
         .from('accommodations')
         .update({
           auction_buyer_id: userId,
-          auction_reserved_at: new Date().toISOString(),
-          auction_max_bid: maxBid,
+          auction_purchase_price: currentPrice,
+          auction_purchased_at: new Date().toISOString(),
         })
         .eq('id', roomId)
-        .is('auction_buyer_id', null); // Ensure it's not already reserved
+        .is('auction_buyer_id', null) // Critical: only update if not already sold
+        .select()
+        .single();
 
-      if (error) throw error;
+      if (error || !data) {
+        // Room was already sold by someone else
+        return { success: false, error: 'Room was just purchased by another buyer' };
+      }
 
-      // Log the reservation
+      // Log the purchase
       await supabase
         .from('auction_history')
         .insert({
           accommodation_id: roomId,
           user_id: userId,
-          action_type: 'reservation',
-          price_at_action: room.auction_current_price,
-          max_bid: maxBid,
+          action_type: 'purchase',
+          price_at_action: currentPrice,
         });
 
       // Refresh data
@@ -184,56 +185,8 @@ export function useDutchAuction() {
 
       return { success: true };
     } catch (error) {
-      console.error('Error reserving room:', error);
-      return { success: false, error: 'Failed to reserve room' };
-    }
-  }, [rooms, fetchData]);
-
-  // Cancel reservation
-  const cancelReservation = useCallback(async (
-    roomId: string,
-    userId: string
-  ): Promise<{ success: boolean; error?: string }> => {
-    try {
-      const room = rooms.find(r => r.id === roomId);
-      if (!room) {
-        return { success: false, error: 'Room not found' };
-      }
-
-      if (room.auction_buyer_id !== userId) {
-        return { success: false, error: 'You do not have a reservation for this room' };
-      }
-
-      // Cancel the reservation
-      const { error } = await supabase
-        .from('accommodations')
-        .update({
-          auction_buyer_id: null,
-          auction_reserved_at: null,
-          auction_max_bid: null,
-        })
-        .eq('id', roomId)
-        .eq('auction_buyer_id', userId);
-
-      if (error) throw error;
-
-      // Log the cancellation
-      await supabase
-        .from('auction_history')
-        .insert({
-          accommodation_id: roomId,
-          user_id: userId,
-          action_type: 'cancellation',
-          price_at_action: room.auction_current_price,
-        });
-
-      // Refresh data
-      await fetchData();
-
-      return { success: true };
-    } catch (error) {
-      console.error('Error cancelling reservation:', error);
-      return { success: false, error: 'Failed to cancel reservation' };
+      console.error('Error buying room:', error);
+      return { success: false, error: 'Failed to purchase room' };
     }
   }, [rooms, fetchData]);
 
@@ -300,8 +253,7 @@ export function useDutchAuction() {
     loading,
     timeToNextDrop,
     nextPriceDrop,
-    reserveRoom,
-    cancelReservation,
+    buyRoom,
     refetch: fetchData,
   };
 }

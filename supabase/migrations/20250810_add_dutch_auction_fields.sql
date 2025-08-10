@@ -7,8 +7,8 @@ ADD COLUMN IF NOT EXISTS auction_current_price DECIMAL(10,2) DEFAULT NULL,
 ADD COLUMN IF NOT EXISTS auction_last_price_update TIMESTAMP WITH TIME ZONE DEFAULT NULL,
 ADD COLUMN IF NOT EXISTS is_in_auction BOOLEAN DEFAULT true,
 ADD COLUMN IF NOT EXISTS auction_buyer_id UUID DEFAULT NULL,
-ADD COLUMN IF NOT EXISTS auction_reserved_at TIMESTAMP WITH TIME ZONE DEFAULT NULL,
-ADD COLUMN IF NOT EXISTS auction_max_bid DECIMAL(10,2) DEFAULT NULL;
+ADD COLUMN IF NOT EXISTS auction_purchase_price DECIMAL(10,2) DEFAULT NULL,
+ADD COLUMN IF NOT EXISTS auction_purchased_at TIMESTAMP WITH TIME ZONE DEFAULT NULL;
 
 -- Add check constraints
 ALTER TABLE public.accommodations
@@ -49,14 +49,13 @@ INSERT INTO public.auction_config (
   false
 );
 
--- Create auction history table for tracking all bids and price changes
+-- Create auction history table for tracking purchases and price changes
 CREATE TABLE IF NOT EXISTS public.auction_history (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   accommodation_id UUID REFERENCES public.accommodations(id) ON DELETE CASCADE,
   user_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
-  action_type TEXT NOT NULL CHECK (action_type IN ('price_drop', 'reservation', 'cancellation', 'purchase')),
+  action_type TEXT NOT NULL CHECK (action_type IN ('price_drop', 'purchase')),
   price_at_action DECIMAL(10,2) NOT NULL,
-  max_bid DECIMAL(10,2),
   notes TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
