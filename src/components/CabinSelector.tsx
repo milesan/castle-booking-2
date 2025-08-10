@@ -48,17 +48,35 @@ interface Props {
 
 // Helper function to get primary image (NEW IMAGES TABLE ONLY)
 const getPrimaryImageUrl = (accommodation: ExtendedAccommodation): string | null => {
-  // Only check new images table for primary image
+  // Check new images table for primary image
   const primaryImage = accommodation.images?.find(img => img.is_primary);
   if (primaryImage) return primaryImage.image_url;
   
-  // No fallback to old image_url field - only use new table
-  return null;
+  // If images exist but no primary, use first image
+  if (accommodation.images && accommodation.images.length > 0) {
+    return accommodation.images[0].image_url;
+  }
+  
+  // Fallback to old image_url field if no images array
+  return accommodation.image_url || null;
 };
 
 // Helper function to get all images sorted by display order
 const getAllImages = (accommodation: ExtendedAccommodation): AccommodationImage[] => {
-  if (!accommodation.images || accommodation.images.length === 0) return [];
+  if (!accommodation.images || accommodation.images.length === 0) {
+    // Fallback: if no images array but has image_url, create a single image entry
+    if (accommodation.image_url) {
+      return [{
+        id: `${accommodation.id}-primary`,
+        accommodation_id: accommodation.id,
+        image_url: accommodation.image_url,
+        display_order: 0,
+        is_primary: true,
+        created_at: new Date().toISOString()
+      }];
+    }
+    return [];
+  }
   return [...accommodation.images].sort((a, b) => a.display_order - b.display_order);
 };
 
@@ -250,14 +268,14 @@ export function CabinSelector({
           <>
             <button
               onClick={handlePrevious}
-              className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-black/80 hover:bg-black/90 text-white rounded-md p-1 transition-all duration-200 hover:scale-110 shadow-lg z-20"
+              className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-black/80 hover:bg-black/90 text-white rounded-md p-1 transition-all duration-200 hover:scale-110 shadow-lg z-30"
               aria-label="Previous image"
             >
               <ChevronLeft size={16} />
             </button>
             <button
               onClick={handleNext}
-              className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-black/80 hover:bg-black/90 text-white rounded-md p-1 transition-all duration-200 hover:scale-110 shadow-lg z-20"
+              className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-black/80 hover:bg-black/90 text-white rounded-md p-1 transition-all duration-200 hover:scale-110 shadow-lg z-30"
               aria-label="Next image"
             >
               <ChevronRight size={16} />
@@ -267,7 +285,7 @@ export function CabinSelector({
 
         {/* Dots indicator - only show if more than 1 image */}
         {allImages.length > 1 && (
-          <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 flex space-x-1 z-10">
+          <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 flex space-x-1 z-30">
             {allImages.map((_, index) => (
               <button
                 key={index}
