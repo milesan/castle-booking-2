@@ -101,6 +101,11 @@ export function CabinSelector({
 
   // State to track current image index for each accommodation
   const [currentImageIndices, setCurrentImageIndices] = useState<Record<string, number>>({});
+  // State to track loaded images to prevent alt text flash
+  const [loadedImages, setLoadedImages] = useState<Set<string>>(new Set());
+  // State for bathroom filters
+  const [showOnlyWithBathrooms, setShowOnlyWithBathrooms] = useState(false);
+  const [showOnlySharedBathrooms, setShowOnlySharedBathrooms] = useState(false);
   
   // State for masonry gallery
   const [galleryOpen, setGalleryOpen] = useState(false);
@@ -161,6 +166,27 @@ export function CabinSelector({
     const allImages = getAllImages(accommodation);
     const currentIndex = currentImageIndices[accommodation.id] || 0;
     const currentImageUrl = getCurrentImage(accommodation);
+    const [imageLoading, setImageLoading] = useState(false);
+
+    // Preload adjacent images for smoother transitions
+    useEffect(() => {
+      if (allImages.length > 1) {
+        const nextIndex = (currentIndex + 1) % allImages.length;
+        const prevIndex = currentIndex === 0 ? allImages.length - 1 : currentIndex - 1;
+        
+        // Preload next and previous images
+        [nextIndex, prevIndex].forEach(idx => {
+          const imgUrl = allImages[idx]?.image_url;
+          if (imgUrl && !loadedImages.has(imgUrl)) {
+            const img = new Image();
+            img.onload = () => {
+              setLoadedImages(prev => new Set(prev).add(imgUrl));
+            };
+            img.src = imgUrl;
+          }
+        });
+      }
+    }, [currentIndex, allImages]);
 
     if (allImages.length === 0) {
       return (
@@ -172,31 +198,48 @@ export function CabinSelector({
 
     const handlePrevious = (e: React.MouseEvent) => {
       e.stopPropagation();
+      setImageLoading(true);
       navigateToImage(accommodation.id, 'prev', allImages.length);
+      setTimeout(() => setImageLoading(false), 50);
     };
 
     const handleNext = (e: React.MouseEvent) => {
       e.stopPropagation();
+      setImageLoading(true);
       navigateToImage(accommodation.id, 'next', allImages.length);
+      setTimeout(() => setImageLoading(false), 50);
     };
 
     const handleDotClick = (e: React.MouseEvent, index: number) => {
       e.stopPropagation();
+      setImageLoading(true);
       setImageIndex(accommodation.id, index);
+      setTimeout(() => setImageLoading(false), 50);
+    };
+
+    const handleImageLoad = () => {
+      if (currentImageUrl) {
+        setLoadedImages(prev => new Set(prev).add(currentImageUrl));
+      }
+      setImageLoading(false);
     };
 
     return (
-      <div className="relative w-full h-full group/gallery">
-        {/* Main Image - clickable to open masonry gallery */}
+      <div className="relative w-full h-full group/gallery bg-gray-100">
+        {/* Main Image - clickable to open masonry gallery, with anti-flash loading */}
         <div 
           className="w-full h-full cursor-pointer relative"
           onClick={(e) => handleOpenGallery(accommodation, e)}
         >
           <img 
+            key={currentImageUrl} // Force remount for clean transitions
             src={currentImageUrl || ''} 
-            alt={`${accommodation.title} ${currentIndex + 1}`} 
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 ease-in-out"
-            loading="lazy"
+            alt="" // Remove alt text to prevent flash
+            className={`w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 ease-in-out ${
+              imageLoading || !loadedImages.has(currentImageUrl || '') ? 'opacity-0' : 'opacity-100'
+            }`}
+            onLoad={handleImageLoad}
+            loading="eager" // Change to eager for gallery images
           />
           {/* Subtle expand indicator on hover */}
           <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
@@ -371,37 +414,88 @@ export function CabinSelector({
          return false;
       }
 
+      // Filter by bathroom if enabled
+      if (showOnlyWithBathrooms && (!acc.bathrooms || acc.bathrooms === 0)) {
+        return false;
+      }
+
+      // Filter by shared bathroom if enabled
+      if (showOnlySharedBathrooms && acc.bathroom_type !== 'shared') {
+        return false;
+      }
+
       return true;
     })
     .sort((a, b) => {
-      // Define accommodation categories
+      // Define castle location priority
+      const getLocationPriority = (acc: typeof a) => {
+        const location = acc.property_location;
+        if (!location) return 99; // No location goes to the end
+        
+        // Priority order for castle locations
+        switch(location) {
+          case 'dovecote': return 1;      // Most exclusive
+          case 'renaissance': return 2;   // Main castle building
+          case 'medieval': return 3;      // Historic section
+          case 'oriental': return 4;      // Exotic wing
+          case 'palm_grove': return 5;    // Garden area
+          default: return 99;
+        }
+      };
+      
+      // Define accommodation categories (for items without castle location)
       const getCategory = (acc: typeof a) => {
         const title = acc.title.toLowerCase();
         const type = acc.type?.toLowerCase() || '';
         
         // Category 1: Own accommodation (own tent, own van, van parking)
         if (title.includes('own tent') || title.includes('own van') || title.includes('van parking')) {
-          return 1;
+          return 100;
         }
         
         // Category 2: Camping/Tents (tipi, bell tent, other tents)
         if (type === 'tent' || title.includes('tipi') || title.includes('bell tent') || title.includes('tent')) {
-          return 2;
+          return 101;
         }
         
         // Category 3: Dorms
         if (title.includes('dorm')) {
-          return 3;
+          return 102;
         }
         
-        // Category 4: All other rooms (cabins, suites, etc.)
-        return 4;
+        // Category 4: All other rooms without location
+        return 50;
       };
       
+      const aLocPriority = getLocationPriority(a);
+      const bLocPriority = getLocationPriority(b);
+      
+      // If both have castle locations, sort by location priority
+      if (aLocPriority < 99 && bLocPriority < 99) {
+        if (aLocPriority !== bLocPriority) {
+          return aLocPriority - bLocPriority;
+        }
+        
+        // Within same location, sort by floor/section if Renaissance
+        if (a.property_location === 'renaissance' && b.property_location === 'renaissance') {
+          const sectionOrder = { 'mezzanine': 1, 'first_floor': 2, 'second_floor': 3, 'attic': 4 };
+          const aSection = sectionOrder[a.property_section as keyof typeof sectionOrder] || 5;
+          const bSection = sectionOrder[b.property_section as keyof typeof sectionOrder] || 5;
+          if (aSection !== bSection) return aSection - bSection;
+        }
+        
+        // Within same location/section, sort by price
+        return b.base_price - a.base_price; // Higher price first within same location
+      }
+      
+      // If one has castle location and other doesn't, castle location comes first
+      if (aLocPriority < 99) return -1;
+      if (bLocPriority < 99) return 1;
+      
+      // If neither has castle location, use category sorting
       const aCat = getCategory(a);
       const bCat = getCategory(b);
       
-      // First sort by category
       if (aCat !== bCat) {
         return aCat - bCat;
       }
@@ -453,7 +547,50 @@ export function CabinSelector({
 
   return (
     <div className="space-y-6" style={{ position: 'relative' }}>
-      {/* Filter options could be added here in the future */}
+      {/* Filter options */}
+      <div className="flex items-center gap-4 mb-4 flex-wrap">
+        <button
+          onClick={() => {
+            setShowOnlyWithBathrooms(!showOnlyWithBathrooms);
+            if (showOnlySharedBathrooms) setShowOnlySharedBathrooms(false);
+          }}
+          className={clsx(
+            "flex items-center gap-2 px-4 py-2 rounded-sm border transition-all duration-200 font-mono text-sm",
+            showOnlyWithBathrooms 
+              ? "bg-accent-primary text-white border-accent-primary" 
+              : "bg-surface text-secondary border-border hover:border-accent-primary"
+          )}
+        >
+          <Bath size={16} />
+          <span>Private Bathrooms</span>
+          {showOnlyWithBathrooms && (
+            <span className="ml-1 text-xs opacity-90">
+              ({accommodations.filter(acc => acc.bathrooms && acc.bathrooms > 0 && !(acc as any).parent_accommodation_id).length})
+            </span>
+          )}
+        </button>
+        
+        <button
+          onClick={() => {
+            setShowOnlySharedBathrooms(!showOnlySharedBathrooms);
+            if (showOnlyWithBathrooms) setShowOnlyWithBathrooms(false);
+          }}
+          className={clsx(
+            "flex items-center gap-2 px-4 py-2 rounded-sm border transition-all duration-200 font-mono text-sm",
+            showOnlySharedBathrooms 
+              ? "bg-accent-primary text-white border-accent-primary" 
+              : "bg-surface text-secondary border-border hover:border-accent-primary"
+          )}
+        >
+          <Users size={16} />
+          <span>Shared Bathrooms</span>
+          {showOnlySharedBathrooms && (
+            <span className="ml-1 text-xs opacity-90">
+              ({accommodations.filter(acc => acc.bathroom_type === 'shared' && !(acc as any).parent_accommodation_id).length})
+            </span>
+          )}
+        </button>
+      </div>
       
       {isLoading ? (
         <div className="max-w-2xl">
@@ -470,8 +607,18 @@ export function CabinSelector({
         </div>
       ) : visibleAccommodations.length === 0 ? (
         <div className="text-center py-12 bg-surface rounded-sm border border-border">
-          <h3 className="text-lg font-medium text-primary mb-2 font-mono">No accommodations available</h3>
-          <p className="text-secondary font-mono">Please adjust your dates or check back later.</p>
+          <h3 className="text-lg font-medium text-primary mb-2 font-mono">
+            {showOnlyWithBathrooms 
+              ? 'No rooms with private bathrooms available' 
+              : showOnlySharedBathrooms 
+                ? 'No rooms with shared bathrooms available'
+                : 'No accommodations available'}
+          </h3>
+          <p className="text-secondary font-mono">
+            {(showOnlyWithBathrooms || showOnlySharedBathrooms)
+              ? 'Try removing the bathroom filter or adjusting your dates.' 
+              : 'Please adjust your dates or check back later.'}
+          </p>
         </div>
       ) : (
         <div>

@@ -30,6 +30,7 @@ import { InfoBox } from '../components/InfoBox';
 import { useUserPermissions } from '../hooks/useUserPermissions';
 import { Fireflies } from '../components/Fireflies';
 import { FireflyPortal } from '../components/FireflyPortal';
+import { GardenDecompressionAddon } from '../components/GardenDecompressionAddon';
 
 // Define SeasonBreakdown type locally
 interface SeasonBreakdown {
@@ -108,6 +109,7 @@ export function Book2Page() {
   const [selectedWeekForCustomization, setSelectedWeekForCustomization] = useState<Week | null>(null);
   const [lastRefresh, setLastRefresh] = useState(0);
   const [showDiscountModal, setShowDiscountModal] = useState(false);
+  const [selectedGardenAddon, setSelectedGardenAddon] = useState<any>(null);
 
 
 
@@ -931,6 +933,13 @@ export function Book2Page() {
                 )}
               </div> {/* Closing Calendar card div */}
               
+              {/* Garden Decompression Addon */}
+              <GardenDecompressionAddon
+                castleEndDate={new Date('2025-09-26T00:00:00Z')}
+                onSelectAddon={setSelectedGardenAddon}
+                selectedAddon={selectedGardenAddon}
+              />
+              
               {/* Outer Cabin Selector keeps py-* padding */}
               <div className="rounded-sm shadow-sm py-3 xs:py-4 sm:py-6 mb-4 xs:mb-5 sm:mb-6 cabin-selector">
                 {/* REMOVING px-* padding from this h2 */}
@@ -964,6 +973,8 @@ export function Book2Page() {
                     onClearAccommodation={() => setSelectedAccommodation(null)}
                     seasonBreakdown={seasonBreakdown}
                     calculatedWeeklyAccommodationPrice={selectedAccommodation ? weeklyAccommodationInfo[selectedAccommodation]?.price ?? null : null}
+                    gardenAddon={selectedGardenAddon}
+                    onClearGardenAddon={() => setSelectedGardenAddon(null)}
                   />
                 ) : (
                   <div className="text-secondary text-sm xs:text-sm font-mono">
