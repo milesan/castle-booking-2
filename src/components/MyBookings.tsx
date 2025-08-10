@@ -24,6 +24,7 @@ import { OptimizedSlider } from './shared/OptimizedSlider';
 import { useCredits } from '../hooks/useCredits';
 import { CreditsSection } from './BookingSummary/components/CreditsSection';
 import { formatPriceDisplay } from './BookingSummary/BookingSummary.utils';
+import { MasonryGallery } from './shared/MasonryGallery';
 
 // Interface for accommodation images
 interface AccommodationImage {
@@ -171,6 +172,11 @@ export function MyBookings() {
   const [enlargedImageUrl, setEnlargedImageUrl] = React.useState<string | null>(null);
   const [enlargedAccommodation, setEnlargedAccommodation] = React.useState<ExtendedAccommodation | null>(null);
   const [originalCheckOut, setOriginalCheckOut] = React.useState<Date | null>(null);
+  
+  // Masonry gallery state
+  const [galleryOpen, setGalleryOpen] = React.useState(false);
+  const [galleryImages, setGalleryImages] = React.useState<AccommodationImage[]>([]);
+  const [galleryTitle, setGalleryTitle] = React.useState<string>('');
 
   const [showPaymentModal, setShowPaymentModal] = React.useState(false);
   const [isProcessingPayment, setIsProcessingPayment] = React.useState(false);
@@ -998,8 +1004,18 @@ export function MyBookings() {
                         currentImageIndices={currentImageIndices}
                         setCurrentImageIndices={setCurrentImageIndices}
                         onImageClick={(imageUrl) => {
-                          setEnlargedImageUrl(imageUrl);
-                          setEnlargedAccommodation(booking.accommodation as ExtendedAccommodation);
+                          // Open masonry gallery with all images
+                          const accommodation = booking.accommodation as ExtendedAccommodation;
+                          const images = getAllImages(accommodation);
+                          if (images.length > 0) {
+                            setGalleryImages(images);
+                            setGalleryTitle(accommodation.title);
+                            setGalleryOpen(true);
+                          } else {
+                            // Fallback to old behavior if no images
+                            setEnlargedImageUrl(imageUrl);
+                            setEnlargedAccommodation(accommodation);
+                          }
                         }}
                       />
                     )}
@@ -1878,6 +1894,14 @@ export function MyBookings() {
           })()}
         />
       )}
+      
+      {/* Masonry Gallery Modal */}
+      <MasonryGallery
+        images={galleryImages}
+        isOpen={galleryOpen}
+        onClose={() => setGalleryOpen(false)}
+        title={galleryTitle}
+      />
     </div>
   );
 }
