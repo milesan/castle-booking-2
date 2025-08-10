@@ -14,6 +14,7 @@ import { useSession } from '../hooks/useSession';
 import { HoverClickPopover } from './HoverClickPopover';
 import { useUserPermissions } from '../hooks/useUserPermissions';
 import { usePendingBookings } from '../hooks/usePendingBookings';
+import { MasonryGallery } from './shared/MasonryGallery';
 
 // Local interface for accommodation images
 interface AccommodationImage {
@@ -100,6 +101,11 @@ export function CabinSelector({
 
   // State to track current image index for each accommodation
   const [currentImageIndices, setCurrentImageIndices] = useState<Record<string, number>>({});
+  
+  // State for masonry gallery
+  const [galleryOpen, setGalleryOpen] = useState(false);
+  const [galleryImages, setGalleryImages] = useState<AccommodationImage[]>([]);
+  const [galleryTitle, setGalleryTitle] = useState<string>('');
 
   // Helper function to get current image for an accommodation
   const getCurrentImage = (accommodation: ExtendedAccommodation): string | null => {
@@ -137,6 +143,19 @@ export function CabinSelector({
     }));
   };
 
+  // Handler to open masonry gallery
+  const handleOpenGallery = (accommodation: ExtendedAccommodation, e?: React.MouseEvent) => {
+    if (e) {
+      e.stopPropagation();
+    }
+    const images = getAllImages(accommodation);
+    if (images.length > 0) {
+      setGalleryImages(images);
+      setGalleryTitle(accommodation.title);
+      setGalleryOpen(true);
+    }
+  };
+
   // Image Gallery Component
   const ImageGallery: React.FC<{ accommodation: ExtendedAccommodation }> = ({ accommodation }) => {
     const allImages = getAllImages(accommodation);
@@ -168,13 +187,20 @@ export function CabinSelector({
 
     return (
       <div className="relative w-full h-full group/gallery">
-        {/* Main Image */}
-        <img 
-          src={currentImageUrl || ''} 
-          alt={`${accommodation.title} ${currentIndex + 1}`} 
-          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 ease-in-out"
-          loading="lazy"
-        />
+        {/* Main Image - clickable to open masonry gallery */}
+        <div 
+          className="w-full h-full cursor-pointer relative"
+          onClick={(e) => handleOpenGallery(accommodation, e)}
+        >
+          <img 
+            src={currentImageUrl || ''} 
+            alt={`${accommodation.title} ${currentIndex + 1}`} 
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 ease-in-out"
+            loading="lazy"
+          />
+          {/* Subtle expand indicator on hover */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
+        </div>
 
         {/* Navigation arrows - always visible when more than 1 image */}
         {allImages.length > 1 && (
@@ -697,6 +723,14 @@ export function CabinSelector({
           </div>
         </div>
       )}
+      
+      {/* Masonry Gallery Modal */}
+      <MasonryGallery
+        images={galleryImages}
+        isOpen={galleryOpen}
+        onClose={() => setGalleryOpen(false)}
+        title={galleryTitle}
+      />
     </div>
   );
 }
