@@ -840,23 +840,6 @@ export function calculateTotalDays(selectedWeeks: Week[]): number {
   const timeDiff = endUTC.getTime() - startUTC.getTime();
   const days = Math.floor(timeDiff / (1000 * 60 * 60 * 24)) + 1;
   
-  // [EXTENSION_DURATION_DEBUG] Add logging for day calculation
-  console.log('[EXTENSION_DURATION_DEBUG] calculateTotalDays calculation:', {
-    inputWeeks: selectedWeeks.map(w => ({
-      startDate: w.startDate.toISOString(),
-      endDate: w.endDate.toISOString(),
-      hasFlexDate: !!w.selectedFlexDate,
-      flexDate: w.selectedFlexDate?.toISOString()
-    })),
-    effectiveStartDate: effectiveStartDate.toISOString(),
-    lastDate: lastDate.toISOString(),
-    startUTC: startUTC.toISOString(),
-    endUTC: endUTC.toISOString(),
-    timeDiffMs: timeDiff,
-    timeDiffDays: timeDiff / (1000 * 60 * 60 * 24),
-    calculatedDays: days,
-    calculationNote: 'days = Math.floor(timeDiff / (1000 * 60 * 60 * 24)) + 1 (inclusive)'
-  });
   
   return days;
 }
@@ -874,12 +857,6 @@ export function calculateDurationDiscountWeeks(selectedWeeks: Week[]): number {
   // might have different lengths or customizations
   const weeks = selectedWeeks.length;
   
-  // [EXTENSION_DURATION_DEBUG] Add logging for week calculation
-  console.log('[EXTENSION_DURATION_DEBUG] calculateDurationDiscountWeeks calculation:', {
-    selectedWeeksCount: selectedWeeks.length,
-    weeks,
-    calculationNote: 'weeks = selectedWeeks.length (counting actual selected weeks)'
-  });
   
   return weeks;
 }
