@@ -7,9 +7,9 @@ BEGIN;
 UPDATE public.accommodations
 SET 
   additional_info = CASE
-    -- The Dovecote - Fix capitalization and formatting
+    -- The Dovecote - Luxury accommodation with special features
     WHEN title = 'The Dovecote' THEN 
-      'Bed 0210 at first floor • Bath on ground floor • Bluetooth amplifier'
+      'Luxury suite on first floor • Giant round tub on ground floor • Bluetooth amplifier'
     
     -- Rooms with private bathrooms (en-suite)
     WHEN title = 'The Hearth' THEN 
