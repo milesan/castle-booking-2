@@ -102,7 +102,10 @@ export function FullScreenMasonry({ images, isOpen, onClose, title }: Props) {
           {/* Close button - minimal, top right */}
           <button
             className="absolute top-6 right-6 z-[10001] text-white/60 hover:text-white transition-colors duration-200"
-            onClick={onClose}
+            onClick={(e) => {
+              e.stopPropagation();
+              onClose();
+            }}
             aria-label="Close gallery"
           >
             <X size={28} />
@@ -114,7 +117,10 @@ export function FullScreenMasonry({ images, isOpen, onClose, title }: Props) {
               {title}
             </h2>
             <button 
-              onClick={() => setViewMode(prev => prev === 'masonry' ? 'single' : 'masonry')}
+              onClick={(e) => {
+                e.stopPropagation();
+                setViewMode(prev => prev === 'masonry' ? 'single' : 'masonry');
+              }}
               className="text-white/40 hover:text-white/60 text-xs mt-1 transition-colors"
             >
               {viewMode === 'single' ? 'View Grid' : 'View Single'} (G)
@@ -144,14 +150,20 @@ export function FullScreenMasonry({ images, isOpen, onClose, title }: Props) {
                   {images.length > 1 && (
                     <>
                       <button
-                        onClick={handlePrevious}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handlePrevious();
+                        }}
                         className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-black/60 hover:bg-black/80 text-white rounded-full p-3 transition-all duration-200 hover:scale-110"
                         aria-label="Previous image"
                       >
                         <ChevronLeft size={24} />
                       </button>
                       <button
-                        onClick={handleNext}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleNext();
+                        }}
                         className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-black/60 hover:bg-black/80 text-white rounded-full p-3 transition-all duration-200 hover:scale-110"
                         aria-label="Next image"
                       >
