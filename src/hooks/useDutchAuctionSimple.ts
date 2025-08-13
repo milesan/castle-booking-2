@@ -11,26 +11,27 @@ export interface AuctionConfig {
 export interface AuctionPricing {
   tier: 'tower_suite' | 'noble_quarter' | 'standard_chamber' | null;
   currentPrice: number;
-  dailyDrop: number;
+  dailyReduction: number;
   floorPrice: number;
+  startPrice: number;
 }
 
-// Price configuration
+// Price configuration - 30 days from Aug 15 to Sept 14
 const TIER_CONFIG = {
   tower_suite: {
     startPrice: 15000,
-    floorPrice: 3000,
-    dailyDrop: 343, // (15000-3000)/35 days
+    floorPrice: 4000,
+    dailyReduction: 367, // (15000-4000)/30 days, rounded
   },
   noble_quarter: {
     startPrice: 10000,
     floorPrice: 2000,
-    dailyDrop: 229, // (10000-2000)/35 days
+    dailyReduction: 267, // (10000-2000)/30 days, rounded
   },
   standard_chamber: {
-    startPrice: 5000,
-    floorPrice: 1000,
-    dailyDrop: 114, // (5000-1000)/35 days
+    startPrice: 4800,
+    floorPrice: 800,
+    dailyReduction: 133, // (4800-800)/30 days, rounded
   },
 };
 
@@ -57,18 +58,11 @@ export function useDutchAuctionSimple() {
       return config.startPrice;
     }
     
-    // Calculate hours elapsed since auction start
-    const hoursElapsed = Math.floor((today.getTime() - auctionStartDate.getTime()) / (1000 * 60 * 60));
+    // Calculate days elapsed since auction start
+    const daysElapsed = Math.floor((today.getTime() - auctionStartDate.getTime()) / (1000 * 60 * 60 * 24));
     
-    // Calculate total hours in auction period (30 days = 720 hours)
-    const totalHours = 30 * 24; // 720 hours
-    
-    // Calculate hourly drop rate
-    const totalPriceDrop = config.startPrice - config.floorPrice;
-    const hourlyDrop = totalPriceDrop / totalHours;
-    
-    // Calculate current price based on hours elapsed
-    const currentDrop = hoursElapsed * hourlyDrop;
+    // Calculate current price based on days elapsed
+    const currentDrop = daysElapsed * config.dailyReduction;
     const currentPrice = Math.max(
       config.startPrice - currentDrop,
       config.floorPrice
@@ -96,8 +90,9 @@ export function useDutchAuctionSimple() {
     return {
       tier: tierKey,
       currentPrice: calculateCurrentPrice(tierKey),
-      dailyDrop: config.dailyDrop,
+      dailyReduction: config.dailyReduction,
       floorPrice: config.floorPrice,
+      startPrice: config.startPrice,
     };
   }, [roomTiers, isActive, calculateCurrentPrice]);
 
@@ -132,38 +127,47 @@ export function useDutchAuctionSimple() {
     }
   }, []);
 
-  // Update countdown timer (to next hour)
+  // Update countdown timer (to next day at midnight UTC)
   useEffect(() => {
-    const now = new Date();
-    
-    // If auction hasn't started, show countdown to start
-    if (now < auctionStartDate) {
-      const diff = auctionStartDate.getTime() - now.getTime();
-      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-      const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-      setTimeToNextDrop(`Starts in ${days}d ${hours}h`);
-      return;
-    }
-    
-    if (!isActive) {
-      setTimeToNextDrop('');
-      return;
-    }
-
     const updateCountdown = () => {
       const now = new Date();
-      const nextHour = new Date(now);
-      nextHour.setHours(nextHour.getHours() + 1, 0, 0, 0);
       
-      const diff = nextHour.getTime() - now.getTime();
-      const minutes = Math.floor(diff / (1000 * 60));
-      const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+      // If auction hasn't started, show countdown to start
+      if (now < auctionStartDate) {
+        const diff = auctionStartDate.getTime() - now.getTime();
+        const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+        
+        if (days > 0) {
+          setTimeToNextDrop(`${days}d ${hours}h ${minutes}m`);
+        } else if (hours > 0) {
+          setTimeToNextDrop(`${hours}h ${minutes}m`);
+        } else {
+          setTimeToNextDrop(`${minutes}m`);
+        }
+        return;
+      }
       
-      setTimeToNextDrop(`${minutes}m ${seconds}s`);
+      if (!isActive) {
+        setTimeToNextDrop('');
+        return;
+      }
+
+      // Calculate time to next midnight UTC
+      const tomorrow = new Date(now);
+      tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);
+      tomorrow.setUTCHours(0, 0, 0, 0);
+      
+      const diff = tomorrow.getTime() - now.getTime();
+      const hours = Math.floor(diff / (1000 * 60 * 60));
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      
+      setTimeToNextDrop(`${hours}h ${minutes}m`);
     };
 
     updateCountdown();
-    const interval = setInterval(updateCountdown, 1000); // Update every second
+    const interval = setInterval(updateCountdown, 60000); // Update every minute
 
     return () => clearInterval(interval);
   }, [isActive, auctionStartDate]);

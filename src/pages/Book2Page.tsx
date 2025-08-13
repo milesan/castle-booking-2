@@ -32,7 +32,8 @@ import { Fireflies } from '../components/Fireflies';
 import { FireflyPortal } from '../components/FireflyPortal';
 import { GardenDecompressionAddon } from '../components/GardenDecompressionAddon';
 import { useDutchAuctionSimple } from '../hooks/useDutchAuctionSimple';
-import { TrendingDown } from 'lucide-react';
+import { TrendingDown, Info } from 'lucide-react';
+import { DutchAuctionModal } from '../components/DutchAuctionModal';
 
 // Define SeasonBreakdown type locally
 interface SeasonBreakdown {
@@ -113,6 +114,7 @@ export function Book2Page() {
   const [lastRefresh, setLastRefresh] = useState(0);
   const [showDiscountModal, setShowDiscountModal] = useState(false);
   const [selectedGardenAddon, setSelectedGardenAddon] = useState<any>(null);
+  const [showAuctionModal, setShowAuctionModal] = useState(false);
 
 
 
@@ -649,43 +651,36 @@ export function Book2Page() {
   
   return (
     <div className="min-h-screen">
-      {/* Dutch Auction Banner */}
+      {/* Dutch Auction Banner - Simplified */}
       {auctionActive && (
-        <div className="bg-gradient-to-b from-amber-50/80 to-transparent border-b border-amber-200/40 px-4 py-3">
+        <div className="bg-gradient-to-r from-amber-50 via-amber-50/90 to-amber-50/80 border-b border-amber-200/50 px-4 py-2.5">
           <div className="max-w-7xl mx-auto">
-            <div className="flex flex-col gap-2">
-              {/* Main info line */}
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
-                <div className="flex items-center gap-3">
-                  <TrendingDown className="w-4 h-4 text-amber-700" />
-                  <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
-                    <span className="text-sm font-semibold text-gray-900">
-                      {hasStarted ? 'Buy now or wait for lower prices' : 'Buy now at starting prices'}
-                    </span>
-                    <span className="text-xs text-gray-600">
-                      {hasStarted 
-                        ? 'Prices drop hourly until Sept 14' 
-                        : `Hourly drops begin Aug 15 at midnight`}
-                    </span>
-                  </div>
-                </div>
-                
-                {/* Countdown */}
-                <div className="flex items-center gap-2 bg-white/50 rounded px-2.5 py-1">
-                  <span className="text-xs text-gray-600">
-                    {hasStarted ? 'Next drop:' : 'Auction starts:'}
+            <div className="flex items-center justify-between">
+              {/* Left side - Auction indicator and countdown */}
+              <div className="flex items-center gap-3">
+                <TrendingDown className="w-4 h-4 text-amber-700" />
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium text-gray-900">
+                    {hasStarted ? 'Next reduction:' : 'Auction starts:'}
                   </span>
-                  <span className="font-mono text-xs font-semibold text-amber-700">{timeToNextDrop || '—'}</span>
+                  <span className="font-mono text-sm font-semibold text-amber-700">
+                    {timeToNextDrop || '—'}
+                  </span>
                 </div>
               </div>
               
-              {/* Tier pricing - more compact */}
-              <div className="flex flex-wrap gap-3 text-[11px] text-gray-600 pl-7">
-                <span>Tower: €15k→€3k</span>
-                <span className="text-gray-400">•</span>
-                <span>Noble: €10k→€2k</span>
-                <span className="text-gray-400">•</span>
-                <span>Standard: €5k→€1k</span>
+              {/* Right side - Info button and price range */}
+              <div className="flex items-center gap-3">
+                <span className="hidden sm:block text-xs text-gray-600">
+                  Tower: €15k→€4k • Noble: €10k→€2k • Standard: €4.8k→€800
+                </span>
+                <button
+                  onClick={() => setShowAuctionModal(true)}
+                  className="p-1.5 rounded-md hover:bg-amber-100 transition-colors"
+                  aria-label="Auction details"
+                >
+                  <Info className="w-4 h-4 text-amber-700" />
+                </button>
               </div>
             </div>
           </div>
@@ -932,6 +927,15 @@ export function Book2Page() {
           selectedWeeks={selectedWeeks}
         />
       )}
+      
+      {/* Dutch Auction Modal */}
+      <DutchAuctionModal
+        isOpen={showAuctionModal}
+        onClose={() => setShowAuctionModal(false)}
+        auctionStartDate={auctionStartDate}
+        auctionEndDate={auctionEndDate}
+        hasStarted={hasStarted}
+      />
     </div>
   );
 }

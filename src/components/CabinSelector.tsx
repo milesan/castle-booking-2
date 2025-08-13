@@ -789,7 +789,7 @@ export function CabinSelector({
                         <div className="mb-2 flex items-center gap-2">
                           <span className="inline-flex items-center px-2 py-1 rounded-sm text-xs font-medium bg-green-900/20 text-green-200 border border-green-700/30">
                             <TrendingDown size={12} className="mr-1" />
-                            Dutch Auction - drops €{auctionPricing.dailyDrop}/day
+                            Dutch Auction - €{auctionPricing.dailyReduction}/day reduction
                           </span>
                         </div>
                       )}
