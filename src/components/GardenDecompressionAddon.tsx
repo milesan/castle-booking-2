@@ -79,7 +79,7 @@ export function GardenDecompressionAddon({
           Continue to The Garden? (Optional)
         </h2>
         <p className="text-sm sm:text-base text-secondary font-mono">
-          Decompress after The Castle at our sister location in Portugal
+          Decompress at our permanent campus in Portugal
         </p>
       </div>
 
