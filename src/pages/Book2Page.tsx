@@ -289,7 +289,6 @@ export function Book2Page() {
    * It's attached to the Clear Selection button in the WeekSelector component.
    */
   const handleClearSelection = useCallback(() => {
-    
     // Simply pass all selected weeks to our existing deselection handler
     if (selectedWeeks.length > 0) {
       handleWeeksDeselect(selectedWeeks);
@@ -391,9 +390,6 @@ export function Book2Page() {
   const isLoading = accommodationsLoading || calendarLoading;
   
   // Track when loading state changes
-  useEffect(() => {
-    // Loading state tracking effect
-  }, [isLoading, accommodationsLoading, calendarLoading]);
 
   // Calculate season breakdown for the selected weeks
   const calculateSeasonBreakdown = useCallback((weeks: Week[], accommodationTitle: string): SeasonBreakdown => {
@@ -422,6 +418,7 @@ export function Book2Page() {
     
     // Group nights by season
     const seasonMap: Record<string, { name: string; discount: number; nights: number }> = {};
+    
 
     // Manually generate dates in UTC to avoid timezone issues with eachDayOfInterval
     const allDates: Date[] = [];
@@ -429,6 +426,7 @@ export function Book2Page() {
     let currentDate = new Date(Date.UTC(startDate.getUTCFullYear(), startDate.getUTCMonth(), startDate.getUTCDate())); 
     // We want to iterate up to, but not including, the endDate
     const finalExclusiveEndDate = new Date(Date.UTC(endDate.getUTCFullYear(), endDate.getUTCMonth(), endDate.getUTCDate()));
+
 
     // Loop while the current date is strictly before the final end date
     while (currentDate.getTime() < finalExclusiveEndDate.getTime()) {
@@ -438,6 +436,7 @@ export function Book2Page() {
         // Increment the day in UTC for the next iteration
         currentDate.setUTCDate(currentDate.getUTCDate() + 1);
     }
+
 
     // Count the nights per season using the date of each night
     allDates.forEach((date: Date) => {
@@ -465,7 +464,6 @@ export function Book2Page() {
     
     const seasons = Object.values(seasonMap).sort((a, b) => b.nights - a.nights);
     const hasMultipleSeasons = seasons.length > 1;
-    
     
     return { hasMultipleSeasons, seasons };
   }, [currentMonth]);
@@ -500,7 +498,6 @@ export function Book2Page() {
     // It should already be normalized by the modal.
     const normalizedDate = date; // Reverted: Use the input date directly
     
-    // --- Log the date received from the modal ---
     
     if (!week) {
       console.error('[Book2Page] No week provided to handleFlexDateSelect');
@@ -523,7 +520,6 @@ export function Book2Page() {
       // Ensure any other essential properties from 'Week' type are preserved if needed
     };
     
-    // --- Log the object just before state update ---
     
     // Use a direct state update for the first selection to avoid any stale closures
     if (selectedWeeks.length === 0) {

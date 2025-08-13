@@ -20,10 +20,7 @@ export function usePricing({
   foodContribution,
   gardenAddon
 }: UsePricingProps): PricingDetails {
-  return useMemo((): PricingDetails => {
-    // --- ADDED LOGGING: Check prop value *inside* memo ---
-    // --- END ADDED LOGGING ---
-
+  return useMemo(() => {
     // === Calculate nights for display ===
     const totalNights = calculateTotalNights(selectedWeeks);
     const exactWeeksDecimal = calculateTotalWeeksDecimal(selectedWeeks); // For display only
@@ -85,5 +82,5 @@ export function usePricing({
     // --- END TEST ACCOMMODATION OVERRIDE ---
 
     return calculatedPricingDetails;
-  }, [selectedWeeks, calculatedWeeklyAccommodationPrice, foodContribution, selectedAccommodation]);
+  }, [selectedWeeks, calculatedWeeklyAccommodationPrice, foodContribution, selectedAccommodation, gardenAddon]);
 }

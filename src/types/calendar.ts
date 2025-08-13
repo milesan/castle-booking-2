@@ -39,6 +39,7 @@ export interface Week {
     isFlexibleSelection?: boolean;
     selectedFlexDate?: Date;
     link?: string;
+    isEventWeek?: boolean; // For weeks that don't require accommodation
 }
 
 export interface FlexibleCheckin {
@@ -52,6 +53,12 @@ export interface FlexibleCheckin {
 // Type guards
 export function isWeekStatus(status: string): status is WeekStatus {
     return ['visible', 'hidden', 'deleted'].includes(status);
+}
+
+// Helper to check if a week is an event week (doesn't require accommodation)
+export function isEventWeek(week: Week): boolean {
+    const eventWeekNames = ['Weekend', 'Full Week', 'October Week', 'Decompression', 'Weekend Decompression', 'Full Week Decompression'];
+    return week.isEventWeek === true || (week.name ? eventWeekNames.some(eventName => week.name!.includes(eventName)) : false);
 }
 
 // Logging utilities
