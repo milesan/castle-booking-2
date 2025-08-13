@@ -31,6 +31,7 @@ import { useUserPermissions } from '../hooks/useUserPermissions';
 import { Fireflies } from '../components/Fireflies';
 import { FireflyPortal } from '../components/FireflyPortal';
 import { GardenDecompressionAddon } from '../components/GardenDecompressionAddon';
+import { DutchAuctionModal } from '../components/DutchAuctionModal';
 
 // Define SeasonBreakdown type locally
 interface SeasonBreakdown {
@@ -883,6 +884,9 @@ export function Book2Page() {
           selectedWeeks={selectedWeeks}
         />
       )}
+      
+      {/* Dutch Auction Modal - shows on first login */}
+      <DutchAuctionModal userId={session?.user?.id} />
     </div>
   );
 }
