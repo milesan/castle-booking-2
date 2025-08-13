@@ -647,10 +647,7 @@ export function BookingSummary({
           });
           // --- END ADDED: Final credit state check ---
           
-            bookingId: booking.id,
-            actualDonationAmount,
-            creditsToUse
-          });
+          // Debug logging disabled for orphaned object literals
           
           // Retrieve accommodation details from the booking if selectedAccommodation is null
           let accommodationTitle = selectedAccommodation?.title;
@@ -969,12 +966,7 @@ Please manually create the booking for this user or process a refund.`;
       selectedWeeksCount: selectedWeeks.length,
       authToken: !!authToken
     });
-      creditsToUse,
-      finalAmountAfterCredits,
-      isBooking,
-      showStripeModal,
-      pendingPaymentRowId
-    });
+    // Debug logging disabled for orphaned object literals
     
     setErrorWithLogging(null); // Clear previous errors
 
@@ -1120,10 +1112,7 @@ Please manually create the booking for this user or process a refund.`;
               isFreeAccommodation: pricing.totalAccommodationCost === 0,
               isCreditsOnly: creditsToUse > 0
             });
-              paymentId: payment.id,
-              creditsToUse,
-              finalAmountAfterCredits
-            });
+            // Debug logging disabled for orphaned object literals
             await handleBookingSuccess(undefined, payment.id);
             return;
           }

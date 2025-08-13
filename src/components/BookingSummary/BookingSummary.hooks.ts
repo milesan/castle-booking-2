@@ -21,11 +21,7 @@ export function usePricing({
   gardenAddon
 }: UsePricingProps): PricingDetails {
   return useMemo((): PricingDetails => {
-      selectedWeeksLength: selectedWeeks.length,
-      selectedAccommodationId_Prop: selectedAccommodation?.id,
-      calculatedWeeklyAccommodationPrice_Prop: calculatedWeeklyAccommodationPrice,
-      foodContribution,
-    });
+    // Debug logging disabled for orphaned object literals
     // --- ADDED LOGGING: Check prop value *inside* memo ---
     // --- END ADDED LOGGING ---
 
@@ -55,11 +51,7 @@ export function usePricing({
     const vatAmount = parseFloat((finalTotalAmount * vatRate).toFixed(2));
     const totalWithVat = parseFloat((finalTotalAmount + vatAmount).toFixed(2));
     
-      finalTotalAmount,
-      vatRate,
-      vatAmount,
-      totalWithVat
-    });
+    // Debug logging disabled for orphaned object literals
     // --- END: Calculate VAT ---
 
     // 5. Construct the final object
@@ -96,6 +88,5 @@ export function usePricing({
     // --- END TEST ACCOMMODATION OVERRIDE ---
 
     return calculatedPricingDetails;
-
   }, [selectedWeeks, calculatedWeeklyAccommodationPrice, foodContribution, selectedAccommodation]);
 }
