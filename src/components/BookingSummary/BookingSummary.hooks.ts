@@ -20,7 +20,10 @@ export function usePricing({
   foodContribution,
   gardenAddon
 }: UsePricingProps): PricingDetails {
-  return useMemo(() => {
+  return useMemo((): PricingDetails => {
+    // --- ADDED LOGGING: Check prop value *inside* memo ---
+    // --- END ADDED LOGGING ---
+
     // === Calculate nights for display ===
     const totalNights = calculateTotalNights(selectedWeeks);
     const exactWeeksDecimal = calculateTotalWeeksDecimal(selectedWeeks); // For display only
