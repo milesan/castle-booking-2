@@ -26,7 +26,7 @@ export function usePricing({
     const exactWeeksDecimal = calculateTotalWeeksDecimal(selectedWeeks); // For display only
     const displayWeeks = selectedWeeks.length > 0 ? Math.round(exactWeeksDecimal * 10) / 10 : 0;
     
-    // === Use accommodation base price directly (castle week fixed price) ===
+    // === Use accommodation base price directly (The Castle fixed price) ===
     const totalAccommodationCost = selectedAccommodation?.base_price || 0;
 
     // === No food cost or discounts ===

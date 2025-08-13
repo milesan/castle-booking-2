@@ -30,6 +30,7 @@ import { AccommodationSection } from './BookingSummary/components/AccommodationS
 import { GardenAddonSection } from './BookingSummary/components/GardenAddonSection';
 import { CreditsSection } from './BookingSummary/components/CreditsSection';
 import { ConfirmButtons } from './BookingSummary/components/ConfirmButtons';
+import { isEventWeek } from '../types/calendar';
 
 // Import utils
 import { formatPriceDisplay } from './BookingSummary/BookingSummary.utils';
@@ -318,8 +319,16 @@ export function BookingSummary({
   // Validate availability before showing Stripe modal
   const validateAvailability = async () => {
     console.log('[Booking Summary] Validating availability...');
-    if (!selectedAccommodation || selectedWeeks.length === 0) {
-      console.warn('[Booking Summary] Missing accommodation or weeks for validation');
+    const hasEventWeek = selectedWeeks.some(week => isEventWeek(week));
+    
+    if (selectedWeeks.length === 0) {
+      console.warn('[Booking Summary] No weeks selected for validation');
+      setError('Please select dates first.');
+      return false;
+    }
+    
+    if (!selectedAccommodation && !hasEventWeek) {
+      console.warn('[Booking Summary] Missing accommodation for non-event weeks');
       setError('Please select accommodation and dates first.');
       return false;
     }
@@ -333,19 +342,19 @@ export function BookingSummary({
       endDate: endDate.toISOString()
     });
 
-    // If accommodation is unlimited, it's always available
-    if (selectedAccommodation.is_unlimited) {
-      console.log('[Booking Summary] Accommodation is unlimited, skipping availability check');
+    // If no accommodation (event week only) or accommodation is unlimited, it's always available
+    if (!selectedAccommodation || selectedAccommodation.is_unlimited) {
+      console.log('[Booking Summary] Event week or unlimited accommodation, skipping availability check');
       return true;
     }
 
     try {
       const availability = await bookingService.getAvailability(startDate, endDate);
-      const accommodationAvailability = availability.find(a => a.accommodation_id === selectedAccommodation.id);
+      const accommodationAvailability = availability.find(a => a.accommodation_id === selectedAccommodation?.id);
       const isAvailable = accommodationAvailability?.is_available ?? false;
       console.log('[Booking Summary] Availability check result:', {
         isAvailable,
-        accommodationId: selectedAccommodation.id
+        accommodationId: selectedAccommodation?.id
       });
       return isAvailable;
     } catch (err) {
@@ -370,8 +379,15 @@ export function BookingSummary({
       selectedCheckInDateISO: selectedCheckInDate?.toISOString()
     });
     try {
-      if (!selectedAccommodation || selectedWeeks.length === 0 || !selectedCheckInDate) {
-        console.error('[Booking Summary] Missing required info for booking success:', { selectedAccommodation: !!selectedAccommodation, selectedWeeks: selectedWeeks.length > 0, selectedCheckInDate: !!selectedCheckInDate });
+      const hasEventWeek = selectedWeeks.some(week => isEventWeek(week));
+      
+      if ((!selectedAccommodation && !hasEventWeek) || selectedWeeks.length === 0 || !selectedCheckInDate) {
+        console.error('[Booking Summary] Missing required info for booking success:', { 
+          selectedAccommodation: !!selectedAccommodation, 
+          hasEventWeek,
+          selectedWeeks: selectedWeeks.length > 0, 
+          selectedCheckInDate: !!selectedCheckInDate 
+        });
         throw new Error('Missing required booking information');
       }
       
@@ -423,7 +439,7 @@ export function BookingSummary({
         
         // Log the breakdown for debugging
         console.log('[Booking Summary] Accommodation pricing breakdown:', {
-          baseWeeklyRate: selectedAccommodation.base_price,
+          baseWeeklyRate: selectedAccommodation?.base_price || 0,
           weeksStaying: pricing.weeksStaying,
           baseAccommodationPrice: baseAccommodationPrice,
           seasonalDiscountAmount: seasonalDiscountAmount,
@@ -444,7 +460,7 @@ export function BookingSummary({
         
         const paymentRowIdToUse = paymentRowIdOverride || pendingPaymentRowId;
         const bookingPayload: any = {
-          accommodationId: selectedAccommodation.id,
+          accommodationId: selectedAccommodation?.id || null,
           checkIn: formattedCheckIn,
           checkOut: formattedCheckOut,
           totalPrice: roundedTotal, // Send the final price calculated by the frontend
@@ -483,7 +499,7 @@ export function BookingSummary({
           bookingPayloadCreditsUsed: bookingPayload.creditsUsed,
           willTriggerCreditDeduction: bookingPayload.creditsUsed > 0,
           userEmail,
-          accommodationTitle: selectedAccommodation.title,
+          accommodationTitle: selectedAccommodation?.title || 'Event Booking',
           totalPrice: bookingPayload.totalPrice,
           finalAmountAfterCredits
         });
@@ -918,7 +934,7 @@ Please manually create the booking for this user or process a refund.`;
         const bookingForConfirmation = {
           id: bookingExistsFromWebhook ? `webhook-booking-${paymentIntentId}` : `pending-booking-${Date.now()}`,
           accommodation: selectedAccommodation?.title || 'Accommodation',
-          guests: selectedAccommodation.inventory,
+          guests: selectedAccommodation?.inventory || 0,
           totalPrice: actualPaymentAmount, // Show actual payment amount after credits
           checkIn: selectedCheckInDate,
           checkOut: checkOut,
@@ -977,8 +993,10 @@ Please manually create the booking for this user or process a refund.`;
       console.warn('[BOOKING_FLOW] STEP 1 FAILED: Check-in date validation failed.');
       return;
     }
-    if (!selectedAccommodation) {
-      console.warn('[BOOKING_FLOW] STEP 1 FAILED: No accommodation selected');
+    const hasEventWeek = selectedWeeks.some(week => isEventWeek(week));
+    
+    if (!selectedAccommodation && !hasEventWeek) {
+      console.warn('[BOOKING_FLOW] STEP 1 FAILED: No accommodation selected for non-event weeks');
       setError('Please select an accommodation');
       return;
     }
@@ -1063,7 +1081,7 @@ Please manually create the booking for this user or process a refund.`;
             const accommodationDurationDiscountAmount = baseAccommodationPrice * (pricing.durationDiscountPercent / 100);
             
             const bookingPayload = {
-              accommodationId: selectedAccommodation.id,
+              accommodationId: selectedAccommodation?.id || null,
               checkIn: formattedCheckIn,
               checkOut: formattedCheckOut,
               totalPrice: pricing.totalAmount,
@@ -1166,8 +1184,10 @@ Please manually create the booking for this user or process a refund.`;
       return;
     }
     
-    if (!selectedAccommodation) {
-      console.warn('[Booking Summary] No accommodation selected');
+    const hasEventWeek = selectedWeeks.some(week => isEventWeek(week));
+    
+    if (!selectedAccommodation && !hasEventWeek) {
+      console.warn('[Booking Summary] No accommodation selected for non-event weeks');
       setError('Please select an accommodation');
       return;
     }
@@ -1258,8 +1278,8 @@ Please manually create the booking for this user or process a refund.`;
                     : finalAmountAfterCredits // Use amount after credits
                 }
                 description={`${selectedAccommodation?.title || 'Accommodation'} for ${pricing.totalNights} nights${selectedCheckInDate ? ` from ${formatInTimeZone(selectedCheckInDate, 'UTC', 'd. MMMM')}` : ''}`}
-                bookingMetadata={selectedAccommodation && selectedCheckInDate ? {
-                  accommodationId: selectedAccommodation.id,
+                bookingMetadata={selectedCheckInDate ? {
+                  accommodationId: selectedAccommodation?.id || null,
                   checkIn: selectedCheckInDate ? formatInTimeZone(selectedCheckInDate, 'UTC', 'yyyy-MM-dd') : undefined,
                   checkOut: selectedCheckInDate ? formatInTimeZone(addDays(selectedCheckInDate, calculateTotalDays(selectedWeeks)-1), 'UTC', 'yyyy-MM-dd') : undefined,
                   originalTotal: pricing.totalAmount,

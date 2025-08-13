@@ -87,12 +87,12 @@ export function Book2Page() {
   // Fetch real accommodations from database with images
   const { accommodations, loading: accommodationsLoading } = useWeeklyAccommodations();
   
-  // Initialize with pre-selected castle week
+  // Initialize with pre-selected The Castle week
   const [selectedWeeks, setSelectedWeeks] = useState<Week[]>([{
     id: 'castle-week-sept-2025',
     startDate: new Date('2025-09-21T00:00:00Z'),
     endDate: new Date('2025-09-26T00:00:00Z'),
-    name: 'Castle Week',
+    name: 'The Castle',
     status: 'available' as WeekStatus,
     isCustom: false,
     isEdgeWeek: false,
@@ -191,7 +191,7 @@ export function Book2Page() {
     id: 'castle-week-sept-2025',
     startDate: new Date('2025-09-21T00:00:00Z'),
     endDate: new Date('2025-09-26T00:00:00Z'), // End date at midnight (start of 26th)
-    name: 'Castle Week',
+    name: 'The Castle',
     status: 'available' as WeekStatus,
     isCustom: false,
     isEdgeWeek: false,
@@ -780,7 +780,7 @@ export function Book2Page() {
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     {/* Increased font size for the header */}
                     <h2 className="text-2xl sm:text-3xl font-display font-light text-primary">
-                      Castle Week · September 21-26, 2025
+                      The Castle · September 21-26, 2025
                     </h2>
                   </div>
 
