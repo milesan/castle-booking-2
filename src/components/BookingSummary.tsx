@@ -647,11 +647,6 @@ export function BookingSummary({
           });
           // --- END ADDED: Final credit state check ---
           
-            bookingId: booking.id,
-            actualDonationAmount,
-            creditsToUse
-          });
-          
           // Retrieve accommodation details from the booking if selectedAccommodation is null
           let accommodationTitle = selectedAccommodation?.title;
           let guests = selectedAccommodation?.inventory;
@@ -685,6 +680,7 @@ export function BookingSummary({
           });
           console.log("[BOOKING_FLOW] STEP 9 SUCCESS: Navigation completed");
         }, 1500);
+        
       } catch (err) {
         console.error('[BOOKING_FLOW] === STEP 6 FAILED: Error creating booking ===');
         console.error('[BOOKING_FLOW] Error details:', err);
@@ -969,12 +965,6 @@ Please manually create the booking for this user or process a refund.`;
       selectedWeeksCount: selectedWeeks.length,
       authToken: !!authToken
     });
-      creditsToUse,
-      finalAmountAfterCredits,
-      isBooking,
-      showStripeModal,
-      pendingPaymentRowId
-    });
     
     setErrorWithLogging(null); // Clear previous errors
 
@@ -1119,10 +1109,6 @@ Please manually create the booking for this user or process a refund.`;
               finalAmountAfterCredits,
               isFreeAccommodation: pricing.totalAccommodationCost === 0,
               isCreditsOnly: creditsToUse > 0
-            });
-              paymentId: payment.id,
-              creditsToUse,
-              finalAmountAfterCredits
             });
             await handleBookingSuccess(undefined, payment.id);
             return;

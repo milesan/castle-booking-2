@@ -264,13 +264,6 @@ export function Book2Page() {
 
   // New handler for deselecting multiple weeks at once
   const handleWeeksDeselect = useCallback((weeksToDeselect: Week[]) => {
-      count: weeksToDeselect.length,
-      weeks: weeksToDeselect.map(w => ({
-        id: w.id,
-        start: formatDateForDisplay(w.startDate),
-        end: formatDateForDisplay(w.endDate)
-      }))
-    });
 
     // Filter out all the weeks to deselect in one batch operation
     setSelectedWeeks(prev => {
@@ -296,8 +289,6 @@ export function Book2Page() {
    * It's attached to the Clear Selection button in the WeekSelector component.
    */
   const handleClearSelection = useCallback(() => {
-      count: selectedWeeks.length
-    });
     
     // Simply pass all selected weeks to our existing deselection handler
     if (selectedWeeks.length > 0) {
@@ -326,13 +317,6 @@ export function Book2Page() {
       const finalStartDate = normalizeToUTCDate(updates.startDate || selectedWeekForCustomization.startDate);
       const finalEndDate = normalizeToUTCDate(updates.endDate || selectedWeekForCustomization.endDate);
       const flexibleDates = updates.flexibleDates?.map(d => normalizeToUTCDate(d));
-
-        weekId: selectedWeekForCustomization.id,
-        startDate: formatDateForDisplay(finalStartDate),
-        endDate: formatDateForDisplay(finalEndDate),
-        status: updates.status,
-        flexibleDatesCount: flexibleDates?.length || 0
-      });
 
       // Check if this is an existing customization or a new one
       if (selectedWeekForCustomization.isCustom && selectedWeekForCustomization.id) {
@@ -399,9 +383,6 @@ export function Book2Page() {
       });
       
       if (filteredWeeks.length !== selectedWeeks.length) {
-          originalCount: selectedWeeks.length,
-          newCount: filteredWeeks.length
-        });
         setSelectedWeeks(filteredWeeks);
       }
     }
@@ -411,10 +392,7 @@ export function Book2Page() {
   
   // Track when loading state changes
   useEffect(() => {
-      isLoading,
-      accommodationsLoading,
-      calendarLoading
-    });
+    // Loading state tracking effect
   }, [isLoading, accommodationsLoading, calendarLoading]);
 
   // Calculate season breakdown for the selected weeks
@@ -444,11 +422,6 @@ export function Book2Page() {
     
     // Group nights by season
     const seasonMap: Record<string, { name: string; discount: number; nights: number }> = {};
-    
-      startDate: startDate.toISOString(),
-      endDate: endDate.toISOString(),
-      totalNights
-    });
 
     // Manually generate dates in UTC to avoid timezone issues with eachDayOfInterval
     const allDates: Date[] = [];
@@ -456,10 +429,6 @@ export function Book2Page() {
     let currentDate = new Date(Date.UTC(startDate.getUTCFullYear(), startDate.getUTCMonth(), startDate.getUTCDate())); 
     // We want to iterate up to, but not including, the endDate
     const finalExclusiveEndDate = new Date(Date.UTC(endDate.getUTCFullYear(), endDate.getUTCMonth(), endDate.getUTCDate()));
-
-        start: currentDate.toISOString(), 
-        endExclusive: finalExclusiveEndDate.toISOString() 
-    });
 
     // Loop while the current date is strictly before the final end date
     while (currentDate.getTime() < finalExclusiveEndDate.getTime()) {
@@ -470,16 +439,8 @@ export function Book2Page() {
         currentDate.setUTCDate(currentDate.getUTCDate() + 1);
     }
 
-        count: allDates.length, 
-        firstDate: allDates[0]?.toISOString(), 
-        lastDate: allDates[allDates.length - 1]?.toISOString() 
-    });
-
     // Count the nights per season using the date of each night
     allDates.forEach((date: Date) => {
-        date: date.toISOString(),
-        discount: getSeasonalDiscount(date, accommodationTitle)
-      });
       const discount = getSeasonalDiscount(date, accommodationTitle);
       const seasonName = discount === 0 ? 'Summer Season' : 
                          discount === 0.15 ? 'Medium Season' : 
@@ -505,12 +466,6 @@ export function Book2Page() {
     const seasons = Object.values(seasonMap).sort((a, b) => b.nights - a.nights);
     const hasMultipleSeasons = seasons.length > 1;
     
-      hasMultipleSeasons, 
-      seasons,
-      totalNights,
-      dateRange: `${format(startDate, 'MMM dd')} - ${format(endDate, 'MMM dd')}`,
-      allDates: allDates.map(d => format(d, 'MMM dd')),
-    });
     
     return { hasMultipleSeasons, seasons };
   }, [currentMonth]);
@@ -545,14 +500,7 @@ export function Book2Page() {
     // It should already be normalized by the modal.
     const normalizedDate = date; // Reverted: Use the input date directly
     
-    // --- Log the date received from the modal --- 
-    
-      dateArgFromModal: formatDateForDisplay(normalizedDate), // Log the date received
-      weekId: week?.id,
-      weekStartOriginal: week ? formatDateForDisplay(week.startDate) : null,
-      weekEndOriginal: week ? formatDateForDisplay(week.endDate) : null,
-      weekSelectedFlexOriginal: week?.selectedFlexDate ? formatDateForDisplay(week.selectedFlexDate) : null
-    });
+    // --- Log the date received from the modal ---
     
     if (!week) {
       console.error('[Book2Page] No week provided to handleFlexDateSelect');
@@ -575,18 +523,7 @@ export function Book2Page() {
       // Ensure any other essential properties from 'Week' type are preserved if needed
     };
     
-    // --- Log the object just before state update --- 
-      startDateIso: selectedWeek.startDate?.toISOString?.(), 
-      selectedFlexDateIso: selectedWeek.selectedFlexDate?.toISOString?.() 
-    });
-    
-      weekId: selectedWeek.id,
-      weekStart: formatDateForDisplay(selectedWeek.startDate),
-      weekEnd: formatDateForDisplay(selectedWeek.endDate),
-      isCustom: selectedWeek.isCustom,
-      isFlexibleSelection: selectedWeek.isFlexibleSelection,
-      selectedFlexDate: selectedWeek.selectedFlexDate ? formatDateForDisplay(selectedWeek.selectedFlexDate) : 'undefined'
-    });
+    // --- Log the object just before state update ---
     
     // Use a direct state update for the first selection to avoid any stale closures
     if (selectedWeeks.length === 0) {
@@ -627,10 +564,6 @@ export function Book2Page() {
 
   // PERFORMANCE FIX: Convert weekly accommodation info from state to computed value
   const weeklyAccommodationInfo = useMemo(() => {
-      selectedWeeksCount: selectedWeeks.length,
-      accommodationsCount: accommodations?.length,
-      currentMonth: formatDateForDisplay(currentMonth)
-    });
     
 
     
@@ -675,12 +608,6 @@ export function Book2Page() {
           
           // Store both the final price and the definitive seasonal discount used
           newInfo[acc.id] = { price: weeklyPrice, avgSeasonalDiscount };
-          
-            id: acc.id,
-            basePrice: acc.base_price,
-            weeklyPrice,
-            avgSeasonalDiscount
-          });
 
         } catch (error) {
           console.error(`[Book2Page] Error calculating info for ${acc.title} (ID: ${acc.id}):`, error);
@@ -704,10 +631,6 @@ export function Book2Page() {
 
   // Handle accommodation selection with firefly effect
   const handleAccommodationSelect = useCallback((accommodationId: string) => {
-      newId: accommodationId,
-      currentId: selectedAccommodation,
-      action: accommodationId ? (accommodationId !== selectedAccommodation ? 'SELECT' : 'SAME') : 'DESELECT'
-    });
 
     // Only trigger fireflies if actually selecting (not deselecting)
     if (accommodationId && accommodationId !== selectedAccommodation) {
