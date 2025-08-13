@@ -46,12 +46,6 @@ export function usePricing({
     const vatRate = 0.24; // 24% VAT
     const vatAmount = parseFloat((finalTotalAmount * vatRate).toFixed(2));
     const totalWithVat = parseFloat((finalTotalAmount + vatAmount).toFixed(2));
-    
-      finalTotalAmount,
-      vatRate,
-      vatAmount,
-      totalWithVat
-    });
     // --- END: Calculate VAT ---
 
     // 5. Construct the final object
