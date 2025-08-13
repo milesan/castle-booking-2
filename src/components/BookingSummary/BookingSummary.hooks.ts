@@ -85,5 +85,5 @@ export function usePricing({
     // --- END TEST ACCOMMODATION OVERRIDE ---
 
     return calculatedPricingDetails;
-  }, [selectedWeeks, calculatedWeeklyAccommodationPrice, foodContribution, selectedAccommodation]);
+  }, [selectedWeeks, calculatedWeeklyAccommodationPrice, foodContribution, selectedAccommodation, gardenAddon]);
 }

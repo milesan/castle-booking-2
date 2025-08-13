@@ -14,7 +14,7 @@ import { useSession } from '../hooks/useSession';
 import { HoverClickPopover } from './HoverClickPopover';
 import { useUserPermissions } from '../hooks/useUserPermissions';
 import { usePendingBookings } from '../hooks/usePendingBookings';
-import { MasonryGallery } from './shared/MasonryGallery';
+import { FullScreenMasonry } from './FullScreenMasonry';
 
 // Local interface for accommodation images
 interface AccommodationImage {
@@ -942,8 +942,8 @@ export function CabinSelector({
         </div>
       )}
       
-      {/* Masonry Gallery Modal */}
-      <MasonryGallery
+      {/* Full-Screen Masonry Gallery */}
+      <FullScreenMasonry
         images={galleryImages}
         isOpen={galleryOpen}
         onClose={() => {
