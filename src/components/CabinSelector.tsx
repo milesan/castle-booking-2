@@ -125,7 +125,7 @@ export function CabinSelector({
   const [showOnlyWithBathrooms, setShowOnlyWithBathrooms] = useState(false);
   const [showOnlySharedBathrooms, setShowOnlySharedBathrooms] = useState(false);
   
-  // State for full-screen masonry gallery
+  // State for masonry gallery
   const [galleryOpen, setGalleryOpen] = useState(false);
   const [galleryImages, setGalleryImages] = useState<AccommodationImage[]>([]);
   const [galleryTitle, setGalleryTitle] = useState<string>('');
@@ -166,18 +166,24 @@ export function CabinSelector({
     }));
   };
 
-  // Handler to open full-screen masonry gallery
+  // Handler to open masonry gallery
   const handleOpenGallery = (accommodation: ExtendedAccommodation, e?: React.MouseEvent) => {
+    console.log('🔍 Opening gallery for:', accommodation.title);
+    
     if (e) {
       e.stopPropagation();
     }
     
     const images = getAllImages(accommodation);
+    console.log('🔍 Found', images.length, 'images');
     
     if (images.length > 0) {
       setGalleryImages(images);
       setGalleryTitle(accommodation.title);
       setGalleryOpen(true);
+      console.log('✅ Gallery opened');
+    } else {
+      console.log('❌ No images found, gallery not opening');
     }
   };
 
@@ -217,21 +223,25 @@ export function CabinSelector({
     }
 
     const handlePrevious = (e: React.MouseEvent) => {
-      e.stopPropagation();
+      console.log('⬅️ Previous button clicked');
+      // Don't stop propagation - let parent handle it
       setImageLoading(true);
       navigateToImage(accommodation.id, 'prev', allImages.length);
       setTimeout(() => setImageLoading(false), 50);
+      console.log('⬅️ Navigated to previous image');
     };
 
     const handleNext = (e: React.MouseEvent) => {
-      e.stopPropagation();
+      console.log('➡️ Next button clicked');
+      // Don't stop propagation - let parent handle it
       setImageLoading(true);
       navigateToImage(accommodation.id, 'next', allImages.length);
       setTimeout(() => setImageLoading(false), 50);
+      console.log('➡️ Navigated to next image');
     };
 
     const handleDotClick = (e: React.MouseEvent, index: number) => {
-      e.stopPropagation();
+      // Don't stop propagation - let parent handle it
       setImageLoading(true);
       setImageIndex(accommodation.id, index);
       setTimeout(() => setImageLoading(false), 50);
@@ -246,7 +256,7 @@ export function CabinSelector({
 
     return (
       <div className="relative w-full h-full group/gallery bg-gray-100">
-        {/* Main Image - clickable to open full-screen masonry */}
+        {/* Main Image - clickable to open masonry gallery, with anti-flash loading */}
         <img 
           key={currentImageUrl} // Force remount for clean transitions
           src={currentImageUrl || ''} 
@@ -256,8 +266,9 @@ export function CabinSelector({
           }`}
           onLoad={handleImageLoad}
           onClick={(e) => {
-            e.stopPropagation();
-            handleOpenGallery(accommodation, e);
+            console.log('🖼️ IMAGE clicked!');
+            // Don't stop propagation - let the parent card handle blocking its own selection
+            handleOpenGallery(accommodation);
           }}
           loading="eager" // Change to eager for gallery images
         />
@@ -434,7 +445,7 @@ export function CabinSelector({
       }
 
       // Filter by bathroom if enabled
-      if (showOnlyWithBathrooms && (!acc.bathrooms || acc.bathrooms === 0)) {
+      if (showOnlyWithBathrooms && acc.bathroom_type !== 'private') {
         return false;
       }
 
@@ -584,7 +595,7 @@ export function CabinSelector({
           <span>Private Bathrooms</span>
           {showOnlyWithBathrooms && (
             <span className="ml-1 text-xs opacity-90">
-              ({accommodations.filter(acc => acc.bathrooms && acc.bathrooms > 0 && !(acc as any).parent_accommodation_id).length})
+              ({accommodations.filter(acc => acc.bathroom_type === 'private' && !(acc as any).parent_accommodation_id).length})
             </span>
           )}
         </button>
@@ -698,7 +709,23 @@ export function CabinSelector({
                     (testMode || (finalCanSelect && !isDisabled)) && 'cursor-pointer'
                   )}
                   onClick={(e) => {
-                    // Only select accommodation if not clicking on interactive elements
+                    // Check if the click target is part of the image gallery
+                    const target = e.target as HTMLElement;
+                    const isImageClick = target.tagName === 'IMG' || 
+                                        target.closest('.group\\/gallery') !== null ||
+                                        target.closest('button') !== null;
+                    
+                    console.log('🎯 Card clicked, isImageClick:', isImageClick);
+                    
+                    // If clicking on image gallery elements, don't select the accommodation
+                    if (isImageClick) {
+                      console.log('🛑 Blocking card selection for image/button click');
+                      return;
+                    }
+                    
+                    // Prevent event bubbling to parent elements
+                    e.stopPropagation();
+                    
                     if (testMode || (finalCanSelect && !isDisabled)) {
                       handleSelectAccommodation(acc.id);
                     }
@@ -799,10 +826,31 @@ export function CabinSelector({
                           </span>
                         </div>
                       )}
-                      {/* Additional Info - Display as text */}
+                      {/* Additional Info - Display as formatted text with icons */}
                       {acc.additional_info && (
-                        <div className="text-secondary text-xs mb-3">
-                          {acc.additional_info}
+                        <div className="text-secondary text-xs mb-3 space-y-1">
+                          {acc.additional_info.split('•').map((info, idx) => {
+                            const trimmedInfo = info.trim();
+                            if (!trimmedInfo) return null;
+                            
+                            // Add icons for specific amenities
+                            let icon = null;
+                            if (trimmedInfo.toLowerCase().includes('bed')) {
+                              icon = <BedDouble size={12} className="inline mr-1" />;
+                            } else if (trimmedInfo.toLowerCase().includes('bath')) {
+                              icon = <Bath size={12} className="inline mr-1" />;
+                            }
+                            
+                            return (
+                              <div key={idx} className="flex items-start">
+                                <span className="mr-1">•</span>
+                                <span>
+                                  {icon}
+                                  {trimmedInfo}
+                                </span>
+                              </div>
+                            );
+                          })}
                         </div>
                       )}
                       
@@ -898,7 +946,10 @@ export function CabinSelector({
       <FullScreenMasonry
         images={galleryImages}
         isOpen={galleryOpen}
-        onClose={() => setGalleryOpen(false)}
+        onClose={() => {
+          console.log('❌ Gallery closing');
+          setGalleryOpen(false);
+        }}
         title={galleryTitle}
       />
     </div>

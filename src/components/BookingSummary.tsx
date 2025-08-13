@@ -30,7 +30,6 @@ import { AccommodationSection } from './BookingSummary/components/AccommodationS
 import { GardenAddonSection } from './BookingSummary/components/GardenAddonSection';
 import { CreditsSection } from './BookingSummary/components/CreditsSection';
 import { ConfirmButtons } from './BookingSummary/components/ConfirmButtons';
-import { isEventWeek } from '../types/calendar';
 
 // Import utils
 import { formatPriceDisplay } from './BookingSummary/BookingSummary.utils';
@@ -319,16 +318,15 @@ export function BookingSummary({
   // Validate availability before showing Stripe modal
   const validateAvailability = async () => {
     console.log('[Booking Summary] Validating availability...');
-    const hasEventWeek = selectedWeeks.some(week => isEventWeek(week));
     
-    if (selectedWeeks.length === 0) {
-      console.warn('[Booking Summary] No weeks selected for validation');
-      setError('Please select dates first.');
-      return false;
+    // If only garden addon is selected (no accommodation), skip availability check
+    if (!selectedAccommodation && gardenAddon) {
+      console.log('[Booking Summary] Only Garden addon selected, skipping accommodation availability check');
+      return true;
     }
     
-    if (!selectedAccommodation && !hasEventWeek) {
-      console.warn('[Booking Summary] Missing accommodation for non-event weeks');
+    if (!selectedAccommodation || selectedWeeks.length === 0) {
+      console.warn('[Booking Summary] Missing accommodation or weeks for validation');
       setError('Please select accommodation and dates first.');
       return false;
     }
@@ -342,19 +340,19 @@ export function BookingSummary({
       endDate: endDate.toISOString()
     });
 
-    // If no accommodation (event week only) or accommodation is unlimited, it's always available
-    if (!selectedAccommodation || selectedAccommodation.is_unlimited) {
-      console.log('[Booking Summary] Event week or unlimited accommodation, skipping availability check');
+    // If accommodation is unlimited, it's always available
+    if (selectedAccommodation.is_unlimited) {
+      console.log('[Booking Summary] Accommodation is unlimited, skipping availability check');
       return true;
     }
 
     try {
       const availability = await bookingService.getAvailability(startDate, endDate);
-      const accommodationAvailability = availability.find(a => a.accommodation_id === selectedAccommodation?.id);
+      const accommodationAvailability = availability.find(a => a.accommodation_id === selectedAccommodation.id);
       const isAvailable = accommodationAvailability?.is_available ?? false;
       console.log('[Booking Summary] Availability check result:', {
         isAvailable,
-        accommodationId: selectedAccommodation?.id
+        accommodationId: selectedAccommodation.id
       });
       return isAvailable;
     } catch (err) {
@@ -379,12 +377,11 @@ export function BookingSummary({
       selectedCheckInDateISO: selectedCheckInDate?.toISOString()
     });
     try {
-      const hasEventWeek = selectedWeeks.some(week => isEventWeek(week));
-      
-      if ((!selectedAccommodation && !hasEventWeek) || selectedWeeks.length === 0 || !selectedCheckInDate) {
+      // For Garden-only bookings, we still need dates but not accommodation
+      if ((!selectedAccommodation && !gardenAddon) || selectedWeeks.length === 0 || !selectedCheckInDate) {
         console.error('[Booking Summary] Missing required info for booking success:', { 
           selectedAccommodation: !!selectedAccommodation, 
-          hasEventWeek,
+          gardenAddon: !!gardenAddon,
           selectedWeeks: selectedWeeks.length > 0, 
           selectedCheckInDate: !!selectedCheckInDate 
         });
@@ -439,7 +436,7 @@ export function BookingSummary({
         
         // Log the breakdown for debugging
         console.log('[Booking Summary] Accommodation pricing breakdown:', {
-          baseWeeklyRate: selectedAccommodation?.base_price || 0,
+          baseWeeklyRate: selectedAccommodation.base_price,
           weeksStaying: pricing.weeksStaying,
           baseAccommodationPrice: baseAccommodationPrice,
           seasonalDiscountAmount: seasonalDiscountAmount,
@@ -459,8 +456,13 @@ export function BookingSummary({
         });
         
         const paymentRowIdToUse = paymentRowIdOverride || pendingPaymentRowId;
+        
+        // Handle Garden-only bookings
+        const accommodationId = selectedAccommodation?.id || null;
+        const bookingTitle = selectedAccommodation?.title || (gardenAddon ? `Garden Decompression: ${gardenAddon.name}` : 'Booking');
+        
         const bookingPayload: any = {
-          accommodationId: selectedAccommodation?.id || null,
+          accommodationId: accommodationId,
           checkIn: formattedCheckIn,
           checkOut: formattedCheckOut,
           totalPrice: roundedTotal, // Send the final price calculated by the frontend
@@ -499,7 +501,7 @@ export function BookingSummary({
           bookingPayloadCreditsUsed: bookingPayload.creditsUsed,
           willTriggerCreditDeduction: bookingPayload.creditsUsed > 0,
           userEmail,
-          accommodationTitle: selectedAccommodation?.title || 'Event Booking',
+          accommodationTitle: selectedAccommodation.title,
           totalPrice: bookingPayload.totalPrice,
           finalAmountAfterCredits
         });
@@ -696,6 +698,7 @@ export function BookingSummary({
           });
           console.log("[BOOKING_FLOW] STEP 9 SUCCESS: Navigation completed");
         }, 1500);
+        
       } catch (err) {
         console.error('[BOOKING_FLOW] === STEP 6 FAILED: Error creating booking ===');
         console.error('[BOOKING_FLOW] Error details:', err);
@@ -928,7 +931,7 @@ Please manually create the booking for this user or process a refund.`;
         const bookingForConfirmation = {
           id: bookingExistsFromWebhook ? `webhook-booking-${paymentIntentId}` : `pending-booking-${Date.now()}`,
           accommodation: selectedAccommodation?.title || 'Accommodation',
-          guests: selectedAccommodation?.inventory || 0,
+          guests: selectedAccommodation.inventory,
           totalPrice: actualPaymentAmount, // Show actual payment amount after credits
           checkIn: selectedCheckInDate,
           checkOut: checkOut,
@@ -987,11 +990,10 @@ Please manually create the booking for this user or process a refund.`;
       console.warn('[BOOKING_FLOW] STEP 1 FAILED: Check-in date validation failed.');
       return;
     }
-    const hasEventWeek = selectedWeeks.some(week => isEventWeek(week));
-    
-    if (!selectedAccommodation && !hasEventWeek) {
-      console.warn('[BOOKING_FLOW] STEP 1 FAILED: No accommodation selected for non-event weeks');
-      setError('Please select an accommodation');
+    // Allow booking if either accommodation OR garden addon is selected
+    if (!selectedAccommodation && !gardenAddon) {
+      console.warn('[BOOKING_FLOW] STEP 1 FAILED: No accommodation or garden addon selected');
+      setError('Please select an accommodation or Garden decompression option');
       return;
     }
     try {
@@ -1075,7 +1077,7 @@ Please manually create the booking for this user or process a refund.`;
             const accommodationDurationDiscountAmount = baseAccommodationPrice * (pricing.durationDiscountPercent / 100);
             
             const bookingPayload = {
-              accommodationId: selectedAccommodation?.id || null,
+              accommodationId: selectedAccommodation.id,
               checkIn: formattedCheckIn,
               checkOut: formattedCheckOut,
               totalPrice: pricing.totalAmount,
@@ -1178,10 +1180,8 @@ Please manually create the booking for this user or process a refund.`;
       return;
     }
     
-    const hasEventWeek = selectedWeeks.some(week => isEventWeek(week));
-    
-    if (!selectedAccommodation && !hasEventWeek) {
-      console.warn('[Booking Summary] No accommodation selected for non-event weeks');
+    if (!selectedAccommodation) {
+      console.warn('[Booking Summary] No accommodation selected');
       setError('Please select an accommodation');
       return;
     }
@@ -1271,8 +1271,8 @@ Please manually create the booking for this user or process a refund.`;
                     ? testPaymentAmount // Otherwise use admin test amount if set
                     : finalAmountAfterCredits // Use amount after credits
                 }
-                description={`${selectedAccommodation?.title || 'Accommodation'} for ${pricing.totalNights} nights${selectedCheckInDate ? ` from ${formatInTimeZone(selectedCheckInDate, 'UTC', 'd. MMMM')}` : ''}`}
-                bookingMetadata={selectedCheckInDate ? {
+                description={`${selectedAccommodation?.title || (gardenAddon ? `Garden Decompression: ${gardenAddon.name}` : 'Booking')} for ${pricing.totalNights} nights${selectedCheckInDate ? ` from ${formatInTimeZone(selectedCheckInDate, 'UTC', 'd. MMMM')}` : ''}`}
+                bookingMetadata={(selectedAccommodation || gardenAddon) && selectedCheckInDate ? {
                   accommodationId: selectedAccommodation?.id || null,
                   checkIn: selectedCheckInDate ? formatInTimeZone(selectedCheckInDate, 'UTC', 'yyyy-MM-dd') : undefined,
                   checkOut: selectedCheckInDate ? formatInTimeZone(addDays(selectedCheckInDate, calculateTotalDays(selectedWeeks)-1), 'UTC', 'yyyy-MM-dd') : undefined,
@@ -1322,7 +1322,7 @@ Please manually create the booking for this user or process a refund.`;
             </div>
           )}
           
-          {selectedWeeks.length > 0 && (
+          {selectedWeeks.length > 0 && (selectedAccommodation || gardenAddon) && (
             <div className="">
               {/* Stay Details Section */}
               <StayDetails selectedWeeks={selectedWeeks} />
@@ -1388,6 +1388,7 @@ Please manually create the booking for this user or process a refund.`;
                   isBooking={isBooking}
                   selectedAccommodation={selectedAccommodation}
                   selectedWeeks={selectedWeeks}
+                  gardenAddon={gardenAddon}
                   finalAmountAfterCredits={finalAmountAfterCredits}
                   creditsToUse={creditsToUse}
                   isAdmin={isAdmin}
@@ -1403,6 +1404,13 @@ Please manually create the booking for this user or process a refund.`;
             <div className="text-center py-10 bg-surface/50 rounded-sm shadow-sm">
               <Calendar className="w-12 h-12 mx-auto text-secondary mb-4" />
               <p className="text-secondary text-sm">Select your dates to see the summary</p>
+            </div>
+          )}
+          
+          {selectedWeeks.length > 0 && !selectedAccommodation && !gardenAddon && (
+            <div className="text-center py-10 bg-surface/50 rounded-sm shadow-sm">
+              <Calendar className="w-12 h-12 mx-auto text-secondary mb-4" />
+              <p className="text-secondary text-sm">Select accommodation or Garden decompression to continue</p>
             </div>
           )}
         </div>

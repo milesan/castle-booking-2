@@ -1,10 +1,10 @@
 import React from 'react';
-import { Week, isEventWeek } from '../../../types/calendar';
 
 interface ConfirmButtonsProps {
   isBooking: boolean;
   selectedAccommodation: any | null;
-  selectedWeeks: Week[];
+  selectedWeeks: any[];
+  gardenAddon: any | null;
   finalAmountAfterCredits: number;
   creditsToUse: number;
   isAdmin: boolean;
@@ -17,6 +17,7 @@ export function ConfirmButtons({
   isBooking,
   selectedAccommodation,
   selectedWeeks,
+  gardenAddon,
   finalAmountAfterCredits,
   creditsToUse,
   isAdmin,
@@ -24,11 +25,8 @@ export function ConfirmButtons({
   onConfirm,
   onAdminConfirm
 }: ConfirmButtonsProps) {
-  // Check if any selected week is an event week
-  const hasEventWeek = selectedWeeks.some(week => isEventWeek(week));
-  
-  // Enable button if: has accommodation OR has event week
-  const canProceed = selectedWeeks.length > 0 && (selectedAccommodation || hasEventWeek);
+  // Allow booking if either accommodation is selected OR garden addon is selected
+  const canProceed = (selectedAccommodation || gardenAddon) && selectedWeeks.length > 0;
   
   return (
     <div className="mt-6 font-mono sm:mt-8">
