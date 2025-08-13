@@ -15,6 +15,8 @@ import { HoverClickPopover } from './HoverClickPopover';
 import { useUserPermissions } from '../hooks/useUserPermissions';
 import { usePendingBookings } from '../hooks/usePendingBookings';
 import { MasonryGallery } from './shared/MasonryGallery';
+import { TrendingDown } from 'lucide-react';
+import type { AuctionPricing } from '../hooks/useDutchAuctionSimple';
 
 // Local interface for accommodation images
 interface AccommodationImage {
@@ -44,6 +46,7 @@ interface Props {
   isDisabled?: boolean;
   displayWeeklyAccommodationPrice: (accommodationId: string) => { price: number | null; avgSeasonalDiscount: number | null } | null;
   testMode?: boolean;
+  getPricingInfo?: (accommodationId: string) => AuctionPricing | null;
 }
 
 // Helper function to get primary image (NEW IMAGES TABLE ONLY)
@@ -92,7 +95,8 @@ export function CabinSelector({
   currentMonth = normalizeToUTCDate(new Date()),
   isDisabled = false,
   displayWeeklyAccommodationPrice,
-  testMode = false
+  testMode = false,
+  getPricingInfo
 }: Props) {
 
   const { session } = useSession();
@@ -639,12 +643,16 @@ export function CabinSelector({
               // Get all images for the current accommodation to use for the counter
               const allImagesForAcc = getAllImages(acc);
 
-              // Get the whole info object
+              // Check for auction pricing first
+              const auctionPricing = getPricingInfo ? getPricingInfo(acc.id) : null;
+              const isInAuction = auctionPricing !== null;
+              
+              // Get the whole info object (regular pricing)
               const weeklyInfo = getDisplayInfoOptimized(acc.id);
               
-              // Ensure weeklyInfo and its properties are defined before accessing
-              let weeklyPrice = weeklyInfo?.price ?? null; // Use null as default if undefined
-              const avgSeasonalDiscountForTooltip = weeklyInfo?.avgSeasonalDiscount ?? null; // Use null as default
+              // Use auction price if available, otherwise use regular weekly price
+              let weeklyPrice = isInAuction ? auctionPricing.currentPrice : (weeklyInfo?.price ?? null);
+              const avgSeasonalDiscountForTooltip = isInAuction ? null : (weeklyInfo?.avgSeasonalDiscount ?? null);
 
               // Keep duration discount calculation local to tooltip
               const completeWeeksForDiscount = calculateDurationDiscountWeeks(selectedWeeks);
@@ -758,6 +766,15 @@ export function CabinSelector({
                   )}>
                     <div>
                       <h3 className="text-lg font-medium mb-1 text-primary font-lettra-bold uppercase">{acc.title}</h3>
+                      {/* Auction Indicator */}
+                      {isInAuction && auctionPricing && (
+                        <div className="mb-2 flex items-center gap-2">
+                          <span className="inline-flex items-center px-2 py-1 rounded-sm text-xs font-medium bg-green-900/20 text-green-200 border border-green-700/30">
+                            <TrendingDown size={12} className="mr-1" />
+                            Dutch Auction - drops €{auctionPricing.dailyDrop}/day
+                          </span>
+                        </div>
+                      )}
                       {/* Property Location Badge */}
                       {acc.property_location && (
                         <div className="mb-2">
@@ -804,10 +821,17 @@ export function CabinSelector({
                         {weeklyPrice === null || weeklyPrice === 0 ? (
                           <span className="text-accent-primary text-xl font-lettra-bold font-mono">{formatPrice(weeklyPrice, isTestAccommodation)}</span>
                         ) : (
-                          <span className="text-xl font-lettra-bold text-accent-primary">
-                            €{formatPrice(weeklyPrice, isTestAccommodation)}
-                            <span className="text-xl text-secondary font-lettra-bold"></span>
-                          </span>
+                          <div className="flex flex-col">
+                            <span className="text-xl font-lettra-bold text-accent-primary">
+                              €{formatPrice(weeklyPrice, isTestAccommodation)}
+                              <span className="text-xl text-secondary font-lettra-bold"></span>
+                            </span>
+                            {isInAuction && auctionPricing && (
+                              <span className="text-xs text-secondary font-mono mt-1">
+                                Floor: €{formatPrice(auctionPricing.floorPrice, false)}
+                              </span>
+                            )}
+                          </div>
                         )}
                       </div>
                       

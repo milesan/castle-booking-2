@@ -31,6 +31,8 @@ import { useUserPermissions } from '../hooks/useUserPermissions';
 import { Fireflies } from '../components/Fireflies';
 import { FireflyPortal } from '../components/FireflyPortal';
 import { GardenDecompressionAddon } from '../components/GardenDecompressionAddon';
+import { useDutchAuctionSimple } from '../hooks/useDutchAuctionSimple';
+import { TrendingDown } from 'lucide-react';
 
 // Define SeasonBreakdown type locally
 interface SeasonBreakdown {
@@ -76,6 +78,9 @@ const SeasonLegend = () => {
 export function Book2Page() {
   // console.log(`📊 [BOOK2] Render`); // Debug logging disabled
   const navigate = useNavigate();
+  
+  // Dutch Auction integration
+  const { isActive: auctionActive, timeToNextDrop, getPricingInfo, auctionStartDate, auctionEndDate, hasStarted } = useDutchAuctionSimple();
   
   // Get current date and set the initial month
   const today = new Date();
@@ -777,6 +782,48 @@ export function Book2Page() {
   
   return (
     <div className="min-h-screen">
+      {/* Dutch Auction Banner */}
+      {auctionActive && (
+        <div className="bg-gradient-to-b from-amber-50/80 to-transparent border-b border-amber-200/40 px-4 py-3">
+          <div className="max-w-7xl mx-auto">
+            <div className="flex flex-col gap-2">
+              {/* Main info line */}
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+                <div className="flex items-center gap-3">
+                  <TrendingDown className="w-4 h-4 text-amber-700" />
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
+                    <span className="text-sm font-semibold text-gray-900">
+                      {hasStarted ? 'Buy now or wait for lower prices' : 'Buy now at starting prices'}
+                    </span>
+                    <span className="text-xs text-gray-600">
+                      {hasStarted 
+                        ? 'Prices drop hourly until Sept 14' 
+                        : `Hourly drops begin Aug 15 at midnight`}
+                    </span>
+                  </div>
+                </div>
+                
+                {/* Countdown */}
+                <div className="flex items-center gap-2 bg-white/50 rounded px-2.5 py-1">
+                  <span className="text-xs text-gray-600">
+                    {hasStarted ? 'Next drop:' : 'Auction starts:'}
+                  </span>
+                  <span className="font-mono text-xs font-semibold text-amber-700">{timeToNextDrop || '—'}</span>
+                </div>
+              </div>
+              
+              {/* Tier pricing - more compact */}
+              <div className="flex flex-wrap gap-3 text-[11px] text-gray-600 pl-7">
+                <span>Tower: €15k→€3k</span>
+                <span className="text-gray-400">•</span>
+                <span>Noble: €10k→€2k</span>
+                <span className="text-gray-400">•</span>
+                <span>Standard: €5k→€1k</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
       <FireflyPortal />
       
       
@@ -948,6 +995,8 @@ export function Book2Page() {
                   accommodations={accommodations || []}
                   selectedAccommodationId={selectedAccommodation}
                   onSelectAccommodation={handleAccommodationSelect}
+                  auctionActive={auctionActive}
+                  getPricingInfo={getPricingInfo}
                   selectedWeeks={selectedWeeks}
                   currentMonth={currentMonth}
                   isLoading={accommodationsLoading}

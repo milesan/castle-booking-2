@@ -25,9 +25,9 @@ interface AuctionConfig {
 }
 
 const TIERS = [
-  { value: 'tower_suite', label: 'Tower Suite', defaultStart: 15000, defaultFloor: 800 },
-  { value: 'noble_quarter', label: 'Noble Quarter', defaultStart: 10000, defaultFloor: 600 },
-  { value: 'standard_chamber', label: 'Standard Chamber', defaultStart: 6000, defaultFloor: 400 },
+  { value: 'tower_suite', label: 'Tower Suite', defaultStart: 15000, defaultFloor: 3000 },
+  { value: 'noble_quarter', label: 'Noble Quarter', defaultStart: 10000, defaultFloor: 2000 },
+  { value: 'standard_chamber', label: 'Standard Chamber', defaultStart: 5000, defaultFloor: 1000 },
 ];
 
 export function DutchAuctionAdmin() {
@@ -37,9 +37,9 @@ export function DutchAuctionAdmin() {
   const [saving, setSaving] = useState(false);
   const [selectedTier, setSelectedTier] = useState<string>('');
   const [tierPrices, setTierPrices] = useState<Record<string, { start: number; floor: number }>>({
-    tower_suite: { start: 15000, floor: 800 },
-    noble_quarter: { start: 10000, floor: 600 },
-    standard_chamber: { start: 6000, floor: 400 },
+    tower_suite: { start: 15000, floor: 3000 },
+    noble_quarter: { start: 10000, floor: 2000 },
+    standard_chamber: { start: 5000, floor: 1000 },
   });
 
   useEffect(() => {
