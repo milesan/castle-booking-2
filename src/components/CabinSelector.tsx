@@ -125,7 +125,7 @@ export function CabinSelector({
   const [showOnlyWithBathrooms, setShowOnlyWithBathrooms] = useState(false);
   const [showOnlySharedBathrooms, setShowOnlySharedBathrooms] = useState(false);
   
-  // State for full-screen masonry gallery
+  // State for masonry gallery
   const [galleryOpen, setGalleryOpen] = useState(false);
   const [galleryImages, setGalleryImages] = useState<AccommodationImage[]>([]);
   const [galleryTitle, setGalleryTitle] = useState<string>('');
@@ -166,7 +166,7 @@ export function CabinSelector({
     }));
   };
 
-  // Handler to open full-screen masonry gallery
+  // Handler to open masonry gallery
   const handleOpenGallery = (accommodation: ExtendedAccommodation, e?: React.MouseEvent) => {
     if (e) {
       e.stopPropagation();
