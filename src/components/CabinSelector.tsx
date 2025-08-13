@@ -776,8 +776,8 @@ export function CabinSelector({
                     <div>
                       <h3 className="text-lg font-medium mb-1 text-primary font-lettra-bold uppercase">{acc.title}</h3>
                       {/* Property Location Badge */}
-                      {acc.property_location && (
-                        <div className="mb-2">
+                      <div className="mb-2 flex items-center gap-2 flex-wrap">
+                        {acc.property_location && (
                           <span className="inline-flex items-center px-2 py-1 rounded-sm text-xs font-medium bg-amber-900/20 text-amber-200 border border-amber-700/30">
                             {acc.property_location === 'dovecote' && '🕊️ Dovecote'}
                             {acc.property_location === 'renaissance' && (
@@ -797,8 +797,29 @@ export function CabinSelector({
                             {acc.property_location === 'palm_grove' && '🌴 Palm Grove'}
                             {acc.property_location === 'medieval' && '🏰 Medieval'}
                           </span>
-                        </div>
-                      )}
+                        )}
+                        {/* Bathroom Type Badge */}
+                        {acc.bathroom_type && acc.bathroom_type !== 'none' && (
+                          <span className={clsx(
+                            "inline-flex items-center gap-1 px-2 py-1 rounded-sm text-xs font-medium",
+                            acc.bathroom_type === 'private' 
+                              ? "bg-blue-500/20 text-blue-300 border border-blue-500/30" 
+                              : "bg-gray-600/20 text-gray-300 border border-gray-600/30"
+                          )}>
+                            {acc.bathroom_type === 'private' ? (
+                              <>
+                                <Bath size={10} />
+                                <span>Private</span>
+                              </>
+                            ) : (
+                              <>
+                                <Users size={10} />
+                                <span>Shared</span>
+                              </>
+                            )}
+                          </span>
+                        )}
+                      </div>
                       {/* Additional Info - Display as formatted text with icons */}
                       {acc.additional_info && (
                         <div className="text-secondary text-xs mb-3 space-y-1">
@@ -808,16 +829,23 @@ export function CabinSelector({
                             
                             // Add icons for specific amenities
                             let icon = null;
+                            let highlightClass = "";
+                            
                             if (trimmedInfo.toLowerCase().includes('bed')) {
                               icon = <BedDouble size={12} className="inline mr-1" />;
-                            } else if (trimmedInfo.toLowerCase().includes('bath')) {
+                            } else if (trimmedInfo.toLowerCase().includes('private') && trimmedInfo.toLowerCase().includes('bath')) {
+                              icon = <Bath size={12} className="inline mr-1 text-accent-primary" />;
+                              highlightClass = "text-accent-primary font-medium";
+                            } else if (trimmedInfo.toLowerCase().includes('shared') && trimmedInfo.toLowerCase().includes('bath')) {
+                              icon = <Users size={12} className="inline mr-1" />;
+                            } else if (trimmedInfo.toLowerCase().includes('bath') || trimmedInfo.toLowerCase().includes('shower') || trimmedInfo.toLowerCase().includes('tub')) {
                               icon = <Bath size={12} className="inline mr-1" />;
                             }
                             
                             return (
                               <div key={idx} className="flex items-start">
                                 <span className="mr-1">•</span>
-                                <span>
+                                <span className={highlightClass}>
                                   {icon}
                                   {trimmedInfo}
                                 </span>
