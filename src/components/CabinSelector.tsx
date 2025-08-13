@@ -168,22 +168,16 @@ export function CabinSelector({
 
   // Handler to open masonry gallery
   const handleOpenGallery = (accommodation: ExtendedAccommodation, e?: React.MouseEvent) => {
-    console.log('🔍 Opening gallery for:', accommodation.title);
-    
     if (e) {
       e.stopPropagation();
     }
     
     const images = getAllImages(accommodation);
-    console.log('🔍 Found', images.length, 'images');
     
     if (images.length > 0) {
       setGalleryImages(images);
       setGalleryTitle(accommodation.title);
       setGalleryOpen(true);
-      console.log('✅ Gallery opened');
-    } else {
-      console.log('❌ No images found, gallery not opening');
     }
   };
 
@@ -223,25 +217,21 @@ export function CabinSelector({
     }
 
     const handlePrevious = (e: React.MouseEvent) => {
-      console.log('⬅️ Previous button clicked');
-      // Don't stop propagation - let parent handle it
+      e.stopPropagation();
       setImageLoading(true);
       navigateToImage(accommodation.id, 'prev', allImages.length);
       setTimeout(() => setImageLoading(false), 50);
-      console.log('⬅️ Navigated to previous image');
     };
 
     const handleNext = (e: React.MouseEvent) => {
-      console.log('➡️ Next button clicked');
-      // Don't stop propagation - let parent handle it
+      e.stopPropagation();
       setImageLoading(true);
       navigateToImage(accommodation.id, 'next', allImages.length);
       setTimeout(() => setImageLoading(false), 50);
-      console.log('➡️ Navigated to next image');
     };
 
     const handleDotClick = (e: React.MouseEvent, index: number) => {
-      // Don't stop propagation - let parent handle it
+      e.stopPropagation();
       setImageLoading(true);
       setImageIndex(accommodation.id, index);
       setTimeout(() => setImageLoading(false), 50);
@@ -256,7 +246,7 @@ export function CabinSelector({
 
     return (
       <div className="relative w-full h-full group/gallery bg-gray-100">
-        {/* Main Image - clickable to open masonry gallery, with anti-flash loading */}
+        {/* Main Image - clickable to open full-screen masonry */}
         <img 
           key={currentImageUrl} // Force remount for clean transitions
           src={currentImageUrl || ''} 
@@ -266,9 +256,8 @@ export function CabinSelector({
           }`}
           onLoad={handleImageLoad}
           onClick={(e) => {
-            console.log('🖼️ IMAGE clicked!');
-            // Don't stop propagation - let the parent card handle blocking its own selection
-            handleOpenGallery(accommodation);
+            e.stopPropagation();
+            handleOpenGallery(accommodation, e);
           }}
           loading="eager" // Change to eager for gallery images
         />
@@ -709,23 +698,7 @@ export function CabinSelector({
                     (testMode || (finalCanSelect && !isDisabled)) && 'cursor-pointer'
                   )}
                   onClick={(e) => {
-                    // Check if the click target is part of the image gallery
-                    const target = e.target as HTMLElement;
-                    const isImageClick = target.tagName === 'IMG' || 
-                                        target.closest('.group\\/gallery') !== null ||
-                                        target.closest('button') !== null;
-                    
-                    console.log('🎯 Card clicked, isImageClick:', isImageClick);
-                    
-                    // If clicking on image gallery elements, don't select the accommodation
-                    if (isImageClick) {
-                      console.log('🛑 Blocking card selection for image/button click');
-                      return;
-                    }
-                    
-                    // Prevent event bubbling to parent elements
-                    e.stopPropagation();
-                    
+                    // Only select accommodation if not clicking on interactive elements
                     if (testMode || (finalCanSelect && !isDisabled)) {
                       handleSelectAccommodation(acc.id);
                     }
@@ -946,10 +919,7 @@ export function CabinSelector({
       <FullScreenMasonry
         images={galleryImages}
         isOpen={galleryOpen}
-        onClose={() => {
-          console.log('❌ Gallery closing');
-          setGalleryOpen(false);
-        }}
+        onClose={() => setGalleryOpen(false)}
         title={galleryTitle}
       />
     </div>

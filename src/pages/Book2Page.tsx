@@ -289,7 +289,6 @@ export function Book2Page() {
    * It's attached to the Clear Selection button in the WeekSelector component.
    */
   const handleClearSelection = useCallback(() => {
-    
     // Simply pass all selected weeks to our existing deselection handler
     if (selectedWeeks.length > 0) {
       handleWeeksDeselect(selectedWeeks);
@@ -466,7 +465,6 @@ export function Book2Page() {
     const seasons = Object.values(seasonMap).sort((a, b) => b.nights - a.nights);
     const hasMultipleSeasons = seasons.length > 1;
     
-    
     return { hasMultipleSeasons, seasons };
   }, [currentMonth]);
 
@@ -500,8 +498,6 @@ export function Book2Page() {
     // It should already be normalized by the modal.
     const normalizedDate = date; // Reverted: Use the input date directly
     
-    // --- Log the date received from the modal ---
-    
     if (!week) {
       console.error('[Book2Page] No week provided to handleFlexDateSelect');
       return;
@@ -522,8 +518,6 @@ export function Book2Page() {
       isFlexibleSelection: true // Add flag
       // Ensure any other essential properties from 'Week' type are preserved if needed
     };
-    
-    // --- Log the object just before state update ---
     
     // Use a direct state update for the first selection to avoid any stale closures
     if (selectedWeeks.length === 0) {
