@@ -318,6 +318,13 @@ export function BookingSummary({
   // Validate availability before showing Stripe modal
   const validateAvailability = async () => {
     console.log('[Booking Summary] Validating availability...');
+    
+    // If only garden addon is selected (no accommodation), skip availability check
+    if (!selectedAccommodation && gardenAddon) {
+      console.log('[Booking Summary] Only Garden addon selected, skipping accommodation availability check');
+      return true;
+    }
+    
     if (!selectedAccommodation || selectedWeeks.length === 0) {
       console.warn('[Booking Summary] Missing accommodation or weeks for validation');
       setError('Please select accommodation and dates first.');
@@ -370,8 +377,14 @@ export function BookingSummary({
       selectedCheckInDateISO: selectedCheckInDate?.toISOString()
     });
     try {
-      if (!selectedAccommodation || selectedWeeks.length === 0 || !selectedCheckInDate) {
-        console.error('[Booking Summary] Missing required info for booking success:', { selectedAccommodation: !!selectedAccommodation, selectedWeeks: selectedWeeks.length > 0, selectedCheckInDate: !!selectedCheckInDate });
+      // For Garden-only bookings, we still need dates but not accommodation
+      if ((!selectedAccommodation && !gardenAddon) || selectedWeeks.length === 0 || !selectedCheckInDate) {
+        console.error('[Booking Summary] Missing required info for booking success:', { 
+          selectedAccommodation: !!selectedAccommodation, 
+          gardenAddon: !!gardenAddon,
+          selectedWeeks: selectedWeeks.length > 0, 
+          selectedCheckInDate: !!selectedCheckInDate 
+        });
         throw new Error('Missing required booking information');
       }
       
@@ -443,8 +456,13 @@ export function BookingSummary({
         });
         
         const paymentRowIdToUse = paymentRowIdOverride || pendingPaymentRowId;
+        
+        // Handle Garden-only bookings
+        const accommodationId = selectedAccommodation?.id || null;
+        const bookingTitle = selectedAccommodation?.title || (gardenAddon ? `Garden Decompression: ${gardenAddon.name}` : 'Booking');
+        
         const bookingPayload: any = {
-          accommodationId: selectedAccommodation.id,
+          accommodationId: accommodationId,
           checkIn: formattedCheckIn,
           checkOut: formattedCheckOut,
           totalPrice: roundedTotal, // Send the final price calculated by the frontend
@@ -982,9 +1000,10 @@ Please manually create the booking for this user or process a refund.`;
       console.warn('[BOOKING_FLOW] STEP 1 FAILED: Check-in date validation failed.');
       return;
     }
-    if (!selectedAccommodation) {
-      console.warn('[BOOKING_FLOW] STEP 1 FAILED: No accommodation selected');
-      setError('Please select an accommodation');
+    // Allow booking if either accommodation OR garden addon is selected
+    if (!selectedAccommodation && !gardenAddon) {
+      console.warn('[BOOKING_FLOW] STEP 1 FAILED: No accommodation or garden addon selected');
+      setError('Please select an accommodation or Garden decompression option');
       return;
     }
     try {
@@ -1266,9 +1285,9 @@ Please manually create the booking for this user or process a refund.`;
                     ? testPaymentAmount // Otherwise use admin test amount if set
                     : finalAmountAfterCredits // Use amount after credits
                 }
-                description={`${selectedAccommodation?.title || 'Accommodation'} for ${pricing.totalNights} nights${selectedCheckInDate ? ` from ${formatInTimeZone(selectedCheckInDate, 'UTC', 'd. MMMM')}` : ''}`}
-                bookingMetadata={selectedAccommodation && selectedCheckInDate ? {
-                  accommodationId: selectedAccommodation.id,
+                description={`${selectedAccommodation?.title || (gardenAddon ? `Garden Decompression: ${gardenAddon.name}` : 'Booking')} for ${pricing.totalNights} nights${selectedCheckInDate ? ` from ${formatInTimeZone(selectedCheckInDate, 'UTC', 'd. MMMM')}` : ''}`}
+                bookingMetadata={(selectedAccommodation || gardenAddon) && selectedCheckInDate ? {
+                  accommodationId: selectedAccommodation?.id || null,
                   checkIn: selectedCheckInDate ? formatInTimeZone(selectedCheckInDate, 'UTC', 'yyyy-MM-dd') : undefined,
                   checkOut: selectedCheckInDate ? formatInTimeZone(addDays(selectedCheckInDate, calculateTotalDays(selectedWeeks)-1), 'UTC', 'yyyy-MM-dd') : undefined,
                   originalTotal: pricing.totalAmount,
@@ -1317,7 +1336,7 @@ Please manually create the booking for this user or process a refund.`;
             </div>
           )}
           
-          {selectedWeeks.length > 0 && (
+          {selectedWeeks.length > 0 && (selectedAccommodation || gardenAddon) && (
             <div className="">
               {/* Stay Details Section */}
               <StayDetails selectedWeeks={selectedWeeks} />
@@ -1383,6 +1402,7 @@ Please manually create the booking for this user or process a refund.`;
                   isBooking={isBooking}
                   selectedAccommodation={selectedAccommodation}
                   selectedWeeks={selectedWeeks}
+                  gardenAddon={gardenAddon}
                   finalAmountAfterCredits={finalAmountAfterCredits}
                   creditsToUse={creditsToUse}
                   isAdmin={isAdmin}
@@ -1398,6 +1418,13 @@ Please manually create the booking for this user or process a refund.`;
             <div className="text-center py-10 bg-surface/50 rounded-sm shadow-sm">
               <Calendar className="w-12 h-12 mx-auto text-secondary mb-4" />
               <p className="text-secondary text-sm">Select your dates to see the summary</p>
+            </div>
+          )}
+          
+          {selectedWeeks.length > 0 && !selectedAccommodation && !gardenAddon && (
+            <div className="text-center py-10 bg-surface/50 rounded-sm shadow-sm">
+              <Calendar className="w-12 h-12 mx-auto text-secondary mb-4" />
+              <p className="text-secondary text-sm">Select accommodation or Garden decompression to continue</p>
             </div>
           )}
         </div>
