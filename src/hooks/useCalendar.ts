@@ -49,7 +49,7 @@ export function useCalendar({ startDate, endDate, isAdminMode = false }: UseCale
             id: 'sept-21-26-2025',
             startDate: new Date('2025-09-21T00:00:00Z'),
             endDate: new Date('2025-09-26T00:00:00Z'),
-            name: 'Castle Week',
+            name: 'The Castle',
             status: 'available' as WeekStatus,
             isCustom: true,
             isEdgeWeek: false,

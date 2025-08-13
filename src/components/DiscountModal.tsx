@@ -38,11 +38,6 @@ function useDiscounts(checkInDate: Date, checkOutDate: Date, accommodationName: 
   if (selectedWeeks && selectedWeeks.length > 0) {
     // Use the actual selected weeks for accurate duration calculation
     completeWeeks = calculateDurationDiscountWeeks(selectedWeeks);
-    console.log('[EXTENSION_DURATION_DEBUG] Duration calculation using selectedWeeks:', {
-      selectedWeeksCount: selectedWeeks.length,
-      completeWeeks,
-      calculationNote: 'completeWeeks = calculateDurationDiscountWeeks(selectedWeeks)'
-    });
   } else {
     // Fallback to the old method for extensions or when selectedWeeks is not provided
     const mockWeek = { 
@@ -51,48 +46,18 @@ function useDiscounts(checkInDate: Date, checkOutDate: Date, accommodationName: 
       status: 'visible' as const
     };
     
-    console.log('[EXTENSION_DURATION_DEBUG] Duration calculation inputs (fallback):', {
-      durationStartDate: durationStartDate.toISOString(),
-      durationEndDate: durationEndDate.toISOString(),
-      mockWeek: {
-        startDate: mockWeek.startDate.toISOString(),
-        endDate: mockWeek.endDate.toISOString()
-      },
-      usingCustomDurationDates: !!(durationCheckInDate && durationCheckOutDate),
-      regularDates: `${checkInDate.toISOString().split('T')[0]} to ${checkOutDate.toISOString().split('T')[0]}`,
-      durationDates: `${durationStartDate.toISOString().split('T')[0]} to ${durationEndDate.toISOString().split('T')[0]}`
-    });
     
     completeWeeks = calculateDurationDiscountWeeks([mockWeek]);
     
-    console.log('[EXTENSION_DURATION_DEBUG] Duration calculation result (fallback):', {
-      completeWeeks,
-      calculationNote: 'completeWeeks = calculateDurationDiscountWeeks([mockWeek])'
-    });
   }
   
   const durationDiscount = getDurationDiscount(completeWeeks);
   
-  console.log('[EXTENSION_DURATION_DEBUG] Duration discount result:', {
-    inputWeeks: completeWeeks,
-    outputDiscount: durationDiscount,
-    outputDiscountPercent: (durationDiscount * 100).toFixed(1) + '%'
-  });
 
   // Calculate seasonal discount breakdown for accommodation
   const seasonBreakdown = getSeasonBreakdown(checkInDate, checkOutDate);
   const showAccSeasonalSection = basePrice > 0 && seasonBreakdown.seasons.length > 0 && !accommodationName.toLowerCase().includes('dorm');
 
-  console.log('[DiscountModal] useDiscounts Results:', {
-    basePrice,
-    completeWeeks,
-    durationDiscount,
-    showAccSeasonalSection,
-    seasonBreakdown,
-    usingCustomDurationDates: !!(durationCheckInDate && durationCheckOutDate),
-    seasonalDates: `${checkInDate.toISOString().split('T')[0]} to ${checkOutDate.toISOString().split('T')[0]}`,
-    durationDates: `${durationStartDate.toISOString().split('T')[0]} to ${durationEndDate.toISOString().split('T')[0]}`
-  });
 
   return {
     completeWeeks,

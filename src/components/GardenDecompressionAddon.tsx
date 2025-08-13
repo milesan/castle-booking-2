@@ -79,7 +79,7 @@ export function GardenDecompressionAddon({
           Continue to The Garden? (Optional)
         </h2>
         <p className="text-sm sm:text-base text-secondary font-mono">
-          Decompress after Castle Week at our sister location in Portugal
+          Decompress after The Castle at our sister location in Portugal
         </p>
       </div>
 
@@ -193,7 +193,7 @@ export function GardenDecompressionAddon({
                 </div>
 
                 <div className="text-xs text-secondary font-mono italic">
-                  Note: The Garden decompression is a separate booking from Castle Week. 
+                  Note: The Garden decompression is a separate booking from The Castle. 
                   You'll receive separate confirmation and check-in instructions.
                 </div>
               </div>

@@ -48,9 +48,6 @@ export function Fireflies({
   localizedRadius = 150,
   contained = false
 }: FireflyProps) {
-  console.log('[Fireflies] Component mounting with props:', {
-    count, color, minSize, maxSize, fadeIn, fadeOut, duration, clickTrigger, ambient, visible, position, localized, localizedRadius, contained
-  });
   
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationRef = useRef<number>();
@@ -79,17 +76,14 @@ export function Fireflies({
   }, [position]);
 
   useEffect(() => {
-    console.log('[Fireflies] Main effect running, isVisible:', isVisible, 'clickPosition:', clickPosition);
     
     const canvas = canvasRef.current;
     if (!canvas) {
-      console.log('[Fireflies] No canvas ref found');
       return;
     }
 
     const ctx = canvas.getContext('2d');
     if (!ctx) {
-      console.log('[Fireflies] No 2D context found');
       return;
     }
 
@@ -111,26 +105,9 @@ export function Fireflies({
         canvas.style.top = `${viewportY - localizedRadius}px`;
         canvas.style.width = `${localizedRadius * 2}px`;
         canvas.style.height = `${localizedRadius * 2}px`;
-        console.log('[Fireflies] Canvas positioned at:', {
-          pageX: clickPosition.x,
-          pageY: clickPosition.y,
-          viewportX: viewportX,
-          viewportY: viewportY,
-          left: viewportX - localizedRadius,
-          top: viewportY - localizedRadius,
-          scrollX,
-          scrollY
-        });
         
         // Debug: Check if canvas is visible in viewport
         const rect = canvas.getBoundingClientRect();
-        console.log('[Fireflies] Canvas viewport position:', {
-          top: rect.top,
-          left: rect.left,
-          bottom: rect.bottom,
-          right: rect.right,
-          isVisible: rect.top < window.innerHeight && rect.bottom > 0
-        });
       } else if (contained) {
         // For contained mode, size canvas to match its parent container
         const parent = canvas.parentElement;
@@ -233,7 +210,6 @@ export function Fireflies({
     const animate = () => {
       // Check if component is still mounted
       if (!mountedRef.current) {
-        console.log('[Fireflies] Animation cancelled - component unmounted');
         return;
       }
       
@@ -371,7 +347,6 @@ export function Fireflies({
 
     // Start animation
     if (isVisible) {
-      console.log('[Fireflies] Starting animation');
       animate();
     }
 
@@ -393,7 +368,6 @@ export function Fireflies({
         // Use pageX/pageY for document-relative coordinates
         const x = localized ? e.pageX : e.clientX;
         const y = localized ? e.pageY : e.clientY;
-        console.log('[Fireflies] Click detected at:', { x, y });
         setClickPosition({ x, y });
         setIsVisible(true);
         
@@ -412,7 +386,6 @@ export function Fireflies({
     }
 
     return () => {
-      console.log('[Fireflies] Cleaning up effect');
       window.removeEventListener('resize', updateCanvasSize);
       if (scrollHandler) {
         window.removeEventListener('scroll', scrollHandler);
@@ -421,7 +394,6 @@ export function Fireflies({
         window.removeEventListener('click', handleClick);
       }
       if (animationRef.current) {
-        console.log('[Fireflies] Cancelling animation frame:', animationRef.current);
         cancelAnimationFrame(animationRef.current);
         animationRef.current = undefined;
       }
@@ -440,7 +412,6 @@ export function Fireflies({
           style={{ 
             mixBlendMode: 'screen'
           }}
-          onAnimationComplete={() => console.log('[Fireflies] Canvas animation complete')}
         />
       )}
     </AnimatePresence>

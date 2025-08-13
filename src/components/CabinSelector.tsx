@@ -15,6 +15,7 @@ import { HoverClickPopover } from './HoverClickPopover';
 import { useUserPermissions } from '../hooks/useUserPermissions';
 import { usePendingBookings } from '../hooks/usePendingBookings';
 import { MasonryGallery } from './shared/MasonryGallery';
+import { FullScreenMasonry } from './FullScreenMasonry';
 import { TrendingDown } from 'lucide-react';
 import type { AuctionPricing } from '../hooks/useDutchAuctionSimple';
 
@@ -51,17 +52,35 @@ interface Props {
 
 // Helper function to get primary image (NEW IMAGES TABLE ONLY)
 const getPrimaryImageUrl = (accommodation: ExtendedAccommodation): string | null => {
-  // Only check new images table for primary image
+  // Check new images table for primary image
   const primaryImage = accommodation.images?.find(img => img.is_primary);
   if (primaryImage) return primaryImage.image_url;
   
-  // No fallback to old image_url field - only use new table
-  return null;
+  // If images exist but no primary, use first image
+  if (accommodation.images && accommodation.images.length > 0) {
+    return accommodation.images[0].image_url;
+  }
+  
+  // Fallback to old image_url field if no images array
+  return accommodation.image_url || null;
 };
 
 // Helper function to get all images sorted by display order
 const getAllImages = (accommodation: ExtendedAccommodation): AccommodationImage[] => {
-  if (!accommodation.images || accommodation.images.length === 0) return [];
+  if (!accommodation.images || accommodation.images.length === 0) {
+    // Fallback: if no images array but has image_url, create a single image entry
+    if (accommodation.image_url) {
+      return [{
+        id: `${accommodation.id}-primary`,
+        accommodation_id: accommodation.id,
+        image_url: accommodation.image_url,
+        display_order: 0,
+        is_primary: true,
+        created_at: new Date().toISOString()
+      }];
+    }
+    return [];
+  }
   return [...accommodation.images].sort((a, b) => a.display_order - b.display_order);
 };
 
@@ -157,7 +176,9 @@ export function CabinSelector({
     if (e) {
       e.stopPropagation();
     }
+    
     const images = getAllImages(accommodation);
+    
     if (images.length > 0) {
       setGalleryImages(images);
       setGalleryTitle(accommodation.title);
@@ -230,38 +251,37 @@ export function CabinSelector({
 
     return (
       <div className="relative w-full h-full group/gallery bg-gray-100">
-        {/* Main Image - clickable to open masonry gallery, with anti-flash loading */}
-        <div 
-          className="w-full h-full cursor-pointer relative"
-          onClick={(e) => handleOpenGallery(accommodation, e)}
-        >
-          <img 
-            key={currentImageUrl} // Force remount for clean transitions
-            src={currentImageUrl || ''} 
-            alt="" // Remove alt text to prevent flash
-            className={`w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 ease-in-out ${
-              imageLoading || !loadedImages.has(currentImageUrl || '') ? 'opacity-0' : 'opacity-100'
-            }`}
-            onLoad={handleImageLoad}
-            loading="eager" // Change to eager for gallery images
-          />
-          {/* Subtle expand indicator on hover */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
-        </div>
+        {/* Main Image - clickable to open full-screen masonry */}
+        <img 
+          key={currentImageUrl} // Force remount for clean transitions
+          src={currentImageUrl || ''} 
+          alt="" // Remove alt text to prevent flash
+          className={`w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 ease-in-out cursor-pointer ${
+            imageLoading || !loadedImages.has(currentImageUrl || '') ? 'opacity-0' : 'opacity-100'
+          }`}
+          onLoad={handleImageLoad}
+          onClick={(e) => {
+            e.stopPropagation();
+            handleOpenGallery(accommodation, e);
+          }}
+          loading="eager" // Change to eager for gallery images
+        />
+        {/* Subtle expand indicator on hover */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
 
         {/* Navigation arrows - always visible when more than 1 image */}
         {allImages.length > 1 && (
           <>
             <button
               onClick={handlePrevious}
-              className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-black/80 hover:bg-black/90 text-white rounded-md p-1 transition-all duration-200 hover:scale-110 shadow-lg z-20"
+              className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-black/80 hover:bg-black/90 text-white rounded-md p-1 transition-all duration-200 hover:scale-110 shadow-lg z-30"
               aria-label="Previous image"
             >
               <ChevronLeft size={16} />
             </button>
             <button
               onClick={handleNext}
-              className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-black/80 hover:bg-black/90 text-white rounded-md p-1 transition-all duration-200 hover:scale-110 shadow-lg z-20"
+              className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-black/80 hover:bg-black/90 text-white rounded-md p-1 transition-all duration-200 hover:scale-110 shadow-lg z-30"
               aria-label="Next image"
             >
               <ChevronRight size={16} />
@@ -271,7 +291,7 @@ export function CabinSelector({
 
         {/* Dots indicator - only show if more than 1 image */}
         {allImages.length > 1 && (
-          <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 flex space-x-1 z-10">
+          <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 flex space-x-1 z-30">
             {allImages.map((_, index) => (
               <button
                 key={index}
@@ -419,7 +439,7 @@ export function CabinSelector({
       }
 
       // Filter by bathroom if enabled
-      if (showOnlyWithBathrooms && (!acc.bathrooms || acc.bathrooms === 0)) {
+      if (showOnlyWithBathrooms && acc.bathroom_type !== 'private') {
         return false;
       }
 
@@ -569,7 +589,7 @@ export function CabinSelector({
           <span>Private Bathrooms</span>
           {showOnlyWithBathrooms && (
             <span className="ml-1 text-xs opacity-90">
-              ({accommodations.filter(acc => acc.bathrooms && acc.bathrooms > 0 && !(acc as any).parent_accommodation_id).length})
+              ({accommodations.filter(acc => acc.bathroom_type === 'private' && !(acc as any).parent_accommodation_id).length})
             </span>
           )}
         </button>
@@ -687,9 +707,7 @@ export function CabinSelector({
                     (testMode || (finalCanSelect && !isDisabled)) && 'cursor-pointer'
                   )}
                   onClick={(e) => {
-                    // Prevent event bubbling to parent elements
-                    e.stopPropagation();
-                    
+                    // Only select accommodation if not clicking on interactive elements
                     if (testMode || (finalCanSelect && !isDisabled)) {
                       handleSelectAccommodation(acc.id);
                     }
@@ -799,10 +817,31 @@ export function CabinSelector({
                           </span>
                         </div>
                       )}
-                      {/* Additional Info - Display as text */}
+                      {/* Additional Info - Display as formatted text with icons */}
                       {acc.additional_info && (
-                        <div className="text-secondary text-xs mb-3">
-                          {acc.additional_info}
+                        <div className="text-secondary text-xs mb-3 space-y-1">
+                          {acc.additional_info.split('•').map((info, idx) => {
+                            const trimmedInfo = info.trim();
+                            if (!trimmedInfo) return null;
+                            
+                            // Add icons for specific amenities
+                            let icon = null;
+                            if (trimmedInfo.toLowerCase().includes('bed')) {
+                              icon = <BedDouble size={12} className="inline mr-1" />;
+                            } else if (trimmedInfo.toLowerCase().includes('bath')) {
+                              icon = <Bath size={12} className="inline mr-1" />;
+                            }
+                            
+                            return (
+                              <div key={idx} className="flex items-start">
+                                <span className="mr-1">•</span>
+                                <span>
+                                  {icon}
+                                  {trimmedInfo}
+                                </span>
+                              </div>
+                            );
+                          })}
                         </div>
                       )}
                       
@@ -901,8 +940,8 @@ export function CabinSelector({
         </div>
       )}
       
-      {/* Masonry Gallery Modal */}
-      <MasonryGallery
+      {/* Full-Screen Masonry Gallery */}
+      <FullScreenMasonry
         images={galleryImages}
         isOpen={galleryOpen}
         onClose={() => setGalleryOpen(false)}

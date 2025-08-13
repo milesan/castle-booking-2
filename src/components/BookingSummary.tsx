@@ -50,54 +50,30 @@ export function BookingSummary({
     return formatInTimeZone(date, 'UTC', 'MMM d, yyyy');
   };
 
-  // --- ADDED LOGGING: Check received prop value ---
-  console.log('[BookingSummary] --- PROPS CHECK ---');
-  console.log('[BookingSummary] Received calculatedWeeklyAccommodationPrice PROP:', calculatedWeeklyAccommodationPrice);
-  // --- END ADDED LOGGING ---
+  // --- REMOVED: Debug logging ---
 
-  // --- LOGGING: Initial props and state ---
-  console.log('[BookingSummary] --- Component Render Start ---');
-  console.log('[BookingSummary] Initial Props Received:', {
-    selectedWeeksCount: selectedWeeks?.length,
-    selectedAccommodationId: selectedAccommodation?.id,
-    selectedAccommodationTitle: selectedAccommodation?.title,
-    initialSeasonBreakdownProvided: !!initialSeasonBreakdown,
-    calculatedWeeklyAccommodationPrice, // Log the prop value
-  });
-  // Log specifically if it's the test accommodation
-  if (selectedAccommodation?.type === 'test') {
-    console.log('[BookingSummary] TEST ACCOMMODATION SELECTED - calculatedWeeklyAccommodationPrice:', calculatedWeeklyAccommodationPrice);
-  }
-  console.log('[BookingSummary] Raw selectedWeeks:', selectedWeeks.map(w => ({ start: w.startDate?.toISOString(), end: w.endDate?.toISOString(), flex: w.selectedFlexDate?.toISOString() })));
+  // --- REMOVED: Debug logging ---
 
   const [isBooking, setIsBooking] = useState(false);
-  console.log('[BookingSummary] useState(isBooking) called');
   
   const [error, setError] = useState<string | null>(null);
-  console.log('[BookingSummary] useState(error) called');
   
   const [showStripeModal, setShowStripeModal] = useState(false);
-  console.log('[BookingSummary] useState(showStripeModal) called');
   
-  // --- ADDED: Track state setters for flickering debug ---
+  // --- REMOVED: Flickering debug state setters ---
   const setIsBookingWithLogging = useCallback((value: boolean) => {
-    console.log('[FLICKER_DEBUG] 🎯 SETTING isBooking:', { from: isBooking, to: value });
     setIsBooking(value);
-  }, [isBooking]);
+  }, []);
   
   const setErrorWithLogging = useCallback((value: string | null) => {
-    console.log('[FLICKER_DEBUG] 🎯 SETTING error:', { from: error, to: value });
     setError(value);
-  }, [error]);
+  }, []);
   
   const setShowStripeModalWithLogging = useCallback((value: boolean) => {
-    console.log('[FLICKER_DEBUG] 🎯 SETTING showStripeModal:', { from: showStripeModal, to: value });
     setShowStripeModal(value);
-  }, [showStripeModal]);
-  // --- END ADDED: Track state setters for flickering debug ---
+  }, []);
   
   const [authToken, setAuthToken] = useState('');
-  console.log('[BookingSummary] useState(authToken) called');
   
   const [selectedCheckInDate, setSelectedCheckInDate] = useState<Date | null>(null);
   const [showDatePicker, setShowDatePicker] = useState(false);
@@ -122,135 +98,48 @@ export function BookingSummary({
   const [userHasManuallyAdjustedCredits, setUserHasManuallyAdjustedCredits] = useState<boolean>(false);
   // --- END ADDED: Track if user has manually adjusted credits ---
   
-  // --- ADDED: Track render cycles for flickering debug ---
-  const renderCount = React.useRef(0);
-  const lastRenderTime = React.useRef<number>(Date.now());
+  // --- REMOVED: Render cycle tracking debug ---
   
-  useEffect(() => {
-    renderCount.current += 1;
-    const now = Date.now();
-    const timeSinceLastRender = now - lastRenderTime.current;
-    lastRenderTime.current = now;
-    
-    console.log(`[FLICKER_DEBUG] 🔄 Render #${renderCount.current} (${timeSinceLastRender}ms since last)`, {
-      creditsToUse,
-      availableCredits,
-      finalAmountAfterCredits,
-      isBooking,
-      showStripeModal,
-      error,
-      userHasManuallyAdjustedCredits,
-      creditsEnabled,
-      creditsLoading
-    });
-  });
-  // --- END ADDED: Track render cycles for flickering debug ---
-  
-  // --- ADDED: Credit tracking logs ---
-  console.log('[CREDIT_TRACKING] Initial credit state:', {
-    availableCredits,
-    creditsLoading,
-    creditsToUse,
-    creditsEnabled
-  });
+  // --- REMOVED: Credit tracking debug ---
   
   // --- REMOVED: Track component mount (no longer needed) ---
   
   // --- REMOVED: Track credit changes (no longer needed) ---
   
-  // --- ADDED: Track credit changes over time for debugging ---
-  const creditChangeHistory = React.useRef<Array<{
-    timestamp: string;
-    availableCredits: number;
-    creditsToUse: number;
-    creditsEnabled: boolean;
-    creditsLoading: boolean;
-    userHasManuallyAdjustedCredits: boolean;
-    context?: string;
-  }>>([]);
-  
-  useEffect(() => {
-    const change = {
-      timestamp: new Date().toISOString(),
-      availableCredits,
-      creditsToUse,
-      creditsEnabled,
-      creditsLoading,
-      userHasManuallyAdjustedCredits,
-      context: 'state_change'
-    };
-    creditChangeHistory.current.push(change);
-    
-    // Keep only last 20 changes to avoid memory issues
-    if (creditChangeHistory.current.length > 20) {
-      creditChangeHistory.current = creditChangeHistory.current.slice(-20);
-    }
-    
-    console.log('[CREDIT_TRACKING] 📊 Credit change history updated:', {
-      totalChanges: creditChangeHistory.current.length,
-      latestChange: change,
-      recentChanges: creditChangeHistory.current.slice(-5)
-    });
-  }, [availableCredits, creditsToUse, creditsEnabled, creditsLoading, userHasManuallyAdjustedCredits]);
-  // --- END ADDED: Track credit changes over time ---
+  // --- REMOVED: Credit change history tracking ---
   
   // Clear error when accommodation changes
   useEffect(() => {
     if (error) {
-      console.log('[BookingSummary] Clearing error due to accommodation change');
       setErrorWithLogging(null);
     }
   }, [selectedAccommodation?.id]);
   
   // Track when credits are set
   const setCreditsToUseWithLogging = useCallback((value: number) => {
-    console.log('[CREDIT_TRACKING] Setting creditsToUse:', {
-      from: creditsToUse,
-      to: value,
-      availableCredits,
-      willExceedAvailable: value > availableCredits
-    });
     setCreditsToUse(value);
-  }, [creditsToUse, availableCredits]);
+  }, []);
   
-  // --- ADDED: Manual credit adjustment function ---
+  // --- Manual credit adjustment function ---
   const setCreditsToUseManually = useCallback((value: number) => {
-    console.log('[CREDIT_TRACKING] 🎯 MANUAL credit adjustment:', {
-      from: creditsToUse,
-      to: value,
-      availableCredits,
-      willExceedAvailable: value > availableCredits
-    });
     setCreditsToUse(value);
     setUserHasManuallyAdjustedCredits(true);
-    console.log('[CREDIT_TRACKING] ✅ User has manually adjusted credits - auto-setting disabled');
-  }, [creditsToUse, availableCredits]);
-  // --- END ADDED: Manual credit adjustment function ---
+  }, []);
   
   // Track refreshCredits calls
   const refreshCreditsWithLogging = useCallback(async () => {
-    console.log('[CREDIT_TRACKING] 🔄 Calling refreshCredits...');
-    const beforeCredits = availableCredits;
     try {
       await refreshCredits();
-      console.log('[CREDIT_TRACKING] ✅ refreshCredits completed successfully');
-      // Note: We can't log the new value here since it's async, but we can check in the next render
     } catch (error) {
-      console.error('[CREDIT_TRACKING] ❌ refreshCredits failed:', error);
+      console.error('refreshCredits failed:', error);
     }
-  }, [refreshCredits, availableCredits]);
-  // --- END ADDED: Credit tracking logs ---
+  }, [refreshCredits]);
   
   // --- End Credits State ---
 
   // State for internally calculated season breakdown
   const [seasonBreakdownState, setSeasonBreakdownState] = useState<SeasonBreakdown | undefined>(initialSeasonBreakdown);
   const [accommodations, setAccommodations] = useState<any[]>([]);
-  console.log('[BookingSummary] Initial State Values:', {
-      isBooking, error, showStripeModal, authToken: !!authToken, selectedCheckInDate, showDatePicker, foodContribution, showDiscountDetails, testPaymentAmount,
-      seasonBreakdownStateExists: !!seasonBreakdownState,
-      accommodationsCount: accommodations.length, // Log initial count
-  });
 
   // --- REMOVED: Track selectedAccommodation prop changes (no longer needed) ---
 
@@ -264,93 +153,49 @@ export function BookingSummary({
   const flexibleDates = selectedWeeks[0]?.flexibleDates;
   const hasFlexibleDates = flexibleDates && flexibleDates.length > 0;
 
-  // --- LOGGING: Season Breakdown Calculation Effect ---
-  // Log state *before* the effect runs
-  console.log('[BookingSummary] State BEFORE season breakdown effect:', {
-    accommodationsCount: accommodations.length,
-    seasonBreakdownStateExists: !!seasonBreakdownState,
-  });
+  // Season Breakdown Calculation Effect
 
   // Update season breakdown when selected weeks or accommodation change
   useEffect(() => {
-    console.log('[BookingSummary] --- Running Season Breakdown Effect ---');
-    console.log('[BookingSummary] Effect Dependencies:', {
-      selectedWeeksLength: selectedWeeks.length,
-      selectedAccommodationId_Prop: selectedAccommodation?.id,
-      // Note: Explicitly removing accommodations state from dependencies if not needed for lookup
-    });
-
-    // --- Get details directly from prop ---
+    // Get details directly from prop
     const accommodationPrice = selectedAccommodation?.base_price ?? 0;
     const accommodationTitle = selectedAccommodation?.title ?? '';
-    console.log('[BookingSummary] Effect: Using selectedAccommodation PROP details:', {
-      id: selectedAccommodation?.id,
-      title: accommodationTitle,
-      price: accommodationPrice,
-    });
 
     // --- Where does the 'accommodations' state list come from? ---
     // If you still need to look up something in the `accommodations` list, log it here:
     // const foundAccommodationInState = accommodations.find(a => a.id === selectedAccommodation?.id);
-    // console.log('[BookingSummary] Effect: Result of finding accommodation in STATE list:', {
     //   found: !!foundAccommodationInState,
     //   stateListCount: accommodations.length
     // });
     // If the lookup IS still needed, restore 'accommodations' to dependency array below.
 
 
-    // --- Calculation Logic ---
+    // Calculation Logic
     if (selectedWeeks.length > 0 && accommodationPrice > 0 && !accommodationTitle.toLowerCase().includes('dorm')) {
-      console.log('[BookingSummary] Effect: Conditions met for calculation (Weeks > 0, Price > 0, Not Dorm).');
       if (selectedWeeks[0]?.startDate && selectedWeeks[selectedWeeks.length - 1]?.endDate) {
         const startDate = selectedWeeks[0].startDate;
         const endDate = selectedWeeks[selectedWeeks.length - 1].endDate;
-         console.log('[BookingSummary] Effect: Calculating breakdown with dates:', { start: startDate.toISOString(), end: endDate.toISOString() });
         const breakdown = getSeasonBreakdown(startDate, endDate);
-        console.log('[BookingSummary] Effect: Calculated breakdown:', JSON.stringify(breakdown, null, 2));
 
         // Avoid unnecessary state update
         if (JSON.stringify(breakdown) !== JSON.stringify(seasonBreakdownState)) {
-            console.log('[BookingSummary] Effect: *** Setting NEW season breakdown state ***');
             setSeasonBreakdownState(breakdown);
-        } else {
-            console.log('[BookingSummary] Effect: Calculated breakdown matches current state. No update.');
         }
       } else {
-        console.warn('[BookingSummary] Effect: Cannot calculate breakdown - missing start/end dates.');
         if (seasonBreakdownState !== undefined) {
-           console.log('[BookingSummary] Effect: *** Clearing season breakdown state (missing dates) ***');
            setSeasonBreakdownState(undefined);
         }
       }
     } else {
-      // Determine reason for not calculating/clearing
-      let reason = 'Unknown';
-      if (selectedWeeks.length === 0) reason = 'No weeks selected.';
-      else if (!selectedAccommodation) reason = 'No accommodation selected (prop).';
-      else if (accommodationPrice === 0) reason = 'Accommodation price is 0.';
-      else if (accommodationTitle.toLowerCase().includes('dorm')) reason = 'Accommodation is Dorm.';
-
       if (seasonBreakdownState !== undefined) {
-          console.log(`[BookingSummary] Effect: *** Clearing season breakdown state. Reason: ${reason} ***`);
           setSeasonBreakdownState(undefined);
-      } else {
-          console.log(`[BookingSummary] Effect: Season breakdown not applicable or already clear. Reason: ${reason}`);
       }
     }
-    console.log('[BookingSummary] --- Finished Season Breakdown Effect ---');
     // Dependencies: Rely only on props/values directly used in the effect's logic
     // Removed 'accommodations' unless it's re-added for the lookup. Added seasonBreakdownState for comparison.
   }, [selectedWeeks, selectedAccommodation, getSeasonBreakdown, seasonBreakdownState]);
-  // --- END LOGGING ---
 
   // Calculate pricing details - MEMOIZED using custom hook
-  console.log('[FLICKER_DEBUG] 🎯 CALLING usePricing hook with:', {
-    selectedWeeksLength: selectedWeeks.length,
-    selectedAccommodationId: selectedAccommodation?.id,
-    calculatedWeeklyAccommodationPrice,
-    foodContribution
-  });
   
   const pricing = usePricing({
     selectedWeeks,
@@ -361,11 +206,6 @@ export function BookingSummary({
     appliedDiscount: null
   });
   
-  console.log('[FLICKER_DEBUG] 🎯 usePricing result:', {
-    totalAmount: pricing.totalAmount,
-    totalNights: pricing.totalNights,
-    finalAmountAfterCredits: Math.max(0, pricing.totalAmount - creditsToUse)
-  });
 
   // --- REMOVED: Log pricing changes (no longer needed) ---
 
@@ -382,22 +222,17 @@ export function BookingSummary({
   // Calculate final amount after credits
   const finalAmountAfterCredits = useMemo(() => {
     const afterCredits = Math.max(0, pricing.totalAmount - creditsToUse);
-    console.log('[BookingSummary] Final amount after credits:', afterCredits, '(totalAmount:', pricing.totalAmount, ', credits:', creditsToUse, ')');
     return afterCredits;
   }, [pricing.totalAmount, creditsToUse]);
 
   // Always update the check-in date when selectedWeeks changes
   useEffect(() => {
-    console.log('[BookingSummary] useEffect[selectedWeeks] - Updating check-in date...');
     if (selectedWeeks.length > 0) {
       // Check if the first week has a selectedFlexDate property (from flexible check-in)
       if (selectedWeeks[0].selectedFlexDate) {
-        console.log('[BookingSummary] Using selectedFlexDate from first week:', formatDateForDisplay(selectedWeeks[0].selectedFlexDate));
         setSelectedCheckInDate(selectedWeeks[0].selectedFlexDate);
-        console.log('[BookingSummary] Selected check-in date:', selectedWeeks[0]);
       } else {
         // Otherwise use the week's start date
-        console.log('[BookingSummary] Using default start date from first week:', formatDateForDisplay(selectedWeeks[0].startDate));
         setSelectedCheckInDate(selectedWeeks[0].startDate);
       }
     } else {
@@ -407,7 +242,6 @@ export function BookingSummary({
 
   // Initialize food contribution based on number of nights/weeks with duration discount applied
   useEffect(() => {
-    console.log('[BookingSummary] useEffect[selectedWeeks] - Initializing food contribution range with duration discount...');
     if (selectedWeeks.length > 0) {
       const totalNights = calculateTotalNights(selectedWeeks);
       
@@ -416,104 +250,51 @@ export function BookingSummary({
       setFoodContribution(0);
     } else {
       setFoodContribution(null);
-      console.log('[BookingSummary] Clearing food contribution');
     }
   }, [selectedWeeks, pricing.durationDiscountPercent]);
 
-  // Log when food contribution changes (for debugging slider/pricing interaction)
+  // Track when food contribution changes
   useEffect(() => {
-    if (foodContribution !== null) {
-      console.log('[BookingSummary] STATE CHANGE: foodContribution updated:', foodContribution);
-    }
+    // Food contribution changed
   }, [foodContribution]);
 
   // Monitor error state changes
   useEffect(() => {
-    console.log('[BookingSummary] ERROR STATE CHANGED:', error);
+    // Error state changed
   }, [error]);
 
   // Auto-set credits to use when pricing or available credits change
   useEffect(() => {
-    console.log('[FLICKER_DEBUG] 🎯 CREDIT AUTO-SET EFFECT TRIGGERED:', {
-      userHasManuallyAdjustedCredits,
-      creditsEnabled,
-      creditsLoading,
-      pricingTotalAmount: pricing.totalAmount,
-      availableCredits,
-      currentCreditsToUse: creditsToUse
-    });
-    
     // Only auto-set if user hasn't manually adjusted credits
     if (!userHasManuallyAdjustedCredits && creditsEnabled && !creditsLoading && pricing.totalAmount > 0) {
       // Automatically set credits to use (min of available credits or total amount)
       const maxCreditsToUse = Math.min(availableCredits, pricing.totalAmount);
-      console.log('[FLICKER_DEBUG] 🎯 AUTO-SETTING CREDITS:', {
-        from: creditsToUse,
-        to: maxCreditsToUse,
-        reason: 'auto-set triggered'
-      });
       setCreditsToUseWithLogging(maxCreditsToUse);
-      console.log('[BookingSummary] Auto-setting credits to use:', maxCreditsToUse, 'from available:', availableCredits);
     } else if (!creditsEnabled) {
-      console.log('[FLICKER_DEBUG] 🎯 SETTING CREDITS TO 0 (disabled)');
       setCreditsToUseWithLogging(0);
-      console.log('[BookingSummary] Credits disabled, setting to 0');
-    } else if (userHasManuallyAdjustedCredits) {
-      console.log('[FLICKER_DEBUG] 🎯 SKIPPING AUTO-SET (manual adjustment)');
-      console.log('[BookingSummary] Skipping auto-setting - user has manually adjusted credits');
     }
   }, [pricing.totalAmount, availableCredits, creditsEnabled, creditsLoading, setCreditsToUseWithLogging, userHasManuallyAdjustedCredits]);
 
-  // --- MODIFIED: Only reset manual adjustment flag when pricing changes, not accommodation ---
+  // Only reset manual adjustment flag when pricing changes, not accommodation
   useEffect(() => {
-    console.log('[FLICKER_DEBUG] 🔄 PRICING CHANGE EFFECT TRIGGERED:', {
-      pricingTotalAmount: pricing.totalAmount,
-      userHasManuallyAdjustedCredits
-    });
-    
     // Only reset manual adjustment flag when pricing changes significantly
     // This allows auto-setting to work again when user changes dates, but preserves credit selection when swapping accommodations
     if (userHasManuallyAdjustedCredits) {
-      console.log('[FLICKER_DEBUG] 🔄 RESETTING MANUAL ADJUSTMENT FLAG');
-      console.log('[CREDIT_TRACKING] 🔄 Pricing changed - resetting manual adjustment flag to allow auto-setting');
       setUserHasManuallyAdjustedCredits(false);
     }
   }, [pricing.totalAmount]); // Only reset when total amount changes, not accommodation
-  // --- END MODIFIED: Only reset manual adjustment flag when pricing changes, not accommodation ---
 
   // Validate that a check-in date is selected
   const validateCheckInDate = useCallback(() => {
-    console.log('[BookingSummary] Validating check-in date. Selected:', selectedCheckInDate?.toISOString());
     if (!selectedCheckInDate) {
-      console.log('[BookingSummary] Validation FAILED: No check-in date selected');
       setError('Please select a check-in date');
       return false;
     }
-
-    // Add detailed logging here
-    if (hasFlexibleDates && flexibleDates) {
-      console.log('[BookingSummary] Validating flex date. Selected Check In:', selectedCheckInDate.toISOString(), selectedCheckInDate.toString());
-      flexibleDates.forEach((date, index) => {
-        console.log(`[BookingSummary] Flex Date Option ${index}:`, date.toISOString(), date.toString());
-        // Use UTC comparison instead of isSameDay
-        const areDatesSameUTC = date.getUTCFullYear() === selectedCheckInDate.getUTCFullYear() &&
-                               date.getUTCMonth() === selectedCheckInDate.getUTCMonth() &&
-                               date.getUTCDate() === selectedCheckInDate.getUTCDate();
-        console.log(`[BookingSummary] areDatesSameUTC(flexDate ${index}, selectedCheckInDate)?`, areDatesSameUTC);
-      });
-      // Perform the check using UTC comparison
-      const isValid = flexibleDates.some(date => 
-        normalizeToUTCDate(date).getTime() === normalizeToUTCDate(selectedCheckInDate).getTime()
-      );
-      console.log('[BookingSummary] Overall isValid based on UTC comparison:', isValid);
-    }
-    // End of added logging
 
     // Use UTC comparison for the actual validation check
     if (hasFlexibleDates && !flexibleDates?.some(date => 
         normalizeToUTCDate(date).getTime() === normalizeToUTCDate(selectedCheckInDate).getTime()
       )) {
-      console.log('[BookingSummary] Invalid check-in date selected (based on UTC comparison):', selectedCheckInDate);
       setError('Please select a valid check-in date from the available options');
       return false;
     }
@@ -521,19 +302,15 @@ export function BookingSummary({
   }, [selectedCheckInDate, hasFlexibleDates, flexibleDates]);
 
   useEffect(() => {
-    console.log('[BookingSummary] useEffect(getSession) called');
-    console.log('[Booking Summary] Getting Supabase session...');
     supabase.auth.getSession().then(res => {
       const token = res?.data?.session?.access_token;
-      console.log('[Booking Summary] Auth token retrieved:', !!token);
       if(token && token !== '') {
         setAuthToken(token);
       } else {
-        console.warn('[Booking Summary] No auth token found');
         setError('Authentication required. Please sign in again.');
       }
     }).catch(err => {
-      console.error('[Booking Summary] Error getting session:', err);
+      console.error('Error getting session:', err);
       setError('Failed to authenticate. Please try again.');
     });
   }, []);
@@ -541,6 +318,13 @@ export function BookingSummary({
   // Validate availability before showing Stripe modal
   const validateAvailability = async () => {
     console.log('[Booking Summary] Validating availability...');
+    
+    // If only garden addon is selected (no accommodation), skip availability check
+    if (!selectedAccommodation && gardenAddon) {
+      console.log('[Booking Summary] Only Garden addon selected, skipping accommodation availability check');
+      return true;
+    }
+    
     if (!selectedAccommodation || selectedWeeks.length === 0) {
       console.warn('[Booking Summary] Missing accommodation or weeks for validation');
       setError('Please select accommodation and dates first.');
@@ -593,57 +377,35 @@ export function BookingSummary({
       selectedCheckInDateISO: selectedCheckInDate?.toISOString()
     });
     try {
-      if (!selectedAccommodation || selectedWeeks.length === 0 || !selectedCheckInDate) {
-        console.error('[Booking Summary] Missing required info for booking success:', { selectedAccommodation: !!selectedAccommodation, selectedWeeks: selectedWeeks.length > 0, selectedCheckInDate: !!selectedCheckInDate });
+      // For Garden-only bookings, we still need dates but not accommodation
+      if ((!selectedAccommodation && !gardenAddon) || selectedWeeks.length === 0 || !selectedCheckInDate) {
+        console.error('[Booking Summary] Missing required info for booking success:', { 
+          selectedAccommodation: !!selectedAccommodation, 
+          gardenAddon: !!gardenAddon,
+          selectedWeeks: selectedWeeks.length > 0, 
+          selectedCheckInDate: !!selectedCheckInDate 
+        });
         throw new Error('Missing required booking information');
       }
       
-      console.log('[BookingSummary] VALIDATION PASSED - Proceeding with booking');
-
       // Calculate check-out date based on the selected check-in date
       const totalDays = calculateTotalDays(selectedWeeks);
       const checkOut = addDays(selectedCheckInDate, totalDays-1);
 
-              console.log('[BookingSummary] Starting booking process...');
-        console.log('[BookingSummary] handleBookingSuccess: Raw Dates:', { // ADDED LOG BLOCK
-          selectedCheckInDate_ISO: selectedCheckInDate.toISOString(),
-          selectedCheckInDate_Raw: selectedCheckInDate,
-          checkOut_ISO: checkOut.toISOString(),
-          checkOut_Raw: checkOut
-        });
-        console.log('[BookingSummary] Setting isBooking to true and clearing errors');
-        console.log('[FLICKER_DEBUG] 🎯 SETTING STATES FOR BOOKING START');
-        setIsBookingWithLogging(true);
-        setErrorWithLogging(null);
+      setIsBookingWithLogging(true);
+      setErrorWithLogging(null);
       
       try {
         // (Pricing should already be rounded to 2 decimal places)
         const roundedTotal = pricing.totalAmount;
-        console.log('[Booking Summary] Calculated rounded total for booking/confirmation:', roundedTotal);
 
         const formattedCheckIn = formatInTimeZone(selectedCheckInDate, 'UTC', 'yyyy-MM-dd');
         const formattedCheckOut = formatInTimeZone(checkOut, 'UTC', 'yyyy-MM-dd');
-        console.log('[Booking Summary] Creating booking with FORMATTED (UTC) dates and ROUNDED total:', { 
-          formattedCheckIn,
-          formattedCheckOut,
-          accommodationId: selectedAccommodation.id,
-          totalPrice: roundedTotal // Use rounded total
-        });
-
-        // Add applied discount code if present
-        console.log('[BookingSummary] REACHED PRICING BREAKDOWN SECTION');
         
         // Calculate the base accommodation price BEFORE any discounts
         // Use pricing.baseAccommodationRate which is the actual base rate, not selectedAccommodation.base_price
         const baseAccommodationPrice = pricing.baseAccommodationRate * pricing.weeksStaying;
         
-        console.log('[Booking Summary] DEBUG VALUES:', {
-          'selectedAccommodation.base_price': selectedAccommodation.base_price,
-          'pricing.baseAccommodationRate': pricing.baseAccommodationRate,
-          'pricing.weeksStaying': pricing.weeksStaying,
-          'pricing.totalAccommodationCost': pricing.totalAccommodationCost,
-          'baseAccommodationPrice (calculated)': baseAccommodationPrice
-        });
         
         // Calculate seasonal discount amount for accommodation
         let seasonalDiscountAmount = 0;
@@ -694,8 +456,13 @@ export function BookingSummary({
         });
         
         const paymentRowIdToUse = paymentRowIdOverride || pendingPaymentRowId;
+        
+        // Handle Garden-only bookings
+        const accommodationId = selectedAccommodation?.id || null;
+        const bookingTitle = selectedAccommodation?.title || (gardenAddon ? `Garden Decompression: ${gardenAddon.name}` : 'Booking');
+        
         const bookingPayload: any = {
-          accommodationId: selectedAccommodation.id,
+          accommodationId: accommodationId,
           checkIn: formattedCheckIn,
           checkOut: formattedCheckOut,
           totalPrice: roundedTotal, // Send the final price calculated by the frontend
@@ -852,7 +619,6 @@ export function BookingSummary({
         
         // Refresh credits manually to ensure UI updates immediately
         if (creditsToUse > 0) {
-          console.log("[FLICKER_DEBUG] 🔄 CREDITS REFRESH SECTION");
           console.log("[BOOKING_FLOW] === STEP 8: Refreshing credits after use ===");
           console.log('[CREDIT_TRACKING] 🔄 ABOUT TO REFRESH CREDITS - Current state:', {
             creditsToUse,
@@ -863,11 +629,9 @@ export function BookingSummary({
           });
           
           try {
-            console.log('[FLICKER_DEBUG] 🔄 CALLING refreshCreditsWithLogging...');
             await refreshCreditsWithLogging();
             console.log("[BOOKING_FLOW] STEP 8 SUCCESS: Credits refreshed");
             console.log('[CREDIT_TRACKING] ✅ CREDITS REFRESHED - Check next render for updated availableCredits');
-            console.log('[FLICKER_DEBUG] 🔄 CREDITS REFRESH COMPLETED');
           } catch (err) {
             console.error("[Booking Summary] Error refreshing credits:", err);
             console.error('[CREDIT_TRACKING] ❌ CREDITS REFRESH FAILED:', err);
@@ -875,12 +639,10 @@ export function BookingSummary({
           }
         } else {
           console.log('[CREDIT_TRACKING] ⏭️ SKIPPING CREDITS REFRESH - No credits used');
-          console.log('[FLICKER_DEBUG] ⏭️ SKIPPING CREDITS REFRESH - No credits used');
         }
         
         // Delay navigation slightly to show fireflies
         setTimeout(async () => {
-          console.log("[FLICKER_DEBUG] 🎯 NAVIGATION TIMEOUT STARTING");
           console.log("[BOOKING_FLOW] === STEP 9: Navigating to confirmation ===");
           // Calculate actual amount donated (after credits)
           const actualDonationAmount = Math.max(0, booking.total_price - (creditsToUse || 0));
@@ -902,12 +664,6 @@ export function BookingSummary({
                 : '⏭️ NO CREDITS USED'
           });
           // --- END ADDED: Final credit state check ---
-          
-          console.log('[FLICKER_DEBUG] 🎯 ABOUT TO NAVIGATE:', {
-            bookingId: booking.id,
-            actualDonationAmount,
-            creditsToUse
-          });
           
           // Retrieve accommodation details from the booking if selectedAccommodation is null
           let accommodationTitle = selectedAccommodation?.title;
@@ -941,14 +697,13 @@ export function BookingSummary({
             } 
           });
           console.log("[BOOKING_FLOW] STEP 9 SUCCESS: Navigation completed");
-          console.log('[FLICKER_DEBUG] 🎯 NAVIGATION COMPLETED');
         }, 1500);
+        
       } catch (err) {
         console.error('[BOOKING_FLOW] === STEP 6 FAILED: Error creating booking ===');
         console.error('[BOOKING_FLOW] Error details:', err);
         
         // ALWAYS navigate to confirmation page when payment succeeded but booking failed
-        console.log('[BookingSummary] Payment succeeded but booking failed - navigating to confirmation page anyway');
         
         // Track status for admin alert
         let confirmationEmailSent = false;
@@ -982,7 +737,6 @@ export function BookingSummary({
         
         // Try to send confirmation email even though booking failed
         if (userEmail && paymentIntentId) {
-          console.log('[BookingSummary] Attempting to send confirmation email despite booking failure');
           try {
             const formattedCheckIn = formatInTimeZone(selectedCheckInDate, 'UTC', 'yyyy-MM-dd');
             const formattedCheckOut = formatInTimeZone(checkOut, 'UTC', 'yyyy-MM-dd');
@@ -1009,7 +763,6 @@ export function BookingSummary({
               console.error('[BookingSummary] Failed to send confirmation email:', emailError);
               confirmationEmailSent = false;
             } else {
-              console.log('[BookingSummary] Confirmation email sent successfully despite booking failure');
               confirmationEmailSent = true;
             }
           } catch (emailErr) {
@@ -1020,7 +773,6 @@ export function BookingSummary({
         
         // Try to manually deduct credits since payment succeeded but booking failed
         if (creditsToUse > 0) {
-          console.log('[BookingSummary] Payment succeeded but booking failed - attempting to manually deduct credits:', creditsToUse);
           console.log('[CREDIT_TRACKING] 🔧 MANUAL CREDIT DEDUCTION ATTEMPT:', {
             creditsToUse,
             availableCredits,
@@ -1054,7 +806,6 @@ export function BookingSummary({
                 });
                 creditsWereDeducted = false;
               } else {
-                console.log('[BookingSummary] Successfully deducted credits manually. New balance:', newBalance);
                 console.log('[CREDIT_TRACKING] ✅ MANUAL DEDUCTION SUCCESSFUL:', {
                   userId: user.id,
                   amountDeducted: creditsToUse,
@@ -1066,7 +817,6 @@ export function BookingSummary({
                 // Refresh credits in the UI to reflect the deduction
                 try {
                   await refreshCreditsWithLogging();
-                  console.log('[BookingSummary] Credits UI refreshed after manual deduction');
                   console.log('[CREDIT_TRACKING] ✅ UI REFRESHED AFTER MANUAL DEDUCTION');
                 } catch (refreshErr) {
                   console.error('[BookingSummary] Failed to refresh credits UI:', refreshErr);
@@ -1102,14 +852,12 @@ export function BookingSummary({
         // Check if webhook has already created the booking before sending alert
         let bookingExistsFromWebhook = false;
         if (paymentIntentId) {
-          console.log('[BookingSummary] Checking if webhook already created booking...');
           
           // Wait a bit to give webhook time to process
           await new Promise(resolve => setTimeout(resolve, 2000));
           
           try {
             bookingExistsFromWebhook = await bookingService.checkBookingByPaymentIntent(paymentIntentId);
-            console.log('[BookingSummary] Webhook booking check result:', bookingExistsFromWebhook);
           } catch (checkError) {
             console.error('[BookingSummary] Error checking for webhook booking:', checkError);
             // Continue with alert even if check fails
@@ -1118,7 +866,6 @@ export function BookingSummary({
         
         // Only send admin alert if booking truly doesn't exist
         if (!bookingExistsFromWebhook) {
-          console.log('[BookingSummary] Booking does not exist after webhook check, sending admin alert');
           
           // NOW send admin alert with updated status
           try {
@@ -1169,10 +916,8 @@ Please manually create the booking for this user or process a refund.`;
             }
           }
         } else {
-          console.log('[BookingSummary] Booking was successfully created by webhook! No alert needed.');
           // Refresh credits since the webhook booking would have used them
           if (creditsToUse > 0) {
-            console.log('[BookingSummary] Refreshing credits after webhook booking creation');
             try {
               await refreshCreditsWithLogging();
             } catch (err) {
@@ -1230,7 +975,6 @@ Please manually create the booking for this user or process a refund.`;
   }, [selectedAccommodation, selectedWeeks, selectedCheckInDate, navigate, pricing.totalAmount, creditsToUse, refreshCreditsWithLogging, userEmail, onClearWeeks, onClearAccommodation, bookingService, finalAmountAfterCredits]);
 
   const handleConfirmClick = async () => {
-    console.log('[FLICKER_DEBUG] 🎯 CONFIRM BUTTON CLICKED');
     console.log('[BOOKING_FLOW] === STEP 1: Confirm button clicked ===');
     console.log('[BOOKING_FLOW] Button handler reached with:', {
       selectedAccommodation: selectedAccommodation?.title,
@@ -1239,13 +983,6 @@ Please manually create the booking for this user or process a refund.`;
       selectedWeeksCount: selectedWeeks.length,
       authToken: !!authToken
     });
-    console.log('[FLICKER_DEBUG] 🎯 PRE-CLICK STATE:', {
-      creditsToUse,
-      finalAmountAfterCredits,
-      isBooking,
-      showStripeModal,
-      pendingPaymentRowId
-    });
     
     setErrorWithLogging(null); // Clear previous errors
 
@@ -1253,9 +990,10 @@ Please manually create the booking for this user or process a refund.`;
       console.warn('[BOOKING_FLOW] STEP 1 FAILED: Check-in date validation failed.');
       return;
     }
-    if (!selectedAccommodation) {
-      console.warn('[BOOKING_FLOW] STEP 1 FAILED: No accommodation selected');
-      setError('Please select an accommodation');
+    // Allow booking if either accommodation OR garden addon is selected
+    if (!selectedAccommodation && !gardenAddon) {
+      console.warn('[BOOKING_FLOW] STEP 1 FAILED: No accommodation or garden addon selected');
+      setError('Please select an accommodation or Garden decompression option');
       return;
     }
     try {
@@ -1383,7 +1121,6 @@ Please manually create the booking for this user or process a refund.`;
 
           // If the final amount is 0 (free accommodation, fully paid with credits, or both), skip payment
           if (finalAmountAfterCredits === 0) {
-            console.log('[FLICKER_DEBUG] 🎯 FREE/CREDITS-ONLY BOOKING DETECTED');
             console.log('[BOOKING_FLOW] === STEP 4: Free or credits-only booking, skipping Stripe ===');
             console.log('[BOOKING_FLOW] Reason for free booking:', {
               accommodationPrice: pricing.totalAccommodationCost,
@@ -1392,13 +1129,7 @@ Please manually create the booking for this user or process a refund.`;
               isFreeAccommodation: pricing.totalAccommodationCost === 0,
               isCreditsOnly: creditsToUse > 0
             });
-            console.log('[FLICKER_DEBUG] 🎯 ABOUT TO CALL handleBookingSuccess:', {
-              paymentId: payment.id,
-              creditsToUse,
-              finalAmountAfterCredits
-            });
             await handleBookingSuccess(undefined, payment.id);
-            console.log('[FLICKER_DEBUG] 🎯 handleBookingSuccess completed for free/credits-only booking');
             return;
           }
         } catch (err) {
@@ -1421,7 +1152,6 @@ Please manually create the booking for this user or process a refund.`;
 
       // Show Stripe modal after pending payment row is created
       console.log('[BOOKING_FLOW] === STEP 4: Opening Stripe modal ===');
-      console.log('[FLICKER_DEBUG] 🎯 OPENING STRIPE MODAL');
       setShowStripeModalWithLogging(true);
     } catch (err) {
       console.error('[BOOKING_FLOW] Error in handleConfirmClick:', err);
@@ -1467,17 +1197,7 @@ Please manually create the booking for this user or process a refund.`;
 
   // No discount code handlers needed
 
-  // --- LOGGING: Final Render Values ---
-  console.log('[BookingSummary] --- Final Render Values ---');
-  console.log('[BookingSummary] Pricing details:', pricing);
-  console.log('[BookingSummary] Selected Check-in Date:', selectedCheckInDate?.toISOString());
-  console.log('[BookingSummary] Food Contribution:', foodContribution);
-  console.log('[BookingSummary] Season Breakdown State:', seasonBreakdownState ? JSON.stringify(seasonBreakdownState) : 'undefined');
-  console.log('[BookingSummary] Is Admin:', isAdmin);
-  console.log('[BookingSummary] Error state:', error);
-  console.log('[BookingSummary] Is Booking state:', isBooking);
-  console.log('[BookingSummary] Show Stripe Modal state:', showStripeModal);
-  // --- END LOGGING ---
+  // --- REMOVED: Final render logging ---
 
   const fallbackDate = normalizeToUTCDate(new Date());
 
@@ -1520,7 +1240,6 @@ Please manually create the booking for this user or process a refund.`;
                 <h3 className="text-xl font-display text-primary">Complete Payment</h3>
                 <button
                   onClick={async () => {
-                    console.log('[FLICKER_DEBUG] 🎯 CLOSING STRIPE MODAL');
                     setShowStripeModalWithLogging(false);
                     
                     // Cancel the pending booking if user closes modal without payment
@@ -1541,7 +1260,6 @@ Please manually create the booking for this user or process a refund.`;
               </div>
 
               {/* --- ADD LOGGING FOR EMAIL BEFORE PASSING --- */}
-              {/* {console.log("[BookingSummary] Rendering StripeCheckoutForm, userEmail:", userEmail)} */}
               <StripeCheckoutForm
                 authToken={authToken}
                 userEmail={userEmail || ''} // Pass email as prop, default to empty string if undefined
@@ -1553,9 +1271,9 @@ Please manually create the booking for this user or process a refund.`;
                     ? testPaymentAmount // Otherwise use admin test amount if set
                     : finalAmountAfterCredits // Use amount after credits
                 }
-                description={`${selectedAccommodation?.title || 'Accommodation'} for ${pricing.totalNights} nights${selectedCheckInDate ? ` from ${formatInTimeZone(selectedCheckInDate, 'UTC', 'd. MMMM')}` : ''}`}
-                bookingMetadata={selectedAccommodation && selectedCheckInDate ? {
-                  accommodationId: selectedAccommodation.id,
+                description={`${selectedAccommodation?.title || (gardenAddon ? `Garden Decompression: ${gardenAddon.name}` : 'Booking')} for ${pricing.totalNights} nights${selectedCheckInDate ? ` from ${formatInTimeZone(selectedCheckInDate, 'UTC', 'd. MMMM')}` : ''}`}
+                bookingMetadata={(selectedAccommodation || gardenAddon) && selectedCheckInDate ? {
+                  accommodationId: selectedAccommodation?.id || null,
                   checkIn: selectedCheckInDate ? formatInTimeZone(selectedCheckInDate, 'UTC', 'yyyy-MM-dd') : undefined,
                   checkOut: selectedCheckInDate ? formatInTimeZone(addDays(selectedCheckInDate, calculateTotalDays(selectedWeeks)-1), 'UTC', 'yyyy-MM-dd') : undefined,
                   originalTotal: pricing.totalAmount,
@@ -1565,8 +1283,6 @@ Please manually create the booking for this user or process a refund.`;
                 onSuccess={handleBookingSuccess}
                 paymentRowId={pendingPaymentRowId || undefined}
                 onClose={() => {
-                  console.log('[BookingSummary] StripeCheckoutForm onClose called');
-                  console.log('[FLICKER_DEBUG] 🎯 STRIPE MODAL CLOSED VIA onClose');
                   setShowStripeModalWithLogging(false);
                 }}
               />
@@ -1606,7 +1322,7 @@ Please manually create the booking for this user or process a refund.`;
             </div>
           )}
           
-          {selectedWeeks.length > 0 && (
+          {selectedWeeks.length > 0 && (selectedAccommodation || gardenAddon) && (
             <div className="">
               {/* Stay Details Section */}
               <StayDetails selectedWeeks={selectedWeeks} />
@@ -1672,6 +1388,7 @@ Please manually create the booking for this user or process a refund.`;
                   isBooking={isBooking}
                   selectedAccommodation={selectedAccommodation}
                   selectedWeeks={selectedWeeks}
+                  gardenAddon={gardenAddon}
                   finalAmountAfterCredits={finalAmountAfterCredits}
                   creditsToUse={creditsToUse}
                   isAdmin={isAdmin}
@@ -1687,6 +1404,13 @@ Please manually create the booking for this user or process a refund.`;
             <div className="text-center py-10 bg-surface/50 rounded-sm shadow-sm">
               <Calendar className="w-12 h-12 mx-auto text-secondary mb-4" />
               <p className="text-secondary text-sm">Select your dates to see the summary</p>
+            </div>
+          )}
+          
+          {selectedWeeks.length > 0 && !selectedAccommodation && !gardenAddon && (
+            <div className="text-center py-10 bg-surface/50 rounded-sm shadow-sm">
+              <Calendar className="w-12 h-12 mx-auto text-secondary mb-4" />
+              <p className="text-secondary text-sm">Select accommodation or Garden decompression to continue</p>
             </div>
           )}
         </div>
