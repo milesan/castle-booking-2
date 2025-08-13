@@ -264,18 +264,23 @@ export function Book2Page() {
 
   // New handler for deselecting multiple weeks at once
   const handleWeeksDeselect = useCallback((weeksToDeselect: Week[]) => {
-    const deselectInfo = {
-      count: weeksToDeselect.length,
-      weeks: weeksToDeselect.map(w => ({
-        id: w.id,
-        start: formatDateForDisplay(w.startDate),
-        end: formatDateForDisplay(w.endDate)
-      }))
-    };
-    
-    // Remove weeks from selected weeks
-    setSelectedWeeks(prev => prev.filter(w => !weeksToDeselect.some(dw => dw.id === w.id)));
-  }, []);
+
+    // Filter out all the weeks to deselect in one batch operation
+    setSelectedWeeks(prev => {
+      // Safety check - if prev is undefined, initialize as empty array
+      const currentSelection = prev || [];
+      
+      // If nothing to deselect, return unchanged
+      if (weeksToDeselect.length === 0) return currentSelection;
+      
+      // Filter out all weeks that should be deselected
+      return currentSelection.filter(selectedWeek => 
+        !weeksToDeselect.some(weekToDeselect => 
+          areSameWeeks(weekToDeselect, selectedWeek)
+        )
+      );
+    });
+  }, [setSelectedWeeks]);
 
   /**
    * Handle clearing all selected weeks at once
@@ -324,18 +329,18 @@ export function Book2Page() {
       } else {
         // Create new customization
         await CalendarService.createCustomization({
-          startDate: finalStartDate,
-          endDate: finalEndDate,
-          status: updates.status,
-          name: updates.name,
+                startDate: finalStartDate,
+                endDate: finalEndDate,
+                status: updates.status,
+                name: updates.name,
           flexibleDates
         });
       }
       
       // Refresh calendar data and close modal
-      const newTimestamp = Date.now();
-      setLastRefresh(newTimestamp);
-      setSelectedWeekForCustomization(null);
+        const newTimestamp = Date.now();
+        setLastRefresh(newTimestamp);
+        setSelectedWeekForCustomization(null);
     } catch (error) {
       console.error('[Book2Page] Error saving week customization:', error);
       // Show error to user (you could add a toast notification here)
@@ -385,9 +390,6 @@ export function Book2Page() {
   const isLoading = accommodationsLoading || calendarLoading;
   
   // Track when loading state changes
-  useEffect(() => {
-    // Loading state tracking
-  }, [isLoading, accommodationsLoading, calendarLoading]);
 
   // Calculate season breakdown for the selected weeks
   const calculateSeasonBreakdown = useCallback((weeks: Week[], accommodationTitle: string): SeasonBreakdown => {
@@ -416,6 +418,7 @@ export function Book2Page() {
     
     // Group nights by season
     const seasonMap: Record<string, { name: string; discount: number; nights: number }> = {};
+    
 
     // Manually generate dates in UTC to avoid timezone issues with eachDayOfInterval
     const allDates: Date[] = [];
@@ -423,6 +426,7 @@ export function Book2Page() {
     let currentDate = new Date(Date.UTC(startDate.getUTCFullYear(), startDate.getUTCMonth(), startDate.getUTCDate())); 
     // We want to iterate up to, but not including, the endDate
     const finalExclusiveEndDate = new Date(Date.UTC(endDate.getUTCFullYear(), endDate.getUTCMonth(), endDate.getUTCDate()));
+
 
     // Loop while the current date is strictly before the final end date
     while (currentDate.getTime() < finalExclusiveEndDate.getTime()) {
@@ -432,6 +436,7 @@ export function Book2Page() {
         // Increment the day in UTC for the next iteration
         currentDate.setUTCDate(currentDate.getUTCDate() + 1);
     }
+
 
     // Count the nights per season using the date of each night
     allDates.forEach((date: Date) => {
@@ -493,6 +498,7 @@ export function Book2Page() {
     // It should already be normalized by the modal.
     const normalizedDate = date; // Reverted: Use the input date directly
     
+    
     if (!week) {
       console.error('[Book2Page] No week provided to handleFlexDateSelect');
       return;
@@ -514,8 +520,6 @@ export function Book2Page() {
       // Ensure any other essential properties from 'Week' type are preserved if needed
     };
     
-    // --- Log the object just before state update --- 
-    // Debug logging disabled for orphaned object literals
     
     // Use a direct state update for the first selection to avoid any stale closures
     if (selectedWeeks.length === 0) {
@@ -556,7 +560,6 @@ export function Book2Page() {
 
   // PERFORMANCE FIX: Convert weekly accommodation info from state to computed value
   const weeklyAccommodationInfo = useMemo(() => {
-    // Debug logging disabled for orphaned object literals
     
 
     
@@ -601,8 +604,6 @@ export function Book2Page() {
           
           // Store both the final price and the definitive seasonal discount used
           newInfo[acc.id] = { price: weeklyPrice, avgSeasonalDiscount };
-          
-          // Debug logging disabled for orphaned object literals
 
         } catch (error) {
           console.error(`[Book2Page] Error calculating info for ${acc.title} (ID: ${acc.id}):`, error);
@@ -626,7 +627,6 @@ export function Book2Page() {
 
   // Handle accommodation selection with firefly effect
   const handleAccommodationSelect = useCallback((accommodationId: string) => {
-    // Debug logging disabled for orphaned object literals
 
     // Only trigger fireflies if actually selecting (not deselecting)
     if (accommodationId && accommodationId !== selectedAccommodation) {

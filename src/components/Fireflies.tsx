@@ -48,7 +48,6 @@ export function Fireflies({
   localizedRadius = 150,
   contained = false
 }: FireflyProps) {
-  // Debug logging disabled for orphaned object literals
   
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationRef = useRef<number>();
@@ -106,11 +105,9 @@ export function Fireflies({
         canvas.style.top = `${viewportY - localizedRadius}px`;
         canvas.style.width = `${localizedRadius * 2}px`;
         canvas.style.height = `${localizedRadius * 2}px`;
-        // Debug logging disabled for orphaned object literals
         
         // Debug: Check if canvas is visible in viewport
         const rect = canvas.getBoundingClientRect();
-        // Debug logging disabled for orphaned object literals
       } else if (contained) {
         // For contained mode, size canvas to match its parent container
         const parent = canvas.parentElement;
