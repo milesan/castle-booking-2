@@ -857,7 +857,6 @@ export function calculateDurationDiscountWeeks(selectedWeeks: Week[]): number {
   // might have different lengths or customizations
   const weeks = selectedWeeks.length;
   
-  
   return weeks;
 }
 
