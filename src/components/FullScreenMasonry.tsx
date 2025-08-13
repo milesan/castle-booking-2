@@ -22,7 +22,6 @@ export function FullScreenMasonry({ images, isOpen, onClose, title }: Props) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [viewMode, setViewMode] = useState<'masonry' | 'single'>('single'); // Start with single image view
   
-  
   // Reset when opening
   useEffect(() => {
     if (isOpen) {
@@ -77,7 +76,9 @@ export function FullScreenMasonry({ images, isOpen, onClose, title }: Props) {
     }
   }, [onClose]);
 
-  if (!isOpen || images.length === 0) return null;
+  if (!isOpen || images.length === 0) {
+    return null;
+  }
 
   // Group images into columns for masonry effect
   const columns = 3; // Desktop columns
