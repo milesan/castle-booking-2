@@ -1,158 +1,178 @@
-import React, { useEffect, useState } from 'react';
-import { X, Flower } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { supabase } from '../lib/supabase';
+import React from 'react';
+import { X, TrendingDown, Calendar, Clock } from 'lucide-react';
 
 interface DutchAuctionModalProps {
-  userId?: string;
+  isOpen: boolean;
+  onClose: () => void;
+  hasStarted: boolean;
+  auctionStartDate: Date;
+  auctionEndDate: Date;
 }
 
-export function DutchAuctionModal({ userId }: DutchAuctionModalProps) {
-  const [isOpen, setIsOpen] = useState(false);
-  const [hasSeenModal, setHasSeenModal] = useState(false);
-
-  useEffect(() => {
-    const checkIfFirstLogin = async () => {
-      if (!userId) return;
-
-      // Check localStorage first for quick check
-      const localStorageKey = `dutch-auction-seen-${userId}`;
-      const hasSeenLocally = localStorage.getItem(localStorageKey);
-      
-      if (hasSeenLocally) {
-        setHasSeenModal(true);
-        return;
-      }
-
-      // Check database for persistent storage across devices
-      const { data, error } = await supabase
-        .from('user_preferences')
-        .select('has_seen_dutch_auction_modal')
-        .eq('user_id', userId)
-        .single();
-
-      if (error && error.code !== 'PGRST116') {
-        // PGRST116 means no rows returned, which is fine for first-time users
-        console.error('Error checking modal preference:', error);
-        return;
-      }
-
-      if (!data || !data.has_seen_dutch_auction_modal) {
-        // First login - show the modal
-        setIsOpen(true);
-      } else {
-        setHasSeenModal(true);
-        localStorage.setItem(localStorageKey, 'true');
-      }
-    };
-
-    checkIfFirstLogin();
-  }, [userId]);
-
-  const handleClose = async () => {
-    setIsOpen(false);
-    setHasSeenModal(true);
-
-    if (!userId) return;
-
-    // Save to localStorage for quick future checks
-    const localStorageKey = `dutch-auction-seen-${userId}`;
-    localStorage.setItem(localStorageKey, 'true');
-
-    // Save to database for persistence
-    try {
-      await supabase
-        .from('user_preferences')
-        .upsert({
-          user_id: userId,
-          has_seen_dutch_auction_modal: true,
-          updated_at: new Date().toISOString()
-        }, {
-          onConflict: 'user_id'
-        });
-    } catch (error) {
-      console.error('Error saving modal preference:', error);
-    }
-  };
-
-  if (hasSeenModal || !isOpen) return null;
+export function DutchAuctionModal({ 
+  isOpen, 
+  onClose, 
+  hasStarted,
+  auctionStartDate,
+  auctionEndDate 
+}: DutchAuctionModalProps) {
+  if (!isOpen) return null;
 
   return (
-    <AnimatePresence>
-      {isOpen && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
-          onClick={handleClose}
-        >
-          <motion.div
-            initial={{ scale: 0.9, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0.9, opacity: 0 }}
-            transition={{ type: "spring", duration: 0.5 }}
-            className="relative max-w-md w-full bg-surface border border-border rounded-sm p-8 shadow-2xl"
-            onClick={(e) => e.stopPropagation()}
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+      <div className="bg-white dark:bg-gray-900 rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        {/* Header */}
+        <div className="sticky top-0 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 px-6 py-4 flex items-center justify-between">
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Dutch Auction Details</h2>
+          <button
+            onClick={onClose}
+            className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+            aria-label="Close"
           >
-            {/* Close button */}
-            <button
-              onClick={handleClose}
-              className="absolute top-4 right-4 text-secondary hover:text-primary transition-colors"
-              aria-label="Close"
-            >
-              <X size={20} />
-            </button>
+            <X className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+          </button>
+        </div>
 
-            {/* Flower icon */}
-            <div className="flex justify-center mb-6">
-              <div className="p-3 bg-accent-primary/10 rounded-full">
-                <Flower size={32} className="text-accent-primary" />
+        {/* Content */}
+        <div className="px-6 py-6 space-y-6">
+          {/* How it works */}
+          <div>
+            <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-3 flex items-center gap-2">
+              <TrendingDown className="w-5 h-5 text-amber-600 dark:text-amber-500" />
+              How the Dutch Auction Works
+            </h3>
+            <p className="text-gray-600 dark:text-gray-300 leading-relaxed">
+              Room prices start high and decrease by a fixed amount each day at midnight UTC. 
+              You can purchase immediately at the current price, or wait for a lower price—but 
+              risk the room being sold to a fellow castler.
+            </p>
+          </div>
+
+          {/* Timeline */}
+          <div>
+            <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-3 flex items-center gap-2">
+              <Calendar className="w-5 h-5 text-amber-600 dark:text-amber-500" />
+              Auction Timeline
+            </h3>
+            <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg p-4 space-y-2">
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-600 dark:text-gray-400">Start Date:</span>
+                <span className="font-medium text-gray-900 dark:text-gray-100">
+                  {auctionStartDate.toLocaleDateString('en-US', { 
+                    month: 'long', 
+                    day: 'numeric', 
+                    year: 'numeric' 
+                  })} at midnight UTC
+                </span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-600 dark:text-gray-400">End Date:</span>
+                <span className="font-medium text-gray-900 dark:text-gray-100">
+                  {auctionEndDate.toLocaleDateString('en-US', { 
+                    month: 'long', 
+                    day: 'numeric', 
+                    year: 'numeric' 
+                  })}
+                </span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-600 dark:text-gray-400">Duration:</span>
+                <span className="font-medium text-gray-900 dark:text-gray-100">30 days</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-600 dark:text-gray-400">Price Reductions:</span>
+                <span className="font-medium text-gray-900 dark:text-gray-100">Daily at midnight UTC</span>
               </div>
             </div>
+          </div>
 
-            {/* Content */}
-            <div className="space-y-4 text-center">
-              <h2 className="text-xl font-medium text-primary">Dutch Flower Auction</h2>
-              
-              <div className="space-y-3 text-secondary text-sm">
-                <p>
-                  Rooms are to be acquired via a dutch flower auction. 
-                  This is my favourite kind of auction.
-                </p>
-                
-                <p className="font-medium text-primary">
-                  How it works:
-                </p>
-                
-                <p>
-                  Once a day, every day, the prices for all rooms will fall by a fixed amount.
-                </p>
-                
-                <p>
-                  Anyone may purchase any room at any time.
-                </p>
-                
-                <p>
-                  There are 3 tiers of rooms, each with their own starting price and floor.
-                </p>
-                
-                <p className="text-accent-primary pt-2">
-                  Have fun ♥
-                </p>
+          {/* Pricing Tiers */}
+          <div>
+            <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-3 flex items-center gap-2">
+              <Clock className="w-5 h-5 text-amber-600 dark:text-amber-500" />
+              Room Pricing Tiers
+            </h3>
+            <div className="space-y-3">
+              {/* Tower Suite */}
+              <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 bg-white dark:bg-gray-800/50">
+                <div className="flex justify-between items-start mb-2">
+                  <h4 className="font-medium text-gray-900 dark:text-gray-100">Tower Suite</h4>
+                  <span className="text-xs text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">Premium</span>
+                </div>
+                <div className="grid grid-cols-3 gap-4 text-sm">
+                  <div>
+                    <span className="text-gray-500 dark:text-gray-400 block">Starting</span>
+                    <span className="font-semibold text-gray-900 dark:text-gray-100">€15,000</span>
+                  </div>
+                  <div>
+                    <span className="text-gray-500 dark:text-gray-400 block">Daily reduction</span>
+                    <span className="font-semibold text-amber-600 dark:text-amber-500">€367</span>
+                  </div>
+                  <div>
+                    <span className="text-gray-500 dark:text-gray-400 block">Floor</span>
+                    <span className="font-semibold text-gray-900 dark:text-gray-100">€4,000</span>
+                  </div>
+                </div>
               </div>
 
-              {/* Acknowledge button */}
-              <button
-                onClick={handleClose}
-                className="mt-6 px-6 py-2 bg-accent-primary text-white rounded-sm hover:bg-accent-primary/90 transition-colors text-sm font-medium"
-              >
-                Let's go
-              </button>
+              {/* Noble Quarter */}
+              <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 bg-white dark:bg-gray-800/50">
+                <div className="flex justify-between items-start mb-2">
+                  <h4 className="font-medium text-gray-900 dark:text-gray-100">Noble Quarter</h4>
+                  <span className="text-xs text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">Comfort</span>
+                </div>
+                <div className="grid grid-cols-3 gap-4 text-sm">
+                  <div>
+                    <span className="text-gray-500 dark:text-gray-400 block">Starting</span>
+                    <span className="font-semibold text-gray-900 dark:text-gray-100">€10,000</span>
+                  </div>
+                  <div>
+                    <span className="text-gray-500 dark:text-gray-400 block">Daily reduction</span>
+                    <span className="font-semibold text-amber-600 dark:text-amber-500">€267</span>
+                  </div>
+                  <div>
+                    <span className="text-gray-500 dark:text-gray-400 block">Floor</span>
+                    <span className="font-semibold text-gray-900 dark:text-gray-100">€2,000</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Standard Chamber */}
+              <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 bg-white dark:bg-gray-800/50">
+                <div className="flex justify-between items-start mb-2">
+                  <h4 className="font-medium text-gray-900 dark:text-gray-100">Standard Chamber</h4>
+                  <span className="text-xs text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">Value</span>
+                </div>
+                <div className="grid grid-cols-3 gap-4 text-sm">
+                  <div>
+                    <span className="text-gray-500 dark:text-gray-400 block">Starting</span>
+                    <span className="font-semibold text-gray-900 dark:text-gray-100">€4,800</span>
+                  </div>
+                  <div>
+                    <span className="text-gray-500 dark:text-gray-400 block">Daily reduction</span>
+                    <span className="font-semibold text-amber-600 dark:text-amber-500">€133</span>
+                  </div>
+                  <div>
+                    <span className="text-gray-500 dark:text-gray-400 block">Floor</span>
+                    <span className="font-semibold text-gray-900 dark:text-gray-100">€800</span>
+                  </div>
+                </div>
+              </div>
             </div>
-          </motion.div>
-        </motion.div>
-      )}
-    </AnimatePresence>
+          </div>
+
+          {/* Strategy tip */}
+          <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+            <h4 className="font-medium text-blue-900 dark:text-blue-200 mb-2">💡 Strategy Tip</h4>
+            <p className="text-sm text-blue-700 dark:text-blue-300 leading-relaxed">
+              {hasStarted 
+                ? "Prices reduce daily at midnight UTC. The earlier you buy, the higher the price—but you secure your preferred room. Waiting saves money but increases the risk of missing out."
+                : "The auction begins on August 15 at midnight UTC. You can purchase now at starting prices, or wait for daily reductions once the auction begins."
+              }
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }

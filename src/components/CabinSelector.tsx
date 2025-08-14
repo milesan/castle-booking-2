@@ -14,7 +14,10 @@ import { useSession } from '../hooks/useSession';
 import { HoverClickPopover } from './HoverClickPopover';
 import { useUserPermissions } from '../hooks/useUserPermissions';
 import { usePendingBookings } from '../hooks/usePendingBookings';
+import { MasonryGallery } from './shared/MasonryGallery';
 import { FullScreenMasonry } from './FullScreenMasonry';
+import { TrendingDown } from 'lucide-react';
+import type { AuctionPricing } from '../hooks/useDutchAuctionSimple';
 
 // Local interface for accommodation images
 interface AccommodationImage {
@@ -44,6 +47,7 @@ interface Props {
   isDisabled?: boolean;
   displayWeeklyAccommodationPrice: (accommodationId: string) => { price: number | null; avgSeasonalDiscount: number | null } | null;
   testMode?: boolean;
+  getPricingInfo?: (accommodationId: string) => AuctionPricing | null;
 }
 
 // Helper function to get primary image (NEW IMAGES TABLE ONLY)
@@ -90,9 +94,9 @@ const StatusOverlay: React.FC<{
   if (!isVisible) return null;
 
   return (
-    <div className={clsx("absolute inset-0 flex items-center justify-center p-4", `z-[${zIndex}]`)}> {/* Positioning only */}
+    <div className={clsx("absolute inset-0 flex items-center justify-center p-4 pointer-events-none", `z-[${zIndex}]`)}> {/* Positioning only */}
       <div className={clsx(
-        "bg-surface text-text-primary px-4 py-2 rounded-md font-mono text-sm text-center border border-border shadow-md",
+        "bg-surface text-text-primary px-4 py-2 rounded-md font-mono text-sm text-center border border-border shadow-md pointer-events-auto",
         className // Allow specific styling overrides like border color
       )}>
         {children}
@@ -110,12 +114,14 @@ export function CabinSelector({
   currentMonth = normalizeToUTCDate(new Date()),
   isDisabled = false,
   displayWeeklyAccommodationPrice,
-  testMode = false
+  testMode = false,
+  getPricingInfo
 }: Props) {
 
   const { session } = useSession();
   const { isAdmin, isLoading: permissionsLoading } = useUserPermissions(session);
   const { pendingBookings } = usePendingBookings(selectedWeeks);
+  
 
   // State to track current image index for each accommodation
   const [currentImageIndices, setCurrentImageIndices] = useState<Record<string, number>>({});
@@ -187,6 +193,7 @@ export function CabinSelector({
     const currentIndex = currentImageIndices[accommodation.id] || 0;
     const currentImageUrl = getCurrentImage(accommodation);
     const [imageLoading, setImageLoading] = useState(false);
+    
 
     // Preload adjacent images for smoother transitions
     useEffect(() => {
@@ -216,15 +223,21 @@ export function CabinSelector({
       );
     }
 
-    const handlePrevious = (e: React.MouseEvent) => {
-      e.stopPropagation();
+    const handlePrevious = (e?: React.MouseEvent) => {
+      if (e) {
+        e.stopPropagation();
+        e.preventDefault();
+      }
       setImageLoading(true);
       navigateToImage(accommodation.id, 'prev', allImages.length);
       setTimeout(() => setImageLoading(false), 50);
     };
 
-    const handleNext = (e: React.MouseEvent) => {
-      e.stopPropagation();
+    const handleNext = (e?: React.MouseEvent) => {
+      if (e) {
+        e.stopPropagation();
+        e.preventDefault();
+      }
       setImageLoading(true);
       navigateToImage(accommodation.id, 'next', allImages.length);
       setTimeout(() => setImageLoading(false), 50);
@@ -245,7 +258,11 @@ export function CabinSelector({
     };
 
     return (
-      <div className="relative w-full h-full group/gallery bg-gray-100">
+      <div className="relative w-full h-full group/gallery bg-gray-100 cursor-pointer"
+           onClick={(e) => {
+             e.stopPropagation();
+             handleOpenGallery(accommodation, e);
+           }}>
         {/* Main Image - clickable to open full-screen masonry */}
         <img 
           key={currentImageUrl} // Force remount for clean transitions
@@ -269,14 +286,14 @@ export function CabinSelector({
           <>
             <button
               onClick={handlePrevious}
-              className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-black/80 hover:bg-black/90 text-white rounded-md p-1 transition-all duration-200 hover:scale-110 shadow-lg z-30"
+              className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-black/80 hover:bg-black/90 text-white rounded-md p-1 transition-all duration-200 hover:scale-110 shadow-lg z-50"
               aria-label="Previous image"
             >
               <ChevronLeft size={16} />
             </button>
             <button
               onClick={handleNext}
-              className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-black/80 hover:bg-black/90 text-white rounded-md p-1 transition-all duration-200 hover:scale-110 shadow-lg z-30"
+              className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-black/80 hover:bg-black/90 text-white rounded-md p-1 transition-all duration-200 hover:scale-110 shadow-lg z-50"
               aria-label="Next image"
             >
               <ChevronRight size={16} />
@@ -286,7 +303,7 @@ export function CabinSelector({
 
         {/* Dots indicator - only show if more than 1 image */}
         {allImages.length > 1 && (
-          <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 flex space-x-1 z-30">
+          <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 flex space-x-1 z-40 pointer-events-auto">
             {allImages.map((_, index) => (
               <button
                 key={index}
@@ -642,12 +659,16 @@ export function CabinSelector({
               // Get all images for the current accommodation to use for the counter
               const allImagesForAcc = getAllImages(acc);
 
-              // Get the whole info object
+              // Check for auction pricing first
+              const auctionPricing = getPricingInfo ? getPricingInfo(acc.id) : null;
+              const isInAuction = auctionPricing !== null;
+              
+              // Get the whole info object (regular pricing)
               const weeklyInfo = getDisplayInfoOptimized(acc.id);
               
-              // Ensure weeklyInfo and its properties are defined before accessing
-              let weeklyPrice = weeklyInfo?.price ?? null; // Use null as default if undefined
-              const avgSeasonalDiscountForTooltip = weeklyInfo?.avgSeasonalDiscount ?? null; // Use null as default
+              // Use auction price if available, otherwise use regular weekly price
+              let weeklyPrice = isInAuction ? auctionPricing.currentPrice : (weeklyInfo?.price ?? null);
+              const avgSeasonalDiscountForTooltip = isInAuction ? null : (weeklyInfo?.avgSeasonalDiscount ?? null);
 
               // Keep duration discount calculation local to tooltip
               const completeWeeksForDiscount = calculateDurationDiscountWeeks(selectedWeeks);
@@ -682,6 +703,11 @@ export function CabinSelector({
                     (testMode || (finalCanSelect && !isDisabled)) && 'cursor-pointer'
                   )}
                   onClick={(e) => {
+                    // Check if click is on the image or image container
+                    const target = e.target as HTMLElement;
+                    if (target.tagName === 'IMG' || target.closest('.group/gallery')) {
+                      return;
+                    }
                     // Only select accommodation if not clicking on interactive elements
                     if (testMode || (finalCanSelect && !isDisabled)) {
                       handleSelectAccommodation(acc.id);
@@ -745,7 +771,7 @@ export function CabinSelector({
                     !testMode && (!isDisabled && isOutOfSeason && !isFullyBooked) && "blur-sm opacity-40 grayscale-[0.3]"
                   )}>
                     <ImageGallery accommodation={acc} />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div> {/* Increased gradient opacity from 40% to 60% */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent pointer-events-none"></div> {/* Increased gradient opacity from 40% to 60% */}
                   </div>
 
                   {/* Content */}
@@ -759,6 +785,15 @@ export function CabinSelector({
                   )}>
                     <div>
                       <h3 className="text-lg font-medium mb-1 text-primary font-lettra-bold uppercase">{acc.title}</h3>
+                      {/* Auction Indicator */}
+                      {isInAuction && auctionPricing && (
+                        <div className="mb-2 flex items-center gap-2">
+                          <span className="inline-flex items-center px-2 py-1 rounded-sm text-xs font-medium bg-green-900/20 text-green-200 border border-green-700/30">
+                            <TrendingDown size={12} className="mr-1" />
+                            Dutch Auction - €{auctionPricing.dailyReduction}/day reduction
+                          </span>
+                        </div>
+                      )}
                       {/* Property Location Badge */}
                       <div className="mb-2 flex items-center gap-2 flex-wrap">
                         {acc.property_location && (
@@ -861,10 +896,17 @@ export function CabinSelector({
                         {weeklyPrice === null || weeklyPrice === 0 ? (
                           <span className="text-accent-primary text-xl font-lettra-bold font-mono">{formatPrice(weeklyPrice, isTestAccommodation)}</span>
                         ) : (
-                          <span className="text-xl font-lettra-bold text-accent-primary">
-                            €{formatPrice(weeklyPrice, isTestAccommodation)}
-                            <span className="text-xl text-secondary font-lettra-bold"></span>
-                          </span>
+                          <div className="flex flex-col">
+                            <span className="text-xl font-lettra-bold text-accent-primary">
+                              €{formatPrice(weeklyPrice, isTestAccommodation)}
+                              <span className="text-xl text-secondary font-lettra-bold"></span>
+                            </span>
+                            {isInAuction && auctionPricing && (
+                              <span className="text-xs text-secondary font-mono mt-1">
+                                Floor: €{formatPrice(auctionPricing.floorPrice, false)}
+                              </span>
+                            )}
+                          </div>
                         )}
                       </div>
                       
@@ -938,7 +980,9 @@ export function CabinSelector({
       <FullScreenMasonry
         images={galleryImages}
         isOpen={galleryOpen}
-        onClose={() => setGalleryOpen(false)}
+        onClose={() => {
+          setGalleryOpen(false);
+        }}
         title={galleryTitle}
       />
     </div>
