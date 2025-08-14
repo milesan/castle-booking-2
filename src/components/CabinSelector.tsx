@@ -446,81 +446,65 @@ export function CabinSelector({
       return true;
     })
     .sort((a, b) => {
-      // Define castle location priority
-      const getLocationPriority = (acc: typeof a) => {
-        const location = acc.property_location;
-        if (!location) return 99; // No location goes to the end
-        
-        // Priority order for castle locations
-        switch(location) {
-          case 'dovecote': return 1;      // Most exclusive
-          case 'renaissance': return 2;   // Main castle building
-          case 'medieval': return 3;      // Historic section
-          case 'oriental': return 4;      // Exotic wing
-          case 'palm_grove': return 5;    // Garden area
-          default: return 99;
-        }
-      };
-      
-      // Define accommodation categories (for items without castle location)
-      const getCategory = (acc: typeof a) => {
+      // Define accommodation priority (new ordering)
+      const getPriority = (acc: typeof a) => {
         const title = acc.title.toLowerCase();
-        const type = acc.type?.toLowerCase() || '';
         
-        // Category 1: Own accommodation (own tent, own van, van parking)
-        if (title.includes('own tent') || title.includes('own van') || title.includes('van parking')) {
-          return 100;
-        }
+        // Priority 1: Own tent/van (first on site)
+        if (title.includes('own tent') || title.includes('your own tent')) return 1;
+        if (title.includes('own van') || title.includes('van parking') || title.includes('your own van')) return 2;
         
-        // Category 2: Camping/Tents (tipi, bell tent, other tents)
-        if (type === 'tent' || title.includes('tipi') || title.includes('bell tent') || title.includes('tent')) {
-          return 101;
-        }
+        // Priority 2: Le Dorm (new budget option)
+        if (title === 'le dorm') return 3;
         
-        // Category 3: Dorms
-        if (title.includes('dorm')) {
-          return 102;
-        }
+        // Priority 3: Fixed price glamping (tipi and bell tent)
+        if (title.includes('single tipi')) return 4;
+        if (title.includes('bell tent')) return 5;
         
-        // Category 4: All other rooms without location
-        return 50;
+        // Priority 4: Other glamping options
+        if (title.includes('microcabin')) return 10;
+        if (title.includes('yurt')) return 11;
+        if (title.includes('a-frame')) return 12;
+        
+        // Priority 5: Other dorms
+        if (title.includes('dorm') && title !== 'le dorm') return 15;
+        
+        // Priority 6: Castle rooms by location
+        const location = acc.property_location;
+        if (location === 'dovecote') return 20;
+        if (location === 'renaissance') return 21;
+        if (location === 'medieval') return 22;
+        if (location === 'oriental') return 23;
+        if (location === 'palm_grove') return 24;
+        
+        // Everything else
+        return 99;
       };
       
-      const aLocPriority = getLocationPriority(a);
-      const bLocPriority = getLocationPriority(b);
+      const aPriority = getPriority(a);
+      const bPriority = getPriority(b);
       
-      // If both have castle locations, sort by location priority
-      if (aLocPriority < 99 && bLocPriority < 99) {
-        if (aLocPriority !== bLocPriority) {
-          return aLocPriority - bLocPriority;
-        }
-        
-        // Within same location, sort by floor/section if Renaissance
-        if (a.property_location === 'renaissance' && b.property_location === 'renaissance') {
-          const sectionOrder = { 'mezzanine': 1, 'first_floor': 2, 'second_floor': 3, 'attic': 4 };
-          const aSection = sectionOrder[a.property_section as keyof typeof sectionOrder] || 5;
-          const bSection = sectionOrder[b.property_section as keyof typeof sectionOrder] || 5;
-          if (aSection !== bSection) return aSection - bSection;
-        }
-        
-        // Within same location/section, sort by price
-        return b.base_price - a.base_price; // Higher price first within same location
+      // Sort by priority
+      if (aPriority !== bPriority) {
+        return aPriority - bPriority;
       }
       
-      // If one has castle location and other doesn't, castle location comes first
-      if (aLocPriority < 99) return -1;
-      if (bLocPriority < 99) return 1;
-      
-      // If neither has castle location, use category sorting
-      const aCat = getCategory(a);
-      const bCat = getCategory(b);
-      
-      if (aCat !== bCat) {
-        return aCat - bCat;
+      // Within same priority (e.g., same location), sort Renaissance rooms by floor
+      if (a.property_location === 'renaissance' && b.property_location === 'renaissance') {
+        const sectionOrder = { 'mezzanine': 1, 'first_floor': 2, 'second_floor': 3, 'attic': 4 };
+        const aSection = sectionOrder[a.property_section as keyof typeof sectionOrder] || 5;
+        const bSection = sectionOrder[b.property_section as keyof typeof sectionOrder] || 5;
+        if (aSection !== bSection) return aSection - bSection;
       }
       
-      // Within same category, sort by price ascending
-      return a.base_price - b.base_price;
+      // Within same priority/section, sort by price (higher first for castle rooms, lower first for budget options)
+      if (aPriority >= 20) {
+        // Castle rooms - higher price first
+        return b.base_price - a.base_price;
+      } else {
+        // Budget options - lower price first
+        return a.base_price - b.base_price;
+      }
     });
 
   // Convert selectedWeeks to dates for comparison
@@ -866,6 +850,13 @@ export function CabinSelector({
                     
                     <div className="flex justify-between items-end">
                       <div className="text-primary font-medium font-mono">
+                        {/* Pricing Type Label */}
+                        {acc.title === 'Single Tipi' || acc.title === '4 Meter Bell Tent' || acc.title === '4m Bell Tent' || acc.title === 'Le Dorm' ? (
+                          <span className="text-xs text-gray-400 uppercase tracking-wide">Fixed Price</span>
+                        ) : (weeklyPrice !== 0 && acc.title !== 'Your Own Tent' && acc.title !== 'Your Own Van' && acc.title !== 'Van Parking') ? (
+                          <span className="text-xs text-amber-400 uppercase tracking-wide">Dutch Auction</span>
+                        ) : null}
+                        
                         {/* Check if weeklyPrice (from prop) is null or 0, handle 0.01 specifically */}
                         {weeklyPrice === null || weeklyPrice === 0 ? (
                           <span className="text-accent-primary text-xl font-lettra-bold font-mono">{formatPrice(weeklyPrice, isTestAccommodation)}</span>

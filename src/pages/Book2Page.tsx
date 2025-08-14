@@ -674,6 +674,12 @@ export function Book2Page() {
               {/* Moved h1 inside wrapper - REMOVING px-* padding now */}
               <h1 className="text-4xl lg:text-[78px] font-display mb-3 xs:mb-4 text-primary pt-14 leading-[1.1] tracking-[-0.02em]">THE GATES BECKON</h1>
               
+              {/* Closed Container Notice */}
+              <div className="bg-amber-900/20 border border-amber-700/30 rounded-sm p-3 mb-4">
+                <p className="text-sm text-amber-200 font-mono">
+                  The Castle is a closed container. We ask that everyone stays on-site throughout the experience.
+                </p>
+              </div>
 
               {/* == END: Moved Admin controls inside wrapper == */}
 
