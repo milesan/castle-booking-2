@@ -75,11 +75,8 @@ export function GardenDecompressionAddon({
   return (
     <div className="rounded-sm shadow-sm py-3 xs:py-4 sm:py-6 mb-4 xs:mb-5 sm:mb-6">
       <div className="flex flex-col gap-3 mb-4">
-        <h2 className="text-2xl sm:text-3xl font-display font-light text-primary">
-          Continue to The Garden? (Optional)
-        </h2>
         <p className="text-sm sm:text-base text-secondary font-mono">
-          Decompress after The Castle at our sister location in Portugal
+          Decompress after The Castle at our permanent campus in Portugal
         </p>
       </div>
 
