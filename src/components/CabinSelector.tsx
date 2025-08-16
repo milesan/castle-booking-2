@@ -93,8 +93,16 @@ const StatusOverlay: React.FC<{
 }> = ({ isVisible, zIndex, children, className }) => {
   if (!isVisible) return null;
 
+  // Map numeric z-index to Tailwind classes
+  const zIndexClass = {
+    2: 'z-[2]',
+    3: 'z-[3]',
+    4: 'z-[4]',
+    5: 'z-[5]'
+  }[zIndex] || 'z-[1]';
+
   return (
-    <div className={clsx("absolute inset-0 flex items-center justify-center p-4 pointer-events-none", `z-[${zIndex}]`)}> {/* Positioning only */}
+    <div className={clsx("absolute inset-0 flex items-center justify-center p-4 pointer-events-none", zIndexClass)}> {/* Positioning only */}
       <div className={clsx(
         "bg-surface text-text-primary px-4 py-2 rounded-md font-mono text-sm text-center border border-border shadow-md pointer-events-auto",
         className // Allow specific styling overrides like border color
@@ -258,7 +266,7 @@ export function CabinSelector({
     };
 
     return (
-      <div className="relative w-full h-full group/gallery bg-gray-100 cursor-pointer"
+      <div className="relative w-full h-full group/gallery bg-gray-100 cursor-pointer z-[1]"
            onClick={(e) => {
              e.stopPropagation();
              handleOpenGallery(accommodation, e);
@@ -286,24 +294,26 @@ export function CabinSelector({
           <>
             <button
               onClick={handlePrevious}
-              className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-black/80 hover:bg-black/90 text-white rounded-md p-1 transition-all duration-200 hover:scale-110 shadow-lg z-50"
+              className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-black/80 hover:bg-black/90 text-white rounded-md p-2 transition-all duration-200 hover:scale-110 shadow-lg z-[100]"
               aria-label="Previous image"
+              type="button"
             >
-              <ChevronLeft size={16} />
+              <ChevronLeft size={20} />
             </button>
             <button
               onClick={handleNext}
-              className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-black/80 hover:bg-black/90 text-white rounded-md p-1 transition-all duration-200 hover:scale-110 shadow-lg z-50"
+              className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-black/80 hover:bg-black/90 text-white rounded-md p-2 transition-all duration-200 hover:scale-110 shadow-lg z-[100]"
               aria-label="Next image"
+              type="button"
             >
-              <ChevronRight size={16} />
+              <ChevronRight size={20} />
             </button>
           </>
         )}
 
         {/* Dots indicator - only show if more than 1 image */}
         {allImages.length > 1 && (
-          <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 flex space-x-1 z-40 pointer-events-auto">
+          <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 flex space-x-1 z-[90] pointer-events-auto">
             {allImages.map((_, index) => (
               <button
                 key={index}
