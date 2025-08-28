@@ -75,8 +75,19 @@ export function GardenDecompressionAddon({
   return (
     <div className="rounded-sm shadow-sm py-3 xs:py-4 sm:py-6 mb-4 xs:mb-5 sm:mb-6">
       <div className="flex flex-col gap-3 mb-4">
+        <div className="flex items-center gap-2 mb-2">
+          <h3 className="text-xl sm:text-2xl font-display font-light text-primary">
+            Garden Decompression
+          </h3>
+          <span className="bg-gray-100 text-gray-600 px-2 py-1 rounded-sm text-xs font-mono uppercase tracking-wide">
+            Optional
+          </span>
+        </div>
         <p className="text-sm sm:text-base text-secondary font-mono">
           Decompress after The Castle at our permanent campus in Portugal
+        </p>
+        <p className="text-xs text-secondary font-mono italic">
+          You can proceed without selecting any decompression option.
         </p>
       </div>
 
