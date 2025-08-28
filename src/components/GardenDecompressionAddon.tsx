@@ -39,7 +39,7 @@ export function GardenDecompressionAddon({
         startDate: sept26,
         endDate: sept29,
         price: 125,
-        description: 'Fri-Mon • 3 nights of gentle re-entry'
+        description: 'Fri-Mon • 3 nights'
       },
       {
         id: 'full-week',
@@ -47,7 +47,7 @@ export function GardenDecompressionAddon({
         startDate: sept26,
         endDate: oct6,
         price: 400,
-        description: 'Fri-Sun • 10 nights of deep integration'
+        description: 'Fri-Sun • 10 nights'
       },
       {
         id: 'october-week',
