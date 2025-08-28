@@ -14,7 +14,10 @@ import { useSession } from '../hooks/useSession';
 import { HoverClickPopover } from './HoverClickPopover';
 import { useUserPermissions } from '../hooks/useUserPermissions';
 import { usePendingBookings } from '../hooks/usePendingBookings';
+import { MasonryGallery } from './shared/MasonryGallery';
 import { FullScreenMasonry } from './FullScreenMasonry';
+import { TrendingDown } from 'lucide-react';
+import type { AuctionPricing } from '../hooks/useDutchAuctionSimple';
 
 // Local interface for accommodation images
 interface AccommodationImage {
@@ -44,6 +47,7 @@ interface Props {
   isDisabled?: boolean;
   displayWeeklyAccommodationPrice: (accommodationId: string) => { price: number | null; avgSeasonalDiscount: number | null } | null;
   testMode?: boolean;
+  getPricingInfo?: (accommodationId: string) => AuctionPricing | null;
 }
 
 // Helper function to get primary image (NEW IMAGES TABLE ONLY)
@@ -89,8 +93,16 @@ const StatusOverlay: React.FC<{
 }> = ({ isVisible, zIndex, children, className }) => {
   if (!isVisible) return null;
 
+  // Map numeric z-index to Tailwind classes
+  const zIndexClass = {
+    2: 'z-[2]',
+    3: 'z-[3]',
+    4: 'z-[4]',
+    5: 'z-[5]'
+  }[zIndex] || 'z-[1]';
+
   return (
-    <div className={clsx("absolute inset-0 flex items-center justify-center p-4 pointer-events-none", `z-[${zIndex}]`)}> {/* Positioning only */}
+    <div className={clsx("absolute inset-0 flex items-center justify-center p-4 pointer-events-none", zIndexClass)}> {/* Positioning only */}
       <div className={clsx(
         "bg-surface text-text-primary px-4 py-2 rounded-md font-mono text-sm text-center border border-border shadow-md pointer-events-auto",
         className // Allow specific styling overrides like border color
@@ -110,7 +122,8 @@ export function CabinSelector({
   currentMonth = normalizeToUTCDate(new Date()),
   isDisabled = false,
   displayWeeklyAccommodationPrice,
-  testMode = false
+  testMode = false,
+  getPricingInfo
 }: Props) {
 
   const { session } = useSession();
@@ -253,7 +266,7 @@ export function CabinSelector({
     };
 
     return (
-      <div className="relative w-full h-full group/gallery bg-gray-100 cursor-pointer"
+      <div className="relative w-full h-full group/gallery bg-gray-100 cursor-pointer z-[1]"
            onClick={(e) => {
              e.stopPropagation();
              handleOpenGallery(accommodation, e);
@@ -281,24 +294,26 @@ export function CabinSelector({
           <>
             <button
               onClick={handlePrevious}
-              className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-black/80 hover:bg-black/90 text-white rounded-md p-1 transition-all duration-200 hover:scale-110 shadow-lg z-50"
+              className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-black/80 hover:bg-black/90 text-white rounded-md p-2 transition-all duration-200 hover:scale-110 shadow-lg z-[100]"
               aria-label="Previous image"
+              type="button"
             >
-              <ChevronLeft size={16} />
+              <ChevronLeft size={20} />
             </button>
             <button
               onClick={handleNext}
-              className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-black/80 hover:bg-black/90 text-white rounded-md p-1 transition-all duration-200 hover:scale-110 shadow-lg z-50"
+              className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-black/80 hover:bg-black/90 text-white rounded-md p-2 transition-all duration-200 hover:scale-110 shadow-lg z-[100]"
               aria-label="Next image"
+              type="button"
             >
-              <ChevronRight size={16} />
+              <ChevronRight size={20} />
             </button>
           </>
         )}
 
         {/* Dots indicator - only show if more than 1 image */}
         {allImages.length > 1 && (
-          <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 flex space-x-1 z-40 pointer-events-auto">
+          <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 flex space-x-1 z-[90] pointer-events-auto">
             {allImages.map((_, index) => (
               <button
                 key={index}
@@ -458,81 +473,65 @@ export function CabinSelector({
       return true;
     })
     .sort((a, b) => {
-      // Define castle location priority
-      const getLocationPriority = (acc: typeof a) => {
-        const location = acc.property_location;
-        if (!location) return 99; // No location goes to the end
-        
-        // Priority order for castle locations
-        switch(location) {
-          case 'dovecote': return 1;      // Most exclusive
-          case 'renaissance': return 2;   // Main castle building
-          case 'medieval': return 3;      // Historic section
-          case 'oriental': return 4;      // Exotic wing
-          case 'palm_grove': return 5;    // Garden area
-          default: return 99;
-        }
-      };
-      
-      // Define accommodation categories (for items without castle location)
-      const getCategory = (acc: typeof a) => {
+      // Define accommodation priority (new ordering)
+      const getPriority = (acc: typeof a) => {
         const title = acc.title.toLowerCase();
-        const type = acc.type?.toLowerCase() || '';
         
-        // Category 1: Own accommodation (own tent, own van, van parking)
-        if (title.includes('own tent') || title.includes('own van') || title.includes('van parking')) {
-          return 100;
-        }
+        // Priority 1: Own tent/van (first on site)
+        if (title.includes('own tent') || title.includes('your own tent')) return 1;
+        if (title.includes('own van') || title.includes('van parking') || title.includes('your own van')) return 2;
         
-        // Category 2: Camping/Tents (tipi, bell tent, other tents)
-        if (type === 'tent' || title.includes('tipi') || title.includes('bell tent') || title.includes('tent')) {
-          return 101;
-        }
+        // Priority 2: Le Dorm (new budget option)
+        if (title === 'le dorm') return 3;
         
-        // Category 3: Dorms
-        if (title.includes('dorm')) {
-          return 102;
-        }
+        // Priority 3: Fixed price glamping (tipi and bell tent)
+        if (title.includes('single tipi')) return 4;
+        if (title.includes('bell tent')) return 5;
         
-        // Category 4: All other rooms without location
-        return 50;
+        // Priority 4: Other glamping options
+        if (title.includes('microcabin')) return 10;
+        if (title.includes('yurt')) return 11;
+        if (title.includes('a-frame')) return 12;
+        
+        // Priority 5: Other dorms
+        if (title.includes('dorm') && title !== 'le dorm') return 15;
+        
+        // Priority 6: Castle rooms by location
+        const location = acc.property_location;
+        if (location === 'dovecote') return 20;
+        if (location === 'renaissance') return 21;
+        if (location === 'medieval') return 22;
+        if (location === 'oriental') return 23;
+        if (location === 'palm_grove') return 24;
+        
+        // Everything else
+        return 99;
       };
       
-      const aLocPriority = getLocationPriority(a);
-      const bLocPriority = getLocationPriority(b);
+      const aPriority = getPriority(a);
+      const bPriority = getPriority(b);
       
-      // If both have castle locations, sort by location priority
-      if (aLocPriority < 99 && bLocPriority < 99) {
-        if (aLocPriority !== bLocPriority) {
-          return aLocPriority - bLocPriority;
-        }
-        
-        // Within same location, sort by floor/section if Renaissance
-        if (a.property_location === 'renaissance' && b.property_location === 'renaissance') {
-          const sectionOrder = { 'mezzanine': 1, 'first_floor': 2, 'second_floor': 3, 'attic': 4 };
-          const aSection = sectionOrder[a.property_section as keyof typeof sectionOrder] || 5;
-          const bSection = sectionOrder[b.property_section as keyof typeof sectionOrder] || 5;
-          if (aSection !== bSection) return aSection - bSection;
-        }
-        
-        // Within same location/section, sort by price
-        return b.base_price - a.base_price; // Higher price first within same location
+      // Sort by priority
+      if (aPriority !== bPriority) {
+        return aPriority - bPriority;
       }
       
-      // If one has castle location and other doesn't, castle location comes first
-      if (aLocPriority < 99) return -1;
-      if (bLocPriority < 99) return 1;
-      
-      // If neither has castle location, use category sorting
-      const aCat = getCategory(a);
-      const bCat = getCategory(b);
-      
-      if (aCat !== bCat) {
-        return aCat - bCat;
+      // Within same priority (e.g., same location), sort Renaissance rooms by floor
+      if (a.property_location === 'renaissance' && b.property_location === 'renaissance') {
+        const sectionOrder = { 'mezzanine': 1, 'first_floor': 2, 'second_floor': 3, 'attic': 4 };
+        const aSection = sectionOrder[a.property_section as keyof typeof sectionOrder] || 5;
+        const bSection = sectionOrder[b.property_section as keyof typeof sectionOrder] || 5;
+        if (aSection !== bSection) return aSection - bSection;
       }
       
-      // Within same category, sort by price ascending
-      return a.base_price - b.base_price;
+      // Within same priority/section, sort by price (higher first for castle rooms, lower first for budget options)
+      if (aPriority >= 20) {
+        // Castle rooms - higher price first
+        return b.base_price - a.base_price;
+      } else {
+        // Budget options - lower price first
+        return a.base_price - b.base_price;
+      }
     });
 
   // Convert selectedWeeks to dates for comparison
@@ -670,12 +669,16 @@ export function CabinSelector({
               // Get all images for the current accommodation to use for the counter
               const allImagesForAcc = getAllImages(acc);
 
-              // Get the whole info object
+              // Check for auction pricing first
+              const auctionPricing = getPricingInfo ? getPricingInfo(acc.id) : null;
+              const isInAuction = auctionPricing !== null;
+              
+              // Get the whole info object (regular pricing)
               const weeklyInfo = getDisplayInfoOptimized(acc.id);
               
-              // Ensure weeklyInfo and its properties are defined before accessing
-              let weeklyPrice = weeklyInfo?.price ?? null; // Use null as default if undefined
-              const avgSeasonalDiscountForTooltip = weeklyInfo?.avgSeasonalDiscount ?? null; // Use null as default
+              // Use auction price if available, otherwise use regular weekly price
+              let weeklyPrice = isInAuction ? auctionPricing.currentPrice : (weeklyInfo?.price ?? null);
+              const avgSeasonalDiscountForTooltip = isInAuction ? null : (weeklyInfo?.avgSeasonalDiscount ?? null);
 
               // Keep duration discount calculation local to tooltip
               const completeWeeksForDiscount = calculateDurationDiscountWeeks(selectedWeeks);
@@ -792,9 +795,18 @@ export function CabinSelector({
                   )}>
                     <div>
                       <h3 className="text-lg font-medium mb-1 text-primary font-lettra-bold uppercase">{acc.title}</h3>
+                      {/* Auction Indicator */}
+                      {isInAuction && auctionPricing && (
+                        <div className="mb-2 flex items-center gap-2">
+                          <span className="inline-flex items-center px-2 py-1 rounded-sm text-xs font-medium bg-green-900/20 text-green-200 border border-green-700/30">
+                            <TrendingDown size={12} className="mr-1" />
+                            Dutch Auction - €{auctionPricing.dailyReduction}/day reduction
+                          </span>
+                        </div>
+                      )}
                       {/* Property Location Badge */}
-                      {acc.property_location && (
-                        <div className="mb-2">
+                      <div className="mb-2 flex items-center gap-2 flex-wrap">
+                        {acc.property_location && (
                           <span className="inline-flex items-center px-2 py-1 rounded-sm text-xs font-medium bg-amber-900/20 text-amber-200 border border-amber-700/30">
                             {acc.property_location === 'dovecote' && '🕊️ Dovecote'}
                             {acc.property_location === 'renaissance' && (
@@ -814,8 +826,29 @@ export function CabinSelector({
                             {acc.property_location === 'palm_grove' && '🌴 Palm Grove'}
                             {acc.property_location === 'medieval' && '🏰 Medieval'}
                           </span>
-                        </div>
-                      )}
+                        )}
+                        {/* Bathroom Type Badge */}
+                        {acc.bathroom_type && acc.bathroom_type !== 'none' && (
+                          <span className={clsx(
+                            "inline-flex items-center gap-1 px-2 py-1 rounded-sm text-xs font-medium",
+                            acc.bathroom_type === 'private' 
+                              ? "bg-blue-500/20 text-blue-300 border border-blue-500/30" 
+                              : "bg-gray-600/20 text-gray-300 border border-gray-600/30"
+                          )}>
+                            {acc.bathroom_type === 'private' ? (
+                              <>
+                                <Bath size={10} />
+                                <span>Private</span>
+                              </>
+                            ) : (
+                              <>
+                                <Users size={10} />
+                                <span>Shared</span>
+                              </>
+                            )}
+                          </span>
+                        )}
+                      </div>
                       {/* Additional Info - Display as formatted text with icons */}
                       {acc.additional_info && (
                         <div className="text-secondary text-xs mb-3 space-y-1">
@@ -825,16 +858,23 @@ export function CabinSelector({
                             
                             // Add icons for specific amenities
                             let icon = null;
+                            let highlightClass = "";
+                            
                             if (trimmedInfo.toLowerCase().includes('bed')) {
                               icon = <BedDouble size={12} className="inline mr-1" />;
-                            } else if (trimmedInfo.toLowerCase().includes('bath')) {
+                            } else if (trimmedInfo.toLowerCase().includes('private') && trimmedInfo.toLowerCase().includes('bath')) {
+                              icon = <Bath size={12} className="inline mr-1 text-accent-primary" />;
+                              highlightClass = "text-accent-primary font-medium";
+                            } else if (trimmedInfo.toLowerCase().includes('shared') && trimmedInfo.toLowerCase().includes('bath')) {
+                              icon = <Users size={12} className="inline mr-1" />;
+                            } else if (trimmedInfo.toLowerCase().includes('bath') || trimmedInfo.toLowerCase().includes('shower') || trimmedInfo.toLowerCase().includes('tub')) {
                               icon = <Bath size={12} className="inline mr-1" />;
                             }
                             
                             return (
                               <div key={idx} className="flex items-start">
                                 <span className="mr-1">•</span>
-                                <span>
+                                <span className={highlightClass}>
                                   {icon}
                                   {trimmedInfo}
                                 </span>
@@ -855,14 +895,28 @@ export function CabinSelector({
                     
                     <div className="flex justify-between items-end">
                       <div className="text-primary font-medium font-mono">
+                        {/* Pricing Type Label */}
+                        {acc.title === 'Single Tipi' || acc.title === '4 Meter Bell Tent' || acc.title === '4m Bell Tent' || acc.title === 'Le Dorm' ? (
+                          <span className="text-xs text-gray-400 uppercase tracking-wide">Fixed Price</span>
+                        ) : (weeklyPrice !== 0 && acc.title !== 'Your Own Tent' && acc.title !== 'Your Own Van' && acc.title !== 'Van Parking') ? (
+                          <span className="text-xs text-amber-400 uppercase tracking-wide">Dutch Auction</span>
+                        ) : null}
+                        
                         {/* Check if weeklyPrice (from prop) is null or 0, handle 0.01 specifically */}
                         {weeklyPrice === null || weeklyPrice === 0 ? (
                           <span className="text-accent-primary text-xl font-lettra-bold font-mono">{formatPrice(weeklyPrice, isTestAccommodation)}</span>
                         ) : (
-                          <span className="text-xl font-lettra-bold text-accent-primary">
-                            €{formatPrice(weeklyPrice, isTestAccommodation)}
-                            <span className="text-xl text-secondary font-lettra-bold"></span>
-                          </span>
+                          <div className="flex flex-col">
+                            <span className="text-xl font-lettra-bold text-accent-primary">
+                              €{formatPrice(weeklyPrice, isTestAccommodation)}
+                              <span className="text-xl text-secondary font-lettra-bold"></span>
+                            </span>
+                            {isInAuction && auctionPricing && (
+                              <span className="text-xs text-secondary font-mono mt-1">
+                                Floor: €{formatPrice(auctionPricing.floorPrice, false)}
+                              </span>
+                            )}
+                          </div>
                         )}
                       </div>
                       

@@ -31,6 +31,10 @@ import { useUserPermissions } from '../hooks/useUserPermissions';
 import { Fireflies } from '../components/Fireflies';
 import { FireflyPortal } from '../components/FireflyPortal';
 import { GardenDecompressionAddon } from '../components/GardenDecompressionAddon';
+import { useDutchAuctionSimple } from '../hooks/useDutchAuctionSimple';
+import { TrendingDown, Info } from 'lucide-react';
+import { DutchAuctionModal } from '../components/DutchAuctionModal';
+import { DutchAuctionFirstTimeModal } from '../components/DutchAuctionFirstTimeModal';
 
 // Define SeasonBreakdown type locally
 interface SeasonBreakdown {
@@ -76,6 +80,9 @@ export function Book2Page() {
   // console.log(`📊 [BOOK2] Render`); // Debug logging disabled
   const navigate = useNavigate();
   
+  // Dutch Auction integration
+  const { isActive: auctionActive, timeToNextDrop, getPricingInfo, auctionStartDate, auctionEndDate, hasStarted } = useDutchAuctionSimple();
+  
   // Get current date and set the initial month
   const today = new Date();
   
@@ -108,6 +115,7 @@ export function Book2Page() {
   const [lastRefresh, setLastRefresh] = useState(0);
   const [showDiscountModal, setShowDiscountModal] = useState(false);
   const [selectedGardenAddon, setSelectedGardenAddon] = useState<any>(null);
+  const [showAuctionModal, setShowAuctionModal] = useState(false);
 
 
 
@@ -644,6 +652,41 @@ export function Book2Page() {
   
   return (
     <div className="min-h-screen">
+      {/* Dutch Auction Banner - Simplified */}
+      {auctionActive && (
+        <div className="bg-gradient-to-r from-amber-50 via-amber-50/90 to-amber-50/80 border-b border-amber-200/50 px-4 py-2.5">
+          <div className="max-w-7xl mx-auto">
+            <div className="flex items-center justify-between">
+              {/* Left side - Auction indicator and countdown */}
+              <div className="flex items-center gap-3">
+                <TrendingDown className="w-4 h-4 text-amber-700" />
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium text-gray-900">
+                    {hasStarted ? 'Next reduction:' : 'Auction starts:'}
+                  </span>
+                  <span className="font-mono text-sm font-semibold text-amber-700">
+                    {timeToNextDrop || '—'}
+                  </span>
+                </div>
+              </div>
+              
+              {/* Right side - Info button and price range */}
+              <div className="flex items-center gap-3">
+                <span className="hidden sm:block text-xs text-gray-600">
+                  Tower: €15k→€4k • Noble: €10k→€2k • Standard: €4.8k→€800
+                </span>
+                <button
+                  onClick={() => setShowAuctionModal(true)}
+                  className="p-1.5 rounded-md hover:bg-amber-100 transition-colors"
+                  aria-label="Auction details"
+                >
+                  <Info className="w-4 h-4 text-amber-700" />
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
       <FireflyPortal />
       
       
@@ -673,6 +716,12 @@ export function Book2Page() {
               {/* Moved h1 inside wrapper - REMOVING px-* padding now */}
               <h1 className="text-4xl lg:text-[78px] font-display mb-3 xs:mb-4 text-primary pt-14 leading-[1.1] tracking-[-0.02em]">THE GATES BECKON</h1>
               
+              {/* Closed Container Notice */}
+              <div className="bg-amber-900/20 border border-amber-700/30 rounded-sm p-3 mb-4">
+                <p className="text-sm text-amber-200 font-mono">
+                  The Castle is a closed container. We ask that everyone stays on-site throughout the experience.
+                </p>
+              </div>
 
               {/* == END: Moved Admin controls inside wrapper == */}
 
@@ -814,6 +863,8 @@ export function Book2Page() {
                   accommodations={accommodations || []}
                   selectedAccommodationId={selectedAccommodation}
                   onSelectAccommodation={handleAccommodationSelect}
+                  auctionActive={auctionActive}
+                  getPricingInfo={getPricingInfo}
                   selectedWeeks={selectedWeeks}
                   currentMonth={currentMonth}
                   isLoading={accommodationsLoading}
@@ -883,6 +934,18 @@ export function Book2Page() {
           selectedWeeks={selectedWeeks}
         />
       )}
+      
+      {/* Dutch Auction First Time Modal - shows on first login */}
+      <DutchAuctionFirstTimeModal userId={session?.user?.id} />
+      
+      {/* Dutch Auction Info Modal - triggered by info button */}
+      <DutchAuctionModal
+        isOpen={showAuctionModal}
+        onClose={() => setShowAuctionModal(false)}
+        auctionStartDate={auctionStartDate}
+        auctionEndDate={auctionEndDate}
+        hasStarted={hasStarted}
+      />
     </div>
   );
 }
