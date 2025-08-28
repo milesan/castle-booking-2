@@ -2,11 +2,12 @@ import React, { useState } from 'react';
 import { SimpleBookingsList } from '../components/SimpleBookingsList';
 import { WhitelistSimple } from '../components/admin/WhitelistSimple';
 import { Accommodations } from '../components/admin/Accommodations';
-import { DutchAuctionAdmin } from '../components/admin/DutchAuctionAdmin';
-import { ClipboardList, UserPlus, Building2, TrendingDown } from 'lucide-react';
+// import { DutchAuctionAdmin } from '../components/admin/DutchAuctionAdmin'; // Dutch auction disabled
+import { ClipboardList, UserPlus, Building2 } from 'lucide-react';
+// import { TrendingDown } from 'lucide-react'; // Dutch auction disabled
 import { useNavigate } from 'react-router-dom';
 
-type AdminView = 'bookings' | 'whitelist' | 'accommodations' | 'dutch-auction';
+type AdminView = 'bookings' | 'whitelist' | 'accommodations'; // 'dutch-auction' removed
 
 interface AdminPageProps {
   housekeepingOnly?: boolean;
@@ -63,7 +64,8 @@ export function AdminPage({ housekeepingOnly = false }: AdminPageProps) {
             <Building2 className="w-4 h-4" />
             Accommodations
           </button>
-          <button
+          {/* Dutch Auction button - DISABLED */}
+          {/* <button
             onClick={() => setCurrentView('dutch-auction')}
             className={`flex items-center gap-2 px-3 py-1.5 rounded-sm transition-colors whitespace-nowrap font-mono text-sm ${
               currentView === 'dutch-auction'
@@ -73,14 +75,15 @@ export function AdminPage({ housekeepingOnly = false }: AdminPageProps) {
           >
             <TrendingDown className="w-4 h-4" />
             Dutch Auction
-          </button>
+          </button> */}
         </div>
 
         <div className="bg-[var(--color-bg-main)]  shadow-sm">
           {currentView === 'bookings' && <SimpleBookingsList />}
           {currentView === 'whitelist' && <WhitelistSimple />}
           {currentView === 'accommodations' && <Accommodations />}
-          {currentView === 'dutch-auction' && <DutchAuctionAdmin />}
+          {/* Dutch auction panel - DISABLED */}
+          {/* {currentView === 'dutch-auction' && <DutchAuctionAdmin />} */}
         </div>
       </div>
     </div>

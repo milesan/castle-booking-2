@@ -16,8 +16,9 @@ import { useUserPermissions } from '../hooks/useUserPermissions';
 import { usePendingBookings } from '../hooks/usePendingBookings';
 import { MasonryGallery } from './shared/MasonryGallery';
 import { FullScreenMasonry } from './FullScreenMasonry';
-import { TrendingDown } from 'lucide-react';
-import type { AuctionPricing } from '../hooks/useDutchAuctionSimple';
+// Dutch auction imports - DISABLED
+// import { TrendingDown } from 'lucide-react';
+// import type { AuctionPricing } from '../hooks/useDutchAuctionSimple';
 
 // Local interface for accommodation images
 interface AccommodationImage {
@@ -47,7 +48,8 @@ interface Props {
   isDisabled?: boolean;
   displayWeeklyAccommodationPrice: (accommodationId: string) => { price: number | null; avgSeasonalDiscount: number | null } | null;
   testMode?: boolean;
-  getPricingInfo?: (accommodationId: string) => AuctionPricing | null;
+  // Dutch auction prop - DISABLED
+  // getPricingInfo?: (accommodationId: string) => AuctionPricing | null;
 }
 
 // Helper function to get primary image (NEW IMAGES TABLE ONLY)
@@ -122,8 +124,8 @@ export function CabinSelector({
   currentMonth = normalizeToUTCDate(new Date()),
   isDisabled = false,
   displayWeeklyAccommodationPrice,
-  testMode = false,
-  getPricingInfo
+  testMode = false
+  // getPricingInfo - Dutch auction disabled
 }: Props) {
 
   const { session } = useSession();
@@ -669,16 +671,18 @@ export function CabinSelector({
               // Get all images for the current accommodation to use for the counter
               const allImagesForAcc = getAllImages(acc);
 
-              // Check for auction pricing first
-              const auctionPricing = getPricingInfo ? getPricingInfo(acc.id) : null;
-              const isInAuction = auctionPricing !== null;
+              // Dutch auction pricing - DISABLED
+              // const auctionPricing = getPricingInfo ? getPricingInfo(acc.id) : null;
+              // const isInAuction = auctionPricing !== null;
+              const isInAuction = false; // Dutch auction disabled
+              const auctionPricing = null; // Dutch auction disabled
               
               // Get the whole info object (regular pricing)
               const weeklyInfo = getDisplayInfoOptimized(acc.id);
               
-              // Use auction price if available, otherwise use regular weekly price
-              let weeklyPrice = isInAuction ? auctionPricing.currentPrice : (weeklyInfo?.price ?? null);
-              const avgSeasonalDiscountForTooltip = isInAuction ? null : (weeklyInfo?.avgSeasonalDiscount ?? null);
+              // Use regular weekly price only (Dutch auction disabled)
+              let weeklyPrice = weeklyInfo?.price ?? null;
+              const avgSeasonalDiscountForTooltip = weeklyInfo?.avgSeasonalDiscount ?? null;
 
               // Keep duration discount calculation local to tooltip
               const completeWeeksForDiscount = calculateDurationDiscountWeeks(selectedWeeks);
@@ -795,15 +799,15 @@ export function CabinSelector({
                   )}>
                     <div>
                       <h3 className="text-lg font-medium mb-1 text-primary font-lettra-bold uppercase">{acc.title}</h3>
-                      {/* Auction Indicator */}
-                      {isInAuction && auctionPricing && (
+                      {/* Dutch Auction Indicator - DISABLED */}
+                      {/* {isInAuction && auctionPricing && (
                         <div className="mb-2 flex items-center gap-2">
                           <span className="inline-flex items-center px-2 py-1 rounded-sm text-xs font-medium bg-green-900/20 text-green-200 border border-green-700/30">
                             <TrendingDown size={12} className="mr-1" />
                             Dutch Auction - €{auctionPricing.dailyReduction}/day reduction
                           </span>
                         </div>
-                      )}
+                      )} */}
                       {/* Property Location Badge */}
                       <div className="mb-2 flex items-center gap-2 flex-wrap">
                         {acc.property_location && (

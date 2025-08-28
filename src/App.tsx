@@ -10,7 +10,7 @@ import { Retro2Page } from './pages/Retro2Page';
 import { Book2Page } from './pages/Book2Page';
 import { MyBookings } from './components/MyBookings';
 import { AdminPage } from './pages/AdminPage';
-import { DutchAuctionPage } from './pages/DutchAuctionPage';
+// import { DutchAuctionPage } from './pages/DutchAuctionPage'; // Dutch auction disabled
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { supabase } from './lib/supabase';
@@ -100,7 +100,8 @@ function AppRouterLogic({
       <MainAppLayout>
         <Routes>
           <Route path="/" element={<Book2Page />} />
-          <Route path="/dutch-auction" element={<DutchAuctionPage />} />
+          {/* Dutch auction route - DISABLED */}
+          {/* <Route path="/dutch-auction" element={<DutchAuctionPage />} /> */}
           <Route path="/confirmation" element={<ConfirmationPage />} />
           <Route path="/my-bookings" element={<MyBookings />} />
           <Route path="/admin" element={isAdminCheck ? <AdminPage /> : <Navigate to="/" />} />

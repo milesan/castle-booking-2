@@ -31,10 +31,12 @@ import { useUserPermissions } from '../hooks/useUserPermissions';
 import { Fireflies } from '../components/Fireflies';
 import { FireflyPortal } from '../components/FireflyPortal';
 import { GardenDecompressionAddon } from '../components/GardenDecompressionAddon';
-import { useDutchAuctionSimple } from '../hooks/useDutchAuctionSimple';
-import { TrendingDown, Info } from 'lucide-react';
-import { DutchAuctionModal } from '../components/DutchAuctionModal';
-import { DutchAuctionFirstTimeModal } from '../components/DutchAuctionFirstTimeModal';
+// Dutch auction imports - DISABLED
+// import { useDutchAuctionSimple } from '../hooks/useDutchAuctionSimple';
+// import { TrendingDown, Info } from 'lucide-react';
+// import { DutchAuctionModal } from '../components/DutchAuctionModal';
+// import { DutchAuctionFirstTimeModal } from '../components/DutchAuctionFirstTimeModal';
+import { Info } from 'lucide-react'; // Keep Info for other uses
 
 // Define SeasonBreakdown type locally
 interface SeasonBreakdown {
@@ -80,8 +82,10 @@ export function Book2Page() {
   // console.log(`📊 [BOOK2] Render`); // Debug logging disabled
   const navigate = useNavigate();
   
-  // Dutch Auction integration
-  const { isActive: auctionActive, timeToNextDrop, getPricingInfo, auctionStartDate, auctionEndDate, hasStarted } = useDutchAuctionSimple();
+  // Dutch Auction integration - DISABLED
+  // const { isActive: auctionActive, timeToNextDrop, getPricingInfo, auctionStartDate, auctionEndDate, hasStarted } = useDutchAuctionSimple();
+  const auctionActive = false; // Dutch auction disabled
+  const getPricingInfo = null; // Dutch auction disabled
   
   // Get current date and set the initial month
   const today = new Date();
@@ -652,12 +656,11 @@ export function Book2Page() {
   
   return (
     <div className="min-h-screen">
-      {/* Dutch Auction Banner - Simplified */}
-      {auctionActive && (
+      {/* Dutch Auction Banner - DISABLED */}
+      {/* {auctionActive && (
         <div className="bg-gradient-to-r from-amber-50 via-amber-50/90 to-amber-50/80 border-b border-amber-200/50 px-4 py-2.5">
           <div className="max-w-7xl mx-auto">
             <div className="flex items-center justify-between">
-              {/* Left side - Auction indicator and countdown */}
               <div className="flex items-center gap-3">
                 <TrendingDown className="w-4 h-4 text-amber-700" />
                 <div className="flex items-center gap-2">
@@ -669,8 +672,6 @@ export function Book2Page() {
                   </span>
                 </div>
               </div>
-              
-              {/* Right side - Info button and price range */}
               <div className="flex items-center gap-3">
                 <span className="hidden sm:block text-xs text-gray-600">
                   Tower: €15k→€4k • Noble: €10k→€2k • Standard: €4.8k→€800
@@ -686,7 +687,7 @@ export function Book2Page() {
             </div>
           </div>
         </div>
-      )}
+      )} */}
       <FireflyPortal />
       
       
@@ -863,8 +864,9 @@ export function Book2Page() {
                   accommodations={accommodations || []}
                   selectedAccommodationId={selectedAccommodation}
                   onSelectAccommodation={handleAccommodationSelect}
-                  auctionActive={auctionActive}
-                  getPricingInfo={getPricingInfo}
+                  // Dutch auction props removed
+                  // auctionActive={auctionActive}
+                  // getPricingInfo={getPricingInfo}
                   selectedWeeks={selectedWeeks}
                   currentMonth={currentMonth}
                   isLoading={accommodationsLoading}
@@ -935,17 +937,15 @@ export function Book2Page() {
         />
       )}
       
-      {/* Dutch Auction First Time Modal - shows on first login */}
-      <DutchAuctionFirstTimeModal userId={session?.user?.id} />
-      
-      {/* Dutch Auction Info Modal - triggered by info button */}
-      <DutchAuctionModal
+      {/* Dutch Auction Modals - DISABLED */}
+      {/* <DutchAuctionFirstTimeModal userId={session?.user?.id} /> */}
+      {/* <DutchAuctionModal
         isOpen={showAuctionModal}
         onClose={() => setShowAuctionModal(false)}
         auctionStartDate={auctionStartDate}
         auctionEndDate={auctionEndDate}
         hasStarted={hasStarted}
-      />
+      /> */}
     </div>
   );
 }
