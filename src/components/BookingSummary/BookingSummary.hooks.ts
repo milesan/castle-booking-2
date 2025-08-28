@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
-import { calculateTotalNights, calculateTotalWeeksDecimal } from '../../utils/dates';
+import { getSeasonalDiscount, getDurationDiscount, getSeasonBreakdown } from '../../utils/pricing';
+import { calculateTotalNights, calculateDurationDiscountWeeks, calculateTotalWeeksDecimal } from '../../utils/dates';
 import { calculateBaseFoodCost } from './BookingSummary.utils';
 import type { Week } from '../../types/calendar';
 import type { Accommodation } from '../../types';
@@ -21,25 +22,30 @@ export function usePricing({
   gardenAddon
 }: UsePricingProps): PricingDetails {
   return useMemo((): PricingDetails => {
-    // --- ADDED LOGGING: Check prop value *inside* memo ---
-    // --- END ADDED LOGGING ---
-
-    // === Calculate nights for display ===
+    // === Calculate nights and weeks ===
     const totalNights = calculateTotalNights(selectedWeeks);
-    const exactWeeksDecimal = calculateTotalWeeksDecimal(selectedWeeks); // For display only
+    const completeWeeks = calculateDurationDiscountWeeks(selectedWeeks); // For duration discount
+    const exactWeeksDecimal = calculateTotalWeeksDecimal(selectedWeeks); // For display
     const displayWeeks = selectedWeeks.length > 0 ? Math.round(exactWeeksDecimal * 10) / 10 : 0;
     
-    // === Use accommodation base price directly (The Castle fixed price) ===
-    const totalAccommodationCost = selectedAccommodation?.base_price || 0;
+    // === Calculate Accommodation Cost using discounted weekly price ===
+    const weeklyAccPrice = calculatedWeeklyAccommodationPrice ?? 0;
+    const totalAccommodationCost = parseFloat((weeklyAccPrice * displayWeeks).toFixed(2));
 
-    // === No food cost or discounts ===
-    const finalFoodCost = 0;
-    const foodDiscountAmount = 0;
-    const effectiveWeeklyRate = 0;
+    // === Calculate Food & Facilities Cost ===
+    const baseFoodCost = calculateBaseFoodCost(totalNights);
     
-    // 4. Subtotal is accommodation cost + garden addon
+    // Apply duration discount to food if staying 3+ weeks
+    const rawDurationDiscountPercent = getDurationDiscount(completeWeeks);
+    const foodDiscountAmount = parseFloat((baseFoodCost * rawDurationDiscountPercent).toFixed(2));
+    const finalFoodCost = parseFloat((baseFoodCost - foodDiscountAmount).toFixed(2));
+    
+    // Calculate effective weekly rate for display
+    const effectiveWeeklyRate = displayWeeks > 0 ? +(finalFoodCost / displayWeeks).toFixed(2) : 0;
+    
+    // 4. Subtotal includes accommodation, food, and garden addon
     const gardenAddonCost = gardenAddon?.price || 0;
-    const subtotal = totalAccommodationCost + gardenAddonCost;
+    const subtotal = totalAccommodationCost + finalFoodCost + gardenAddonCost;
 
     // No discount codes - simplified pricing
     let finalTotalAmount = subtotal;
@@ -64,9 +70,9 @@ export function usePricing({
       effectiveBaseRate: effectiveWeeklyRate,
       nightlyAccommodationRate: totalNights > 0 ? +(totalAccommodationCost / totalNights).toFixed(2) : 0,
       baseAccommodationRate: selectedAccommodation?.base_price || 0,
-      durationDiscountAmount: 0,
-      durationDiscountPercent: 0,
-      seasonalDiscount: 0,
+      durationDiscountAmount: foodDiscountAmount,
+      durationDiscountPercent: rawDurationDiscountPercent * 100,
+      seasonalDiscount: 0, // This is calculated elsewhere in the parent component
       vatAmount,
       totalWithVat,
     };
