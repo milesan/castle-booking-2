@@ -331,6 +331,34 @@ export function CabinSelector({
     return canSeeTests;
   };
 
+  // Helper function to determine bathroom type from description or bathroom_type field
+  const getBathroomType = (accommodation: ExtendedAccommodation) => {
+    // First check the bathroom_type field
+    if (accommodation.bathroom_type && accommodation.bathroom_type !== 'none') {
+      return accommodation.bathroom_type;
+    }
+    
+    // Fall back to checking the description
+    const desc = accommodation.description?.toLowerCase() || '';
+    if (desc.includes('private bathroom') || desc.includes('ensuite') || desc.includes('en-suite')) {
+      return 'private';
+    }
+    if (desc.includes('shared bathroom') || desc.includes('shared facilities')) {
+      return 'shared';
+    }
+    
+    // Default based on accommodation type
+    const title = accommodation.title.toLowerCase();
+    if (title.includes('micro cabin') || title.includes('attic') || title.includes('dovecote')) {
+      return 'private';
+    }
+    if (title.includes('dorm') || title.includes('bell tent') || title.includes('tipi') || title.includes('own tent') || title.includes('van')) {
+      return 'shared';
+    }
+    
+    return accommodation.bathroom_type || 'none';
+  };
+
   // Filter accommodations based on season and type
   const visibleAccommodations = accommodations
     .filter(acc => {
@@ -342,13 +370,15 @@ export function CabinSelector({
          return false;
       }
 
+      const bathroomType = getBathroomType(acc);
+      
       // Filter by bathroom if enabled
-      if (showOnlyWithBathrooms && acc.bathroom_type !== 'private') {
+      if (showOnlyWithBathrooms && bathroomType !== 'private') {
         return false;
       }
 
       // Filter by shared bathroom if enabled
-      if (showOnlySharedBathrooms && acc.bathroom_type !== 'shared') {
+      if (showOnlySharedBathrooms && bathroomType !== 'shared') {
         return false;
       }
 
@@ -485,7 +515,11 @@ export function CabinSelector({
           <span>Private Bathrooms</span>
           {showOnlyWithBathrooms && (
             <span className="ml-1 text-xs opacity-90">
-              ({accommodations.filter(acc => acc.bathroom_type === 'private' && !(acc as any).parent_accommodation_id).length})
+              ({accommodations.filter(acc => {
+                if ((acc as any).parent_accommodation_id) return false;
+                const bathroomType = getBathroomType(acc);
+                return bathroomType === 'private';
+              }).length})
             </span>
           )}
         </button>
@@ -506,7 +540,11 @@ export function CabinSelector({
           <span>Shared Bathrooms</span>
           {showOnlySharedBathrooms && (
             <span className="ml-1 text-xs opacity-90">
-              ({accommodations.filter(acc => acc.bathroom_type === 'shared' && !(acc as any).parent_accommodation_id).length})
+              ({accommodations.filter(acc => {
+                if ((acc as any).parent_accommodation_id) return false;
+                const bathroomType = getBathroomType(acc);
+                return bathroomType === 'shared';
+              }).length})
             </span>
           )}
         </button>
@@ -601,12 +639,15 @@ export function CabinSelector({
                     (testMode || (finalCanSelect && !isDisabled)) && 'cursor-pointer'
                   )}
                   onClick={(e) => {
-                    // Check if click is on the image or image container
+                    // Check if click is on interactive elements that should not trigger selection
                     const target = e.target as HTMLElement;
-                    if (target.tagName === 'IMG' || target.closest('.group/gallery')) {
+                    
+                    // Don't select if clicking on buttons, links, or other interactive elements
+                    if (target.closest('button') || target.closest('a')) {
                       return;
                     }
-                    // Only select accommodation if not clicking on interactive elements
+                    
+                    // Only select accommodation if clicking is allowed
                     if (testMode || (finalCanSelect && !isDisabled)) {
                       handleSelectAccommodation(acc.id);
                     }
@@ -660,17 +701,21 @@ export function CabinSelector({
                     )}
                   </div>
 
-                  {/* Image */}
-                  <div className={clsx(
-                    "relative h-56 overflow-hidden", // REMOVED bg-surface
-                    // Apply blur and corresponding opacity/grayscale conditionally
-                    !testMode && isDisabled && "blur-sm opacity-20 grayscale-[0.5]",
-                    !testMode && (!isDisabled && isFullyBooked) && "blur-sm opacity-20 grayscale-[0.7]",
-                    !testMode && (!isDisabled && isOutOfSeason && !isFullyBooked) && "blur-sm opacity-40 grayscale-[0.3]"
-                  )}>
-                    <ImageGallery accommodation={acc} />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent pointer-events-none"></div> {/* Increased gradient opacity from 40% to 60% */}
-                  </div>
+                  {/* Image - hide for "your own tent" and "van parking" */}
+                  {!acc.title.toLowerCase().includes('own tent') && 
+                   !acc.title.toLowerCase().includes('own van') && 
+                   !acc.title.toLowerCase().includes('van parking') && (
+                    <div className={clsx(
+                      "relative h-56 overflow-hidden", // REMOVED bg-surface
+                      // Apply blur and corresponding opacity/grayscale conditionally
+                      !testMode && isDisabled && "blur-sm opacity-20 grayscale-[0.5]",
+                      !testMode && (!isDisabled && isFullyBooked) && "blur-sm opacity-20 grayscale-[0.7]",
+                      !testMode && (!isDisabled && isOutOfSeason && !isFullyBooked) && "blur-sm opacity-40 grayscale-[0.3]"
+                    )}>
+                      <ImageGallery accommodation={acc} />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent pointer-events-none"></div> {/* Increased gradient opacity from 40% to 60% */}
+                    </div>
+                  )}
 
                   {/* Content */}
                   <div className={clsx(
