@@ -1271,7 +1271,7 @@ Please manually create the booking for this user or process a refund.`;
                     ? testPaymentAmount // Otherwise use admin test amount if set
                     : finalAmountAfterCredits // Use amount after credits
                 }
-                description={`${selectedAccommodation?.title || (gardenAddon ? `Garden Decompression: ${gardenAddon.name}` : 'Booking')} for ${pricing.totalNights} nights${selectedCheckInDate ? ` from ${formatInTimeZone(selectedCheckInDate, 'UTC', 'd. MMMM')}` : ''}`}
+                description={`${selectedAccommodation?.title || (gardenAddon ? `Garden Decompression: ${gardenAddon.name}` : 'Booking')} for 6 days${selectedCheckInDate ? ` from ${formatInTimeZone(selectedCheckInDate, 'UTC', 'd. MMMM')}` : ''}`}
                 bookingMetadata={(selectedAccommodation || gardenAddon) && selectedCheckInDate ? {
                   accommodationId: selectedAccommodation?.id || null,
                   checkIn: selectedCheckInDate ? formatInTimeZone(selectedCheckInDate, 'UTC', 'yyyy-MM-dd') : undefined,
