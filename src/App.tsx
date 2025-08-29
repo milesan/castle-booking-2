@@ -174,34 +174,23 @@ export default function App() {
 
       const checkCombinedStatus = async () => {
         try {
-          console.log('App: Checking whitelist status directly', { userId, userEmail });
+          console.log('App: User authenticated with magic link', { userId, userEmail });
           
-          // Simple whitelist check instead of complex RPC
-          const { data: whitelistData, error: whitelistError } = await supabase
-            .from('whitelist_all')
-            .select('email, status')
-            .eq('email', userEmail)
-            .single();
-
+          // WHITELIST DISABLED - All authenticated users are allowed
+          // If user has successfully authenticated with magic link, they're approved
           if (!mounted) return; // Component unmounted during async call
-
-          if (whitelistError || !whitelistData) {
-            console.log('App: User not in whitelist:', userEmail);
-            setIsWhitelisted(false);
-            setNeedsWelcomeCheckResult(false);
-            setHasApplicationRecord(false);
-          } else {
-            console.log('App: User is whitelisted (status:', whitelistData.status, ')');
-            setIsWhitelisted(true);
-            setNeedsWelcomeCheckResult(false); // Skip welcome modal for now
-            setHasApplicationRecord(true); // Assume they have completed signup
-          }
+          
+          console.log('App: User approved - magic link authentication successful');
+          setIsWhitelisted(true); // All authenticated users are "whitelisted"
+          setNeedsWelcomeCheckResult(false); // Skip welcome modal
+          setHasApplicationRecord(true); // Assume they have completed signup
         } catch (err) {
-          console.error('App: Exception during whitelist check:', err);
+          console.error('App: Exception during status check:', err);
           if (mounted) {
-            setIsWhitelisted(false);
+            // Even on error, allow authenticated users
+            setIsWhitelisted(true);
             setNeedsWelcomeCheckResult(false);
-            setHasApplicationRecord(false);
+            setHasApplicationRecord(true);
           }
         } finally {
           if (mounted) {
