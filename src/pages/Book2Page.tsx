@@ -891,7 +891,7 @@ export function Book2Page() {
                     onClearWeeks={() => setSelectedWeeks([])}
                     onClearAccommodation={() => setSelectedAccommodation(null)}
                     seasonBreakdown={seasonBreakdown}
-                    calculatedWeeklyAccommodationPrice={selectedAccommodation ? weeklyAccommodationInfo[selectedAccommodation]?.price ?? null : null}
+                    calculatedWeeklyAccommodationPrice={selectedAccommodation ? (weeklyAccommodationInfo[selectedAccommodation]?.price ?? selectedAccommodationObject?.base_price ?? 0) : null}
                     gardenAddon={selectedGardenAddon}
                     onClearGardenAddon={() => setSelectedGardenAddon(null)}
                   />
