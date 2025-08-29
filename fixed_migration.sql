@@ -1,4 +1,5 @@
 -- Add new 4M Bell Tent, Castle View accommodation
+-- Using only columns that exist in the accommodations table
 INSERT INTO accommodations (
   title,
   price,
