@@ -84,7 +84,7 @@ export function GardenDecompressionAddon({
           </span>
         </div>
         <p className="text-sm sm:text-base text-secondary font-mono">
-          Decompress after The Castle at our permanent campus in Portugal
+          Since the prior Castle in 2019, we've built a permanent campus. As you've passed curation, you're invited to decompress with the crew.
         </p>
         <p className="text-xs text-secondary font-mono">
           You can proceed without selecting any decompression option.
