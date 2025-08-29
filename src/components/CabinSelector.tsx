@@ -14,10 +14,10 @@ import { useSession } from '../hooks/useSession';
 import { HoverClickPopover } from './HoverClickPopover';
 import { useUserPermissions } from '../hooks/useUserPermissions';
 import { usePendingBookings } from '../hooks/usePendingBookings';
-import { MasonryGallery } from './shared/MasonryGallery';
-import { FullScreenMasonry } from './FullScreenMasonry';
-import { TrendingDown } from 'lucide-react';
-import type { AuctionPricing } from '../hooks/useDutchAuctionSimple';
+// import { MasonryGallery } from './shared/MasonryGallery';
+// import { FullScreenMasonry } from './FullScreenMasonry';
+import { SimpleImageGallery } from './SimpleImageGallery';
+import { SimpleThumbnailGallery } from './SimpleThumbnailGallery';
 
 // Local interface for accommodation images
 interface AccommodationImage {
@@ -47,11 +47,40 @@ interface Props {
   isDisabled?: boolean;
   displayWeeklyAccommodationPrice: (accommodationId: string) => { price: number | null; avgSeasonalDiscount: number | null } | null;
   testMode?: boolean;
-  getPricingInfo?: (accommodationId: string) => AuctionPricing | null;
 }
+
+// Helper function to format accommodation text with proper capitalization and syntax
+const formatAccommodationText = (text: string): string => {
+  return text
+    // Fix common measurement formats (bed sizes, dimensions)
+    .replace(/(\d+)\s*x\s*(\d+)/gi, '$1 × $2')
+    // Capitalize after hyphens and at start
+    .replace(/(?:^|\s-\s)([a-z])/g, (match, letter) => match.replace(letter, letter.toUpperCase()))
+    // Capitalize first letter
+    .replace(/^([a-z])/, (match, letter) => letter.toUpperCase())
+    // Fix "shared bath with X" to "Shared bath with X"
+    .replace(/shared\s+bath\s+with\s+([a-z])/gi, (match, letter) => `Shared bath with ${letter.toUpperCase()}`)
+    // Fix "private bath" to "Private bath"
+    .replace(/private\s+bath/gi, 'Private bath')
+    // Fix room types
+    .replace(/\bdouble\s+room\b/gi, 'Double room')
+    .replace(/\bsingle\s+room\b/gi, 'Single room')
+    .replace(/\btriple\s+room\b/gi, 'Triple room')
+    // Fix bed references
+    .replace(/\bbed\s+(\d+)/gi, 'Bed $1')
+    // Clean up extra spaces
+    .replace(/\s+/g, ' ')
+    .trim();
+};
 
 // Helper function to get primary image (NEW IMAGES TABLE ONLY)
 const getPrimaryImageUrl = (accommodation: ExtendedAccommodation): string | null => {
+  // Don't show images for tent and van accommodations
+  const title = accommodation.title.toLowerCase();
+  if (title.includes('your own tent') || title.includes('van parking') || title.includes('your own van')) {
+    return null;
+  }
+  
   // Check new images table for primary image
   const primaryImage = accommodation.images?.find(img => img.is_primary);
   if (primaryImage) return primaryImage.image_url;
@@ -67,6 +96,12 @@ const getPrimaryImageUrl = (accommodation: ExtendedAccommodation): string | null
 
 // Helper function to get all images sorted by display order
 const getAllImages = (accommodation: ExtendedAccommodation): AccommodationImage[] => {
+  // Don't show images for tent and van accommodations
+  const title = accommodation.title.toLowerCase();
+  if (title.includes('your own tent') || title.includes('van parking') || title.includes('your own van')) {
+    return [];
+  }
+  
   if (!accommodation.images || accommodation.images.length === 0) {
     // Fallback: if no images array but has image_url, create a single image entry
     if (accommodation.image_url) {
@@ -122,8 +157,7 @@ export function CabinSelector({
   currentMonth = normalizeToUTCDate(new Date()),
   isDisabled = false,
   displayWeeklyAccommodationPrice,
-  testMode = false,
-  getPricingInfo
+  testMode = false
 }: Props) {
 
   const { session } = useSession();
@@ -131,205 +165,53 @@ export function CabinSelector({
   const { pendingBookings } = usePendingBookings(selectedWeeks);
   
 
-  // State to track current image index for each accommodation
-  const [currentImageIndices, setCurrentImageIndices] = useState<Record<string, number>>({});
-  // State to track loaded images to prevent alt text flash
-  const [loadedImages, setLoadedImages] = useState<Set<string>>(new Set());
   // State for bathroom filters
   const [showOnlyWithBathrooms, setShowOnlyWithBathrooms] = useState(false);
   const [showOnlySharedBathrooms, setShowOnlySharedBathrooms] = useState(false);
   
-  // State for masonry gallery
+  // State for simple gallery
   const [galleryOpen, setGalleryOpen] = useState(false);
-  const [galleryImages, setGalleryImages] = useState<AccommodationImage[]>([]);
+  const [galleryImages, setGalleryImages] = useState<{id: string, url: string, alt?: string}[]>([]);
   const [galleryTitle, setGalleryTitle] = useState<string>('');
+  const [galleryStartIndex, setGalleryStartIndex] = useState(0);
 
-  // Helper function to get current image for an accommodation
-  const getCurrentImage = (accommodation: ExtendedAccommodation): string | null => {
-    const allImages = getAllImages(accommodation);
-    if (allImages.length === 0) return null;
-    
-    const currentIndex = currentImageIndices[accommodation.id] || 0;
-    const validIndex = Math.min(currentIndex, allImages.length - 1);
-    return allImages[validIndex]?.image_url || null;
-  };
-
-  // Navigation functions
-  const navigateToImage = (accommodationId: string, direction: 'prev' | 'next', totalImages: number) => {
-    setCurrentImageIndices(prev => {
-      const currentIndex = prev[accommodationId] || 0;
-      let newIndex;
-      
-      if (direction === 'next') {
-        newIndex = (currentIndex + 1) % totalImages;
-      } else {
-        newIndex = currentIndex === 0 ? totalImages - 1 : currentIndex - 1;
-      }
-      
-      return {
-        ...prev,
-        [accommodationId]: newIndex
-      };
-    });
-  };
-
-  const setImageIndex = (accommodationId: string, index: number) => {
-    setCurrentImageIndices(prev => ({
-      ...prev,
-      [accommodationId]: index
-    }));
-  };
-
-  // Handler to open masonry gallery
-  const handleOpenGallery = (accommodation: ExtendedAccommodation, e?: React.MouseEvent) => {
-    if (e) {
-      e.stopPropagation();
-    }
-    
+  // Handler to open gallery
+  const handleOpenGallery = useCallback((accommodation: ExtendedAccommodation, startIndex: number = 0) => {
     const images = getAllImages(accommodation);
-    
     if (images.length > 0) {
-      setGalleryImages(images);
+      setGalleryImages(images.map(img => ({
+        id: img.id,
+        url: img.image_url,
+        alt: accommodation.title
+      })));
       setGalleryTitle(accommodation.title);
+      setGalleryStartIndex(startIndex);
       setGalleryOpen(true);
     }
-  };
+  }, []);
 
-  // Image Gallery Component
+  // Simple Image Gallery Component using new components
   const ImageGallery: React.FC<{ accommodation: ExtendedAccommodation }> = ({ accommodation }) => {
     const allImages = getAllImages(accommodation);
-    const currentIndex = currentImageIndices[accommodation.id] || 0;
-    const currentImageUrl = getCurrentImage(accommodation);
-    const [imageLoading, setImageLoading] = useState(false);
-    
-
-    // Preload adjacent images for smoother transitions
-    useEffect(() => {
-      if (allImages.length > 1) {
-        const nextIndex = (currentIndex + 1) % allImages.length;
-        const prevIndex = currentIndex === 0 ? allImages.length - 1 : currentIndex - 1;
-        
-        // Preload next and previous images
-        [nextIndex, prevIndex].forEach(idx => {
-          const imgUrl = allImages[idx]?.image_url;
-          if (imgUrl && !loadedImages.has(imgUrl)) {
-            const img = new Image();
-            img.onload = () => {
-              setLoadedImages(prev => new Set(prev).add(imgUrl));
-            };
-            img.src = imgUrl;
-          }
-        });
-      }
-    }, [currentIndex, allImages]);
 
     if (allImages.length === 0) {
       return (
-        <div className="w-full h-full flex items-center justify-center text-secondary">
+        <div className="w-full h-full flex items-center justify-center text-secondary bg-gray-100">
           <BedDouble size={32} />
         </div>
       );
     }
 
-    const handlePrevious = (e?: React.MouseEvent) => {
-      if (e) {
-        e.stopPropagation();
-        e.preventDefault();
-      }
-      setImageLoading(true);
-      navigateToImage(accommodation.id, 'prev', allImages.length);
-      setTimeout(() => setImageLoading(false), 50);
-    };
-
-    const handleNext = (e?: React.MouseEvent) => {
-      if (e) {
-        e.stopPropagation();
-        e.preventDefault();
-      }
-      setImageLoading(true);
-      navigateToImage(accommodation.id, 'next', allImages.length);
-      setTimeout(() => setImageLoading(false), 50);
-    };
-
-    const handleDotClick = (e: React.MouseEvent, index: number) => {
-      e.stopPropagation();
-      setImageLoading(true);
-      setImageIndex(accommodation.id, index);
-      setTimeout(() => setImageLoading(false), 50);
-    };
-
-    const handleImageLoad = () => {
-      if (currentImageUrl) {
-        setLoadedImages(prev => new Set(prev).add(currentImageUrl));
-      }
-      setImageLoading(false);
-    };
-
     return (
-      <div className="relative w-full h-full group/gallery bg-gray-100 cursor-pointer z-[1]"
-           onClick={(e) => {
-             e.stopPropagation();
-             handleOpenGallery(accommodation, e);
-           }}>
-        {/* Main Image - clickable to open full-screen masonry */}
-        <img 
-          key={currentImageUrl} // Force remount for clean transitions
-          src={currentImageUrl || ''} 
-          alt="" // Remove alt text to prevent flash
-          className={`w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 ease-in-out cursor-pointer ${
-            imageLoading || !loadedImages.has(currentImageUrl || '') ? 'opacity-0' : 'opacity-100'
-          }`}
-          onLoad={handleImageLoad}
-          onClick={(e) => {
-            e.stopPropagation();
-            handleOpenGallery(accommodation, e);
-          }}
-          loading="eager" // Change to eager for gallery images
-        />
-        {/* Subtle expand indicator on hover */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
-
-        {/* Navigation arrows - always visible when more than 1 image */}
-        {allImages.length > 1 && (
-          <>
-            <button
-              onClick={handlePrevious}
-              className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-black/80 hover:bg-black/90 text-white rounded-md p-2 transition-all duration-200 hover:scale-110 shadow-lg z-[100]"
-              aria-label="Previous image"
-              type="button"
-            >
-              <ChevronLeft size={20} />
-            </button>
-            <button
-              onClick={handleNext}
-              className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-black/80 hover:bg-black/90 text-white rounded-md p-2 transition-all duration-200 hover:scale-110 shadow-lg z-[100]"
-              aria-label="Next image"
-              type="button"
-            >
-              <ChevronRight size={20} />
-            </button>
-          </>
-        )}
-
-        {/* Dots indicator - only show if more than 1 image */}
-        {allImages.length > 1 && (
-          <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 flex space-x-1 z-[90] pointer-events-auto">
-            {allImages.map((_, index) => (
-              <button
-                key={index}
-                onClick={(e) => handleDotClick(e, index)}
-                className={clsx(
-                  "w-2 h-2 rounded-full transition-all duration-200 border border-white/30",
-                  index === currentIndex 
-                    ? "bg-white shadow-sm scale-110" 
-                    : "bg-white/30 hover:bg-white/60 hover:scale-105"
-                )}
-                aria-label={`Go to image ${index + 1}`}
-              />
-            ))}
-          </div>
-        )}
-      </div>
+      <SimpleThumbnailGallery
+        images={allImages.map(img => ({
+          id: img.id,
+          url: img.image_url,
+          alt: accommodation.title
+        }))}
+        onImageClick={(index) => handleOpenGallery(accommodation, index)}
+        className="w-full h-full"
+      />
     );
   };
 
@@ -607,6 +489,14 @@ export function CabinSelector({
 
   return (
     <div className="space-y-6" style={{ position: 'relative' }}>
+      {/* Pricing Explainer */}
+      <div className="mb-6 p-4 bg-surface/50 border border-border/50 rounded-sm">
+        <p className="text-sm text-secondary leading-relaxed">
+          How this works: rooms subsidize the event. We pick people for values and energy, not money, 
+          so there's a financial asymmetry that makes the whole thing possible at this price.
+        </p>
+      </div>
+
       {/* Filter options */}
       <div className="flex items-center gap-4 mb-4 flex-wrap">
         <button
@@ -707,16 +597,14 @@ export function CabinSelector({
               // Get all images for the current accommodation to use for the counter
               const allImagesForAcc = getAllImages(acc);
 
-              // Check for auction pricing first
-              const auctionPricing = getPricingInfo ? getPricingInfo(acc.id) : null;
-              const isInAuction = auctionPricing !== null;
+              const isInAuction = false;
+              const auctionPricing = null;
               
-              // Get the whole info object (regular pricing)
+              // Get the pricing info
               const weeklyInfo = getDisplayInfoOptimized(acc.id);
               
-              // Use auction price if available, otherwise use regular weekly price
-              let weeklyPrice = isInAuction ? auctionPricing.currentPrice : (weeklyInfo?.price ?? null);
-              const avgSeasonalDiscountForTooltip = isInAuction ? null : (weeklyInfo?.avgSeasonalDiscount ?? null);
+              let weeklyPrice = weeklyInfo?.price ?? null;
+              const avgSeasonalDiscountForTooltip = weeklyInfo?.avgSeasonalDiscount ?? null;
 
               // Keep duration discount calculation local to tooltip
               const completeWeeksForDiscount = calculateDurationDiscountWeeks(selectedWeeks);
@@ -840,15 +728,6 @@ export function CabinSelector({
                   )}>
                     <div>
                       <h3 className="text-lg font-medium mb-1 text-primary font-lettra-bold uppercase">{acc.title}</h3>
-                      {/* Auction Indicator */}
-                      {isInAuction && auctionPricing && (
-                        <div className="mb-2 flex items-center gap-2">
-                          <span className="inline-flex items-center px-2 py-1 rounded-sm text-xs font-medium bg-green-900/20 text-green-200 border border-green-700/30">
-                            <TrendingDown size={12} className="mr-1" />
-                            Dutch Auction - €{auctionPricing.dailyReduction}/day reduction
-                          </span>
-                        </div>
-                      )}
                       {/* Property Location Badge */}
                       <div className="mb-2 flex items-center gap-2 flex-wrap">
                         {acc.property_location && (
@@ -898,8 +777,11 @@ export function CabinSelector({
                       {acc.additional_info && (
                         <div className="text-secondary text-xs mb-3 space-y-1">
                           {acc.additional_info.split('•').map((info, idx) => {
-                            const trimmedInfo = info.trim();
-                            if (!trimmedInfo) return null;
+                            const rawInfo = info.trim();
+                            if (!rawInfo) return null;
+                            
+                            // Format the text with proper capitalization and syntax
+                            const trimmedInfo = formatAccommodationText(rawInfo);
                             
                             // Add icons for specific amenities
                             let icon = null;
@@ -943,8 +825,6 @@ export function CabinSelector({
                         {/* Pricing Type Label */}
                         {acc.title === 'Single Tipi' || acc.title === '4 Meter Bell Tent' || acc.title === '4m Bell Tent' || acc.title === 'Le Dorm' ? (
                           <span className="text-xs text-gray-400 uppercase tracking-wide">Fixed Price</span>
-                        ) : (weeklyPrice !== 0 && acc.title !== 'Your Own Tent' && acc.title !== 'Your Own Van' && acc.title !== 'Van Parking') ? (
-                          <span className="text-xs text-amber-400 uppercase tracking-wide">Dutch Auction</span>
                         ) : null}
                         
                         {/* Check if weeklyPrice (from prop) is null or 0, handle 0.01 specifically */}
@@ -1031,14 +911,15 @@ export function CabinSelector({
         </div>
       )}
       
-      {/* Full-Screen Masonry Gallery */}
-      <FullScreenMasonry
+      {/* Full-Screen Gallery */}
+      <SimpleImageGallery
         images={galleryImages}
         isOpen={galleryOpen}
         onClose={() => {
           setGalleryOpen(false);
         }}
         title={galleryTitle}
+        startIndex={galleryStartIndex}
       />
     </div>
   );
