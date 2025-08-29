@@ -18,9 +18,6 @@ import { usePendingBookings } from '../hooks/usePendingBookings';
 // import { FullScreenMasonry } from './FullScreenMasonry';
 import { SimpleImageGallery } from './SimpleImageGallery';
 import { SimpleThumbnailGallery } from './SimpleThumbnailGallery';
-// Dutch auction imports - DISABLED
-// import { TrendingDown } from 'lucide-react';
-// import type { AuctionPricing } from '../hooks/useDutchAuctionSimple';
 
 // Local interface for accommodation images
 interface AccommodationImage {
@@ -50,8 +47,6 @@ interface Props {
   isDisabled?: boolean;
   displayWeeklyAccommodationPrice: (accommodationId: string) => { price: number | null; avgSeasonalDiscount: number | null } | null;
   testMode?: boolean;
-  // Dutch auction prop - DISABLED
-  // getPricingInfo?: (accommodationId: string) => AuctionPricing | null;
 }
 
 // Helper function to format accommodation text with proper capitalization and syntax
@@ -151,7 +146,6 @@ export function CabinSelector({
   isDisabled = false,
   displayWeeklyAccommodationPrice,
   testMode = false
-  // getPricingInfo - Dutch auction disabled
 }: Props) {
 
   const { session } = useSession();
@@ -553,16 +547,12 @@ export function CabinSelector({
               // Get all images for the current accommodation to use for the counter
               const allImagesForAcc = getAllImages(acc);
 
-              // Dutch auction pricing - DISABLED
-              // const auctionPricing = getPricingInfo ? getPricingInfo(acc.id) : null;
-              // const isInAuction = auctionPricing !== null;
-              const isInAuction = false; // Dutch auction disabled
-              const auctionPricing = null; // Dutch auction disabled
+              const isInAuction = false;
+              const auctionPricing = null;
               
-              // Get the whole info object (regular pricing)
+              // Get the pricing info
               const weeklyInfo = getDisplayInfoOptimized(acc.id);
               
-              // Use regular weekly price only (Dutch auction disabled)
               let weeklyPrice = weeklyInfo?.price ?? null;
               const avgSeasonalDiscountForTooltip = weeklyInfo?.avgSeasonalDiscount ?? null;
 
@@ -681,15 +671,6 @@ export function CabinSelector({
                   )}>
                     <div>
                       <h3 className="text-lg font-medium mb-1 text-primary font-lettra-bold uppercase">{acc.title}</h3>
-                      {/* Dutch Auction Indicator - DISABLED */}
-                      {/* {isInAuction && auctionPricing && (
-                        <div className="mb-2 flex items-center gap-2">
-                          <span className="inline-flex items-center px-2 py-1 rounded-sm text-xs font-medium bg-green-900/20 text-green-200 border border-green-700/30">
-                            <TrendingDown size={12} className="mr-1" />
-                            Dutch Auction - €{auctionPricing.dailyReduction}/day reduction
-                          </span>
-                        </div>
-                      )} */}
                       {/* Property Location Badge */}
                       <div className="mb-2 flex items-center gap-2 flex-wrap">
                         {acc.property_location && (
@@ -787,8 +768,6 @@ export function CabinSelector({
                         {/* Pricing Type Label */}
                         {acc.title === 'Single Tipi' || acc.title === '4 Meter Bell Tent' || acc.title === '4m Bell Tent' || acc.title === 'Le Dorm' ? (
                           <span className="text-xs text-gray-400 uppercase tracking-wide">Fixed Price</span>
-                        ) : (weeklyPrice !== 0 && acc.title !== 'Your Own Tent' && acc.title !== 'Your Own Van' && acc.title !== 'Van Parking') ? (
-                          <span className="text-xs text-amber-400 uppercase tracking-wide">Dutch Auction</span>
                         ) : null}
                         
                         {/* Check if weeklyPrice (from prop) is null or 0, handle 0.01 specifically */}

@@ -1317,7 +1317,7 @@ export function Accommodations() {
                     onChange={(e) => handleNewAccommodationInputChange(e, 'additional_info')} 
                     disabled={createLoading} 
                     className={`${inputClassName} min-h-[80px] resize-y`} 
-                    placeholder="e.g. bed ø210 at first floor - bath on ground floor - Bluetooth Amplifier"
+                    placeholder="e.g. Round 210cm Master Bed on 1st Floor - bath on ground floor - Bluetooth Amplifier"
                     rows={3}
                   />
                 </div>
@@ -1681,7 +1681,7 @@ export function Accommodations() {
                           onChange={(e) => handleInputChange(e, 'additional_info')} 
                           disabled={editLoading} 
                           className={`${inputClassName} min-h-[80px] resize-y`}
-                          placeholder="e.g. bed ø210 at first floor - bath on ground floor - Bluetooth Amplifier"
+                          placeholder="e.g. Round 210cm Master Bed on 1st Floor - bath on ground floor - Bluetooth Amplifier"
                           rows={3}
                         />
                     </div>
