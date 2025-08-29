@@ -343,8 +343,7 @@ export function CabinSelector({
     const desc = (accommodation.description || '') + ' ' + (accommodation.additional_info || '');
     const lowerDesc = desc.toLowerCase();
     
-    // Simple rule: if it contains just 'bath' (not preceded by other words like 'shared'), it's private
-    // If it contains 'shared bath', 'communal bath', etc., it's shared
+    // Rule: 'shared bath' = shared, 'private bath' = private, just 'bath' = private, nothing = shared
     if (lowerDesc.includes('shared bath') || 
         lowerDesc.includes('communal bath') || 
         lowerDesc.includes('shared facilities') ||
@@ -352,21 +351,19 @@ export function CabinSelector({
       return 'shared';
     }
     
-    // If it just mentions 'bath' or 'bathroom' (including 'private bath'), it's private
+    if (lowerDesc.includes('private bath') || 
+        lowerDesc.includes('private bathroom') ||
+        lowerDesc.includes('ensuite') || 
+        lowerDesc.includes('en-suite')) {
+      return 'private';
+    }
+    
+    // If it just says 'bath' or 'bathroom' (without shared/private qualifiers), it's private
     if (lowerDesc.includes('bath')) {
       return 'private';
     }
     
-    // Default based on accommodation type patterns
-    const title = accommodation.title.toLowerCase();
-    if (title.includes('micro cabin') || title.includes('attic') || title.includes('dovecote')) {
-      return 'private';
-    }
-    if (title.includes('dorm') || title.includes('bell tent') || title.includes('tipi') || title.includes('own tent') || title.includes('van')) {
-      return 'shared';
-    }
-    
-    // Default fallback
+    // If no bathroom mention at all, default to shared
     return 'shared';
   };
 
