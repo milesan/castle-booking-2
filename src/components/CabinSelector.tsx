@@ -383,29 +383,44 @@ export function CabinSelector({
     return 'shared';
   };
 
+  // Debug accommodations loading
+  console.log(`[CabinSelector] Total accommodations loaded: ${accommodations.length}`);
+  console.log(`[CabinSelector] Accommodations:`, accommodations);
+  console.log(`[CabinSelector] Filter states - Private: ${showOnlyWithBathrooms}, Shared: ${showOnlySharedBathrooms}`);
+  
   // Filter accommodations based on season and type
   const visibleAccommodations = accommodations
     .filter(acc => {
+      console.log(`[CabinSelector] Processing: ${acc.title} (${acc.id})`);
+      
       // Filter out individual bed entries
-      if ((acc as any).parent_accommodation_id) return false;
+      if ((acc as any).parent_accommodation_id) {
+        console.log(`[CabinSelector] - Filtered out: Has parent accommodation`);
+        return false;
+      }
 
       // Filter out 'test' accommodations if the user is NOT an admin AND NOT a test user
       if (acc.type === 'test' && !canSeeTestAccommodations()) {
-         return false;
+        console.log(`[CabinSelector] - Filtered out: Test accommodation`);
+        return false;
       }
 
       const bathroomType = getBathroomType(acc);
+      console.log(`[CabinSelector] - Bathroom type: ${bathroomType}`);
       
       // Filter by bathroom if enabled
       if (showOnlyWithBathrooms && bathroomType !== 'private') {
+        console.log(`[CabinSelector] - Filtered out: Private filter enabled but this is ${bathroomType}`);
         return false;
       }
 
       // Filter by shared bathroom if enabled
       if (showOnlySharedBathrooms && bathroomType !== 'shared') {
+        console.log(`[CabinSelector] - Filtered out: Shared filter enabled but this is ${bathroomType}`);
         return false;
       }
 
+      console.log(`[CabinSelector] - ✅ Passed all filters`);
       return true;
     })
     .sort((a, b) => {
@@ -488,6 +503,9 @@ export function CabinSelector({
         return a.base_price - b.base_price;
       }
     });
+
+  console.log(`[CabinSelector] Final visible accommodations count: ${visibleAccommodations.length}`);
+  console.log(`[CabinSelector] Visible accommodations:`, visibleAccommodations.map(acc => `${acc.title} (${acc.id})`));
 
   // Convert selectedWeeks to dates for comparison
   const selectedDates = selectedWeeks?.map(w => w.startDate || w) || [];
