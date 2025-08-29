@@ -1,3 +1,18 @@
+import { loadStripe } from '@stripe/stripe-js';
+
+// Initialize Stripe
+let stripePromise: Promise<any> | null = null;
+function getStripePromise() {
+  const key = import.meta.env.VITE_STRIPE_PUBLIC_KEY;
+  if (!key || typeof key !== 'string') {
+    throw new Error('Missing or invalid Stripe public key!');
+  }
+  if (!stripePromise) {
+    stripePromise = loadStripe(key);
+  }
+  return stripePromise;
+}
+
 export async function redirectToCheckout(
   title: string,
   checkIn: Date,
@@ -13,7 +28,7 @@ export async function redirectToCheckout(
 
   try {
     console.log('[Stripe Frontend] Loading Stripe instance...');
-    const stripe = await stripePromise;
+    const stripe = await getStripePromise();
     if (!stripe) throw new Error('Stripe failed to load');
     console.log('[Stripe Frontend] Stripe instance loaded successfully');
 
