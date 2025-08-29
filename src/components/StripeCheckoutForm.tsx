@@ -247,6 +247,27 @@ export function StripeCheckoutForm({ total, authToken, description, userEmail, o
           >
             <EmbeddedCheckout />
           </EmbeddedCheckoutProvider>
+          {/* Crypto payment option */}
+          <div style={{ 
+            marginTop: '16px', 
+            paddingTop: '16px', 
+            borderTop: '1px solid #e0e0e0',
+            textAlign: 'center'
+          }}>
+            <a 
+              href="mailto:concierge@castle.community?subject=Bitcoin%2FEthereum%20Payment%20Inquiry&body=Hi%2C%0A%0AI%27d%20like%20to%20pay%20with%20cryptocurrency%20for%20my%20booking.%20Please%20provide%20payment%20details.%0A%0AThank%20you"
+              style={{
+                color: '#666',
+                fontSize: '13px',
+                textDecoration: 'none',
+                transition: 'color 0.2s'
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.color = '#000'}
+              onMouseLeave={(e) => e.currentTarget.style.color = '#666'}
+            >
+              BTC &amp; ETH accepted →
+            </a>
+          </div>
         </div>
       </div>
     </div>
