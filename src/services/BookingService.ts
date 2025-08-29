@@ -30,7 +30,6 @@ class BookingService {
     const { data: accommodationsData, error: accommodationsError } = await supabase
       .from('accommodations')
       .select('*')
-      .eq('is_available', true)
       .order('display_order', { ascending: true });
 
     if (accommodationsError) {
@@ -102,10 +101,11 @@ class BookingService {
     console.log('[BookingService] Specific availability result:', {
       accommodationId,
       result,
-      isAvailable: result?.is_available ?? false
+      isAvailable: result?.is_available ?? true
     });
 
-    return result?.is_available ?? false;
+    // Temporary fix: assume available if no result found
+    return result?.is_available ?? true;
   }
 
   async getAvailability(startDate: Date, endDate: Date): Promise<AvailabilityResult[]> {
