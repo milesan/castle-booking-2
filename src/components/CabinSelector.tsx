@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { BedDouble, Bath, Percent, Info, Ear, ChevronLeft, ChevronRight, Users, Clock } from 'lucide-react';
+import { BedDouble, Bath, Percent, Info, Ear, ChevronLeft, ChevronRight, Users, Clock, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 import clsx from 'clsx';
 import type { Accommodation } from '../types';
 import { Week } from '../types/calendar';
@@ -169,6 +169,9 @@ export function CabinSelector({
   // State for bathroom filters
   const [showOnlyWithBathrooms, setShowOnlyWithBathrooms] = useState(false);
   const [showOnlySharedBathrooms, setShowOnlySharedBathrooms] = useState(false);
+  
+  // State for price sorting
+  const [sortBy, setSortBy] = useState<'default' | 'price-low' | 'price-high'>('default');
   
   // State for simple gallery
   const [galleryOpen, setGalleryOpen] = useState(false);
@@ -403,7 +406,26 @@ export function CabinSelector({
       return true;
     })
     .sort((a, b) => {
-      // Define accommodation priority (new ordering)
+      // Price sorting takes priority if selected
+      if (sortBy !== 'default') {
+        // Get the actual weekly price for each accommodation
+        const aPrice = memoizedPriceInfo[a.id]?.price ?? a.base_price;
+        const bPrice = memoizedPriceInfo[b.id]?.price ?? b.base_price;
+        
+        if (sortBy === 'price-low') {
+          // Sort by price low to high
+          if (aPrice !== bPrice) {
+            return aPrice - bPrice;
+          }
+        } else if (sortBy === 'price-high') {
+          // Sort by price high to low
+          if (aPrice !== bPrice) {
+            return bPrice - aPrice;
+          }
+        }
+      }
+      
+      // Default sorting logic
       const getPriority = (acc: typeof a) => {
         const title = acc.title.toLowerCase();
         
@@ -515,57 +537,105 @@ export function CabinSelector({
         </p>
       </div>
 
-      {/* Filter options */}
-      <div className="flex items-center gap-4 mb-4 flex-wrap">
-        <button
-          onClick={() => {
-            setShowOnlyWithBathrooms(!showOnlyWithBathrooms);
-            if (showOnlySharedBathrooms) setShowOnlySharedBathrooms(false);
-          }}
-          className={clsx(
-            "flex items-center gap-2 px-4 py-2 rounded-sm border transition-all duration-200 font-mono text-sm",
-            showOnlyWithBathrooms 
-              ? "bg-accent-primary text-white border-accent-primary" 
-              : "bg-surface text-secondary border-border hover:border-accent-primary"
-          )}
-        >
-          <Bath size={16} />
-          <span>Private Bathrooms</span>
-          {showOnlyWithBathrooms && (
-            <span className="ml-1 text-xs opacity-90">
-              ({accommodations.filter(acc => {
-                if ((acc as any).parent_accommodation_id) return false;
-                const bathroomType = getBathroomType(acc);
-                return bathroomType === 'private';
-              }).length})
-            </span>
-          )}
-        </button>
+      {/* Filter and Sort options */}
+      <div className="flex flex-col gap-4 mb-4">
+        {/* Bathroom Filters */}
+        <div className="flex items-center gap-4 flex-wrap">
+          <button
+            onClick={() => {
+              setShowOnlyWithBathrooms(!showOnlyWithBathrooms);
+              if (showOnlySharedBathrooms) setShowOnlySharedBathrooms(false);
+            }}
+            className={clsx(
+              "flex items-center gap-2 px-4 py-2 rounded-sm border transition-all duration-200 font-mono text-sm",
+              showOnlyWithBathrooms 
+                ? "bg-accent-primary text-white border-accent-primary" 
+                : "bg-surface text-secondary border-border hover:border-accent-primary"
+            )}
+          >
+            <Bath size={16} />
+            <span>Private Bathrooms</span>
+            {showOnlyWithBathrooms && (
+              <span className="ml-1 text-xs opacity-90">
+                ({accommodations.filter(acc => {
+                  if ((acc as any).parent_accommodation_id) return false;
+                  const bathroomType = getBathroomType(acc);
+                  return bathroomType === 'private';
+                }).length})
+              </span>
+            )}
+          </button>
+          
+          <button
+            onClick={() => {
+              setShowOnlySharedBathrooms(!showOnlySharedBathrooms);
+              if (showOnlyWithBathrooms) setShowOnlyWithBathrooms(false);
+            }}
+            className={clsx(
+              "flex items-center gap-2 px-4 py-2 rounded-sm border transition-all duration-200 font-mono text-sm",
+              showOnlySharedBathrooms 
+                ? "bg-accent-primary text-white border-accent-primary" 
+                : "bg-surface text-secondary border-border hover:border-accent-primary"
+            )}
+          >
+            <Users size={16} />
+            <span>Shared Bathrooms</span>
+            {showOnlySharedBathrooms && (
+              <span className="ml-1 text-xs opacity-90">
+                ({accommodations.filter(acc => {
+                  if ((acc as any).parent_accommodation_id) return false;
+                  const bathroomType = getBathroomType(acc);
+                  return bathroomType === 'shared';
+                }).length})
+              </span>
+            )}
+          </button>
+        </div>
         
-        <button
-          onClick={() => {
-            setShowOnlySharedBathrooms(!showOnlySharedBathrooms);
-            if (showOnlyWithBathrooms) setShowOnlyWithBathrooms(false);
-          }}
-          className={clsx(
-            "flex items-center gap-2 px-4 py-2 rounded-sm border transition-all duration-200 font-mono text-sm",
-            showOnlySharedBathrooms 
-              ? "bg-accent-primary text-white border-accent-primary" 
-              : "bg-surface text-secondary border-border hover:border-accent-primary"
-          )}
-        >
-          <Users size={16} />
-          <span>Shared Bathrooms</span>
-          {showOnlySharedBathrooms && (
-            <span className="ml-1 text-xs opacity-90">
-              ({accommodations.filter(acc => {
-                if ((acc as any).parent_accommodation_id) return false;
-                const bathroomType = getBathroomType(acc);
-                return bathroomType === 'shared';
-              }).length})
-            </span>
-          )}
-        </button>
+        {/* Price Sorting */}
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-secondary font-mono">Sort by:</span>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setSortBy('default')}
+              className={clsx(
+                "flex items-center gap-2 px-4 py-2 rounded-sm border transition-all duration-200 font-mono text-sm",
+                sortBy === 'default'
+                  ? "bg-accent-primary text-white border-accent-primary"
+                  : "bg-surface text-secondary border-border hover:border-accent-primary"
+              )}
+            >
+              <ArrowUpDown size={16} />
+              <span>Default</span>
+            </button>
+            
+            <button
+              onClick={() => setSortBy('price-low')}
+              className={clsx(
+                "flex items-center gap-2 px-4 py-2 rounded-sm border transition-all duration-200 font-mono text-sm",
+                sortBy === 'price-low'
+                  ? "bg-accent-primary text-white border-accent-primary"
+                  : "bg-surface text-secondary border-border hover:border-accent-primary"
+              )}
+            >
+              <ArrowUp size={16} />
+              <span>Price: Low to High</span>
+            </button>
+            
+            <button
+              onClick={() => setSortBy('price-high')}
+              className={clsx(
+                "flex items-center gap-2 px-4 py-2 rounded-sm border transition-all duration-200 font-mono text-sm",
+                sortBy === 'price-high'
+                  ? "bg-accent-primary text-white border-accent-primary"
+                  : "bg-surface text-secondary border-border hover:border-accent-primary"
+              )}
+            >
+              <ArrowDown size={16} />
+              <span>Price: High to Low</span>
+            </button>
+          </div>
+        </div>
       </div>
       
       {isLoading ? (
