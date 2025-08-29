@@ -333,21 +333,31 @@ export function CabinSelector({
 
   // Helper function to determine bathroom type from description or bathroom_type field
   const getBathroomType = (accommodation: ExtendedAccommodation) => {
-    // First check the bathroom_type field
+    // First check the bathroom_type field if it exists and is not 'none'
     if (accommodation.bathroom_type && accommodation.bathroom_type !== 'none') {
       return accommodation.bathroom_type;
     }
     
-    // Fall back to checking the description
+    // Check description for specific bathroom indicators
     const desc = accommodation.description?.toLowerCase() || '';
-    if (desc.includes('private bathroom') || desc.includes('ensuite') || desc.includes('en-suite')) {
-      return 'private';
-    }
-    if (desc.includes('shared bathroom') || desc.includes('shared facilities')) {
+    
+    // Check for shared bathroom indicators first (more specific)
+    if (desc.includes('shared bath') || desc.includes('shared facilities') || desc.includes('communal bath')) {
       return 'shared';
     }
     
-    // Default based on accommodation type
+    // Check for private bathroom indicators
+    if (desc.includes('private bath') || desc.includes('ensuite') || desc.includes('en-suite') || 
+        desc.includes('own bath') || desc.includes('bath on')) {
+      return 'private';
+    }
+    
+    // If just mentions 'bath' without qualifier, assume private
+    if (desc.includes('bath')) {
+      return 'private';
+    }
+    
+    // Default based on accommodation type patterns
     const title = accommodation.title.toLowerCase();
     if (title.includes('micro cabin') || title.includes('attic') || title.includes('dovecote')) {
       return 'private';
@@ -356,7 +366,8 @@ export function CabinSelector({
       return 'shared';
     }
     
-    return accommodation.bathroom_type || 'none';
+    // Default fallback
+    return 'shared';
   };
 
   // Filter accommodations based on season and type
@@ -622,6 +633,12 @@ export function CabinSelector({
               const hasSeasonalDiscount = avgSeasonalDiscountForTooltip !== null && avgSeasonalDiscountForTooltip > 0 && !acc.title.toLowerCase().includes('dorm');
               const hasDurationDiscount = currentDurationDiscount > 0;
               const hasAnyDiscount = !isTestAccommodation && (hasSeasonalDiscount || hasDurationDiscount); // <-- Modified: Exclude test type
+              
+              // Check if this is a tent or van accommodation for special styling
+              const isTentOrVan = acc.title.toLowerCase().includes('own tent') || 
+                                 acc.title.toLowerCase().includes('own van') || 
+                                 acc.title.toLowerCase().includes('van parking');
+              
               return (
                 <motion.div
                   key={acc.id}
@@ -630,7 +647,9 @@ export function CabinSelector({
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ duration: 0.2 }}
                   className={clsx(
-                    'relative rounded-sm overflow-hidden transition-all duration-200 flex flex-col justify-between group mb-4', // Base classes
+                    // Base classes - adjust for tent/van stacking
+                    'relative rounded-sm overflow-hidden transition-all duration-200 flex flex-col justify-between group',
+                    isTentOrVan ? 'mb-2' : 'mb-4', // Smaller margin for tent/van to stack closer
                     // Apply bg-surface by default, override when selected, add shadow only when selected
                     isSelected 
                       ? "shadow-lg bg-[color-mix(in_srgb,_var(--color-bg-surface)_95%,_var(--color-accent-primary)_5%)]" 
@@ -652,7 +671,19 @@ export function CabinSelector({
                       handleSelectAccommodation(acc.id);
                     }
                   }}
-                  style={{ minHeight: '300px' }} 
+                  style={{ 
+                    minHeight: isTentOrVan ? '140px' : '300px', // Half height for tent/van
+                    ...(isTentOrVan && {
+                      // Position tent/van cards to appear as stacked in grid
+                      position: acc.title.toLowerCase().includes('own van') || acc.title.toLowerCase().includes('van parking') 
+                        ? 'relative' 
+                        : 'relative',
+                      transform: acc.title.toLowerCase().includes('own van') || acc.title.toLowerCase().includes('van parking')
+                        ? 'translateY(-146px)' // Move van up to stack with tent
+                        : 'none',
+                      marginBottom: acc.title.toLowerCase().includes('own tent') ? '-146px' : '0' // Create space for van to slide up
+                    })
+                  }} 
                 >
                   {/* Use the StatusOverlay helper component */}
                   <StatusOverlay isVisible={!testMode && isDisabled} zIndex={4}>
