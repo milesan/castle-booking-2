@@ -849,13 +849,6 @@ export function Book2Page() {
                 )}
               </div> {/* Closing Calendar card div */}
               
-              {/* Garden Decompression Addon */}
-              <GardenDecompressionAddon
-                castleEndDate={new Date('2025-09-26T00:00:00Z')}
-                onSelectAddon={setSelectedGardenAddon}
-                selectedAddon={selectedGardenAddon}
-              />
-              
               {/* Outer Cabin Selector keeps py-* padding */}
               <div className="rounded-sm shadow-sm py-3 xs:py-4 sm:py-6 mb-4 xs:mb-5 sm:mb-6 cabin-selector">
                 {/* REMOVING px-* padding from this h2 */}
@@ -875,6 +868,13 @@ export function Book2Page() {
                   testMode={testMode}
                 />
               </div> {/* Closing Cabin Selector div */}
+              
+              {/* Garden Decompression Addon - MOVED AFTER accommodations */}
+              <GardenDecompressionAddon
+                castleEndDate={new Date('2025-09-26T00:00:00Z')}
+                onSelectAddon={setSelectedGardenAddon}
+                selectedAddon={selectedGardenAddon}
+              />
             </div> {/* == END: New wrapper div == */}
           </div> {/* Closing lg:col-span-2 div */}
 
