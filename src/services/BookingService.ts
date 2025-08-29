@@ -30,7 +30,8 @@ class BookingService {
     const { data: accommodationsData, error: accommodationsError } = await supabase
       .from('accommodations')
       .select('*')
-      .order('title');
+      .eq('is_available', true)
+      .order('display_order', { ascending: true });
 
     if (accommodationsError) {
       console.error('[BookingService] Error fetching accommodations:', accommodationsError);
