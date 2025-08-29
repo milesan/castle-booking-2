@@ -1,7 +1,6 @@
 import { useMemo } from 'react';
 import { getSeasonalDiscount, getDurationDiscount, getSeasonBreakdown } from '../../utils/pricing';
 import { calculateTotalNights, calculateDurationDiscountWeeks, calculateTotalWeeksDecimal } from '../../utils/dates';
-import { calculateBaseFoodCost } from './BookingSummary.utils';
 import type { Week } from '../../types/calendar';
 import type { Accommodation } from '../../types';
 import type { PricingDetails, GardenAddon } from './BookingSummary.types';
@@ -37,20 +36,15 @@ export function usePricing({
                           : (selectedAccommodation?.base_price || 0);
     const totalAccommodationCost = parseFloat((weeklyAccPrice * displayWeeks).toFixed(2));
 
-    // === Calculate Food & Facilities Cost ===
-    const { totalBaseFoodCost: baseFoodCost } = calculateBaseFoodCost(totalNights, displayWeeks, foodContribution);
+    // No food cost - accommodation only
+    const finalFoodCost = 0;
+    const foodDiscountAmount = 0;
+    const rawDurationDiscountPercent = 0;
+    const effectiveWeeklyRate = 0;
     
-    // Apply duration discount to food if staying 3+ weeks
-    const rawDurationDiscountPercent = getDurationDiscount(completeWeeks);
-    const foodDiscountAmount = parseFloat((baseFoodCost * rawDurationDiscountPercent).toFixed(2));
-    const finalFoodCost = parseFloat((baseFoodCost - foodDiscountAmount).toFixed(2));
-    
-    // Calculate effective weekly rate for display
-    const effectiveWeeklyRate = displayWeeks > 0 ? +(finalFoodCost / displayWeeks).toFixed(2) : 0;
-    
-    // 4. Subtotal includes accommodation, food, and garden addon
+    // Subtotal includes accommodation and garden addon only
     const gardenAddonCost = gardenAddon?.price || 0;
-    const subtotal = totalAccommodationCost + finalFoodCost + gardenAddonCost;
+    const subtotal = totalAccommodationCost + gardenAddonCost;
 
     // No discount codes - simplified pricing
     let finalTotalAmount = subtotal;
