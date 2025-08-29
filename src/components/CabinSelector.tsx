@@ -333,30 +333,19 @@ export function CabinSelector({
 
   // Helper function to determine bathroom type from description or bathroom_type field
   const getBathroomType = (accommodation: ExtendedAccommodation) => {
-    // First check the bathroom_type field
+    // First check the bathroom_type field if it exists and is not 'none'
     if (accommodation.bathroom_type && accommodation.bathroom_type !== 'none') {
       return accommodation.bathroom_type;
     }
     
-    // Fall back to checking the description
+    // Check description for 'bath' keyword - if present, it's private
     const desc = accommodation.description?.toLowerCase() || '';
-    if (desc.includes('private bathroom') || desc.includes('ensuite') || desc.includes('en-suite')) {
+    if (desc.includes('bath')) {
       return 'private';
     }
-    if (desc.includes('shared bathroom') || desc.includes('shared facilities')) {
-      return 'shared';
-    }
     
-    // Default based on accommodation type
-    const title = accommodation.title.toLowerCase();
-    if (title.includes('micro cabin') || title.includes('attic') || title.includes('dovecote')) {
-      return 'private';
-    }
-    if (title.includes('dorm') || title.includes('bell tent') || title.includes('tipi') || title.includes('own tent') || title.includes('van')) {
-      return 'shared';
-    }
-    
-    return accommodation.bathroom_type || 'none';
+    // If no 'bath' mentioned in description, it's shared
+    return 'shared';
   };
 
   // Filter accommodations based on season and type
