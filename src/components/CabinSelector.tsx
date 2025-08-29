@@ -75,6 +75,12 @@ const formatAccommodationText = (text: string): string => {
 
 // Helper function to get primary image (NEW IMAGES TABLE ONLY)
 const getPrimaryImageUrl = (accommodation: ExtendedAccommodation): string | null => {
+  // Don't show images for tent and van accommodations
+  const title = accommodation.title.toLowerCase();
+  if (title.includes('your own tent') || title.includes('van parking') || title.includes('your own van')) {
+    return null;
+  }
+  
   // Check new images table for primary image
   const primaryImage = accommodation.images?.find(img => img.is_primary);
   if (primaryImage) return primaryImage.image_url;
@@ -90,6 +96,12 @@ const getPrimaryImageUrl = (accommodation: ExtendedAccommodation): string | null
 
 // Helper function to get all images sorted by display order
 const getAllImages = (accommodation: ExtendedAccommodation): AccommodationImage[] => {
+  // Don't show images for tent and van accommodations
+  const title = accommodation.title.toLowerCase();
+  if (title.includes('your own tent') || title.includes('van parking') || title.includes('your own van')) {
+    return [];
+  }
+  
   if (!accommodation.images || accommodation.images.length === 0) {
     // Fallback: if no images array but has image_url, create a single image entry
     if (accommodation.image_url) {
