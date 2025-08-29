@@ -453,6 +453,14 @@ export function CabinSelector({
 
   return (
     <div className="space-y-6" style={{ position: 'relative' }}>
+      {/* Pricing Explainer */}
+      <div className="mb-6 p-4 bg-surface/50 border border-border/50 rounded-sm">
+        <p className="text-sm text-secondary leading-relaxed">
+          How this works: rooms subsidize the event. We pick people for values and energy, not money, 
+          so there's a financial asymmetry that makes the whole thing possible at this price.
+        </p>
+      </div>
+
       {/* Filter options */}
       <div className="flex items-center gap-4 mb-4 flex-wrap">
         <button
