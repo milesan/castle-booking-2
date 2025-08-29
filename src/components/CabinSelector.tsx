@@ -339,41 +339,31 @@ export function CabinSelector({
       return accommodation.bathroom_type;
     }
     
-    // Check description for specific bathroom indicators
-    const desc = accommodation.description || '';
+    // Check description and additional_info for bathroom indicators
+    const desc = (accommodation.description || '') + ' ' + (accommodation.additional_info || '');
+    const lowerDesc = desc.toLowerCase();
     
-    // Check for shared bathroom indicators first (more specific)
-    // Using regex with word boundaries to avoid false matches
-    if (/\bshared\s+(bath|bathroom)/i.test(desc) || 
-        /\bshared\s+facilities/i.test(desc) || 
-        /\bcommunal\s+(bath|bathroom)/i.test(desc)) {
+    // Rule: 'shared bath' = shared, 'private bath' = private, just 'bath' = private, nothing = shared
+    if (lowerDesc.includes('shared bath') || 
+        lowerDesc.includes('communal bath') || 
+        lowerDesc.includes('shared facilities') ||
+        lowerDesc.includes('shared bathroom')) {
       return 'shared';
     }
     
-    // Check for private bathroom indicators
-    if (/\bprivate\s+(bath|bathroom)/i.test(desc) || 
-        /\bensuite\b/i.test(desc) || 
-        /\ben-suite\b/i.test(desc) || 
-        /\bown\s+(bath|bathroom)/i.test(desc)) {
+    if (lowerDesc.includes('private bath') || 
+        lowerDesc.includes('private bathroom') ||
+        lowerDesc.includes('ensuite') || 
+        lowerDesc.includes('en-suite')) {
       return 'private';
     }
     
-    // Check if mentions 'bath' or 'bathroom' WITHOUT being preceded by 'shared'
-    // This catches cases like "bath" or "bathroom" that are private
-    if (/\bbath(room)?\b/i.test(desc) && !/\bshared\s+(bath|bathroom)/i.test(desc)) {
+    // If it just says 'bath' or 'bathroom' (without shared/private qualifiers), it's private
+    if (lowerDesc.includes('bath')) {
       return 'private';
     }
     
-    // Default based on accommodation type patterns
-    const title = accommodation.title.toLowerCase();
-    if (title.includes('micro cabin') || title.includes('attic') || title.includes('dovecote')) {
-      return 'private';
-    }
-    if (title.includes('dorm') || title.includes('bell tent') || title.includes('tipi') || title.includes('own tent') || title.includes('van')) {
-      return 'shared';
-    }
-    
-    // Default fallback
+    // If no bathroom mention at all, default to shared
     return 'shared';
   };
 
