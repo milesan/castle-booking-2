@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { BedDouble, Bath, Percent, Info, Ear, ChevronLeft, ChevronRight, Users, Clock } from 'lucide-react';
+import { BedDouble, Bath, Percent, Info, Ear, ChevronLeft, ChevronRight, Users, Clock, Edit2, Save, X } from 'lucide-react';
 import clsx from 'clsx';
 import type { Accommodation } from '../types';
 import { Week } from '../types/calendar';
@@ -14,6 +14,8 @@ import { useSession } from '../hooks/useSession';
 import { HoverClickPopover } from './HoverClickPopover';
 import { useUserPermissions } from '../hooks/useUserPermissions';
 import { usePendingBookings } from '../hooks/usePendingBookings';
+import { useUserStatusContext } from '../contexts/UserStatusContext';
+import { supabase } from '../lib/supabase';
 // import { MasonryGallery } from './shared/MasonryGallery';
 // import { FullScreenMasonry } from './FullScreenMasonry';
 import { SimpleImageGallery } from './SimpleImageGallery';
@@ -169,11 +171,58 @@ export function CabinSelector({
   const [showOnlyWithBathrooms, setShowOnlyWithBathrooms] = useState(false);
   const [showOnlySharedBathrooms, setShowOnlySharedBathrooms] = useState(false);
   
+  // Admin state
+  const { isAdmin } = useUserStatusContext();
+  const [editingPrices, setEditingPrices] = useState<Record<string, number>>({});
+  const [editingInventory, setEditingInventory] = useState<Record<string, number>>({});
+  const [editMode, setEditMode] = useState<Record<string, boolean>>({});
+  const [saving, setSaving] = useState<Record<string, boolean>>({});
+  
   // State for simple gallery
   const [galleryOpen, setGalleryOpen] = useState(false);
   const [galleryImages, setGalleryImages] = useState<{id: string, url: string, alt?: string}[]>([]);
   const [galleryTitle, setGalleryTitle] = useState<string>('');
   const [galleryStartIndex, setGalleryStartIndex] = useState(0);
+  
+  // Admin functions
+  const handleSaveChanges = async (accId: string) => {
+    setSaving({ ...saving, [accId]: true });
+    try {
+      const updates: any = {};
+      if (editingPrices[accId] !== undefined) {
+        updates.base_price = editingPrices[accId];
+      }
+      if (editingInventory[accId] !== undefined) {
+        updates.inventory = editingInventory[accId];
+      }
+      
+      const { error } = await supabase
+        .from('accommodations')
+        .update(updates)
+        .eq('id', accId);
+      
+      if (error) throw error;
+      
+      // Update local state
+      setEditMode({ ...editMode, [accId]: false });
+      delete editingPrices[accId];
+      delete editingInventory[accId];
+      
+      // Refresh accommodations
+      window.location.reload();
+    } catch (error) {
+      console.error('Error updating accommodation:', error);
+      alert('Failed to update. Please try again.');
+    } finally {
+      setSaving({ ...saving, [accId]: false });
+    }
+  };
+  
+  const handleCancelEdit = (accId: string) => {
+    setEditMode({ ...editMode, [accId]: false });
+    delete editingPrices[accId];
+    delete editingInventory[accId];
+  };
 
   // Handler to open gallery
   const handleOpenGallery = useCallback((accommodation: ExtendedAccommodation, startIndex: number = 0) => {
@@ -926,21 +975,79 @@ export function CabinSelector({
                           <span className="text-xs text-gray-400 uppercase tracking-wide">Fixed Price</span>
                         ) : null}
                         
-                        {/* Check if weeklyPrice (from prop) is null or 0, handle 0.01 specifically */}
-                        {weeklyPrice === null || weeklyPrice === 0 ? (
-                          <span className="text-accent-primary text-xl font-lettra-bold font-mono">{formatPrice(weeklyPrice, isTestAccommodation)}</span>
-                        ) : (
-                          <div className="flex flex-col">
-                            <span className="text-xl font-lettra-bold text-accent-primary">
-                              €{formatPrice(weeklyPrice, isTestAccommodation)}
-                              <span className="text-xl text-secondary font-lettra-bold"></span>
-                            </span>
-                            {isInAuction && auctionPricing && (
-                              <span className="text-xs text-secondary font-mono mt-1">
-                                Floor: €{formatPrice(auctionPricing.floorPrice, false)}
-                              </span>
-                            )}
+                        {/* Admin editing mode */}
+                        {isAdmin && editMode[acc.id] ? (
+                          <div className="flex flex-col gap-2">
+                            <div className="flex items-center gap-2">
+                              <label className="text-xs text-secondary">Price:</label>
+                              <input
+                                type="number"
+                                value={editingPrices[acc.id] ?? acc.base_price}
+                                onChange={(e) => setEditingPrices({ ...editingPrices, [acc.id]: parseFloat(e.target.value) })}
+                                className="w-24 px-2 py-1 border border-border rounded text-sm bg-surface"
+                                disabled={saving[acc.id]}
+                              />
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <label className="text-xs text-secondary">Qty:</label>
+                              <input
+                                type="number"
+                                value={editingInventory[acc.id] ?? acc.inventory ?? 0}
+                                onChange={(e) => setEditingInventory({ ...editingInventory, [acc.id]: parseInt(e.target.value) })}
+                                className="w-24 px-2 py-1 border border-border rounded text-sm bg-surface"
+                                disabled={saving[acc.id]}
+                              />
+                            </div>
+                            <div className="flex gap-1">
+                              <button
+                                onClick={() => handleSaveChanges(acc.id)}
+                                disabled={saving[acc.id]}
+                                className="p-1 text-green-500 hover:text-green-600 disabled:opacity-50"
+                              >
+                                <Save size={14} />
+                              </button>
+                              <button
+                                onClick={() => handleCancelEdit(acc.id)}
+                                disabled={saving[acc.id]}
+                                className="p-1 text-red-500 hover:text-red-600 disabled:opacity-50"
+                              >
+                                <X size={14} />
+                              </button>
+                            </div>
                           </div>
+                        ) : (
+                          // Normal price display
+                          <>
+                            {weeklyPrice === null || weeklyPrice === 0 ? (
+                              <span className="text-accent-primary text-xl font-lettra-bold font-mono">{formatPrice(weeklyPrice, isTestAccommodation)}</span>
+                            ) : (
+                              <div className="flex flex-col">
+                                <span className="text-xl font-lettra-bold text-accent-primary">
+                                  €{formatPrice(weeklyPrice, isTestAccommodation)}
+                                  <span className="text-xl text-secondary font-lettra-bold"></span>
+                                </span>
+                                {isInAuction && auctionPricing && (
+                                  <span className="text-xs text-secondary font-mono mt-1">
+                                    Floor: €{formatPrice(auctionPricing.floorPrice, false)}
+                                  </span>
+                                )}
+                              </div>
+                            )}
+                            {/* Admin edit button */}
+                            {isAdmin && !editMode[acc.id] && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setEditMode({ ...editMode, [acc.id]: true });
+                                  setEditingPrices({ ...editingPrices, [acc.id]: acc.base_price });
+                                  setEditingInventory({ ...editingInventory, [acc.id]: acc.inventory ?? 0 });
+                                }}
+                                className="mt-2 p-1 text-secondary hover:text-primary transition-colors"
+                              >
+                                <Edit2 size={14} />
+                              </button>
+                            )}
+                          </>
                         )}
                       </div>
                       
