@@ -29,12 +29,12 @@ export function usePricing({
     const displayWeeks = selectedWeeks.length > 0 ? Math.round(exactWeeksDecimal * 10) / 10 : 0;
     
     // === Calculate Accommodation Cost using discounted weekly price ===
-    // Ensure we have a valid number, default to 0 if null/undefined/NaN
+    // Use base price from selectedAccommodation if calculatedWeeklyAccommodationPrice is not available
     const weeklyAccPrice = (calculatedWeeklyAccommodationPrice !== null && 
                            calculatedWeeklyAccommodationPrice !== undefined && 
                            !isNaN(calculatedWeeklyAccommodationPrice)) 
                           ? calculatedWeeklyAccommodationPrice 
-                          : 0;
+                          : (selectedAccommodation?.base_price || 0);
     const totalAccommodationCost = parseFloat((weeklyAccPrice * displayWeeks).toFixed(2));
 
     // === Calculate Food & Facilities Cost ===
@@ -56,12 +56,6 @@ export function usePricing({
     let finalTotalAmount = subtotal;
     let discountCodeAmount = 0;
 
-    // --- START: Calculate VAT (24%) ---
-    const vatRate = 0.24; // 24% VAT
-    const vatAmount = parseFloat((finalTotalAmount * vatRate).toFixed(2));
-    const totalWithVat = parseFloat((finalTotalAmount + vatAmount).toFixed(2));
-    // --- END: Calculate VAT ---
-
     // 5. Construct the final object
     const calculatedPricingDetails: PricingDetails = {
       totalNights,
@@ -78,8 +72,8 @@ export function usePricing({
       durationDiscountAmount: foodDiscountAmount,
       durationDiscountPercent: rawDurationDiscountPercent * 100,
       seasonalDiscount: 0, // This is calculated elsewhere in the parent component
-      vatAmount,
-      totalWithVat,
+      vatAmount: 0, // No VAT for nonprofit donations
+      totalWithVat: finalTotalAmount, // Same as totalAmount since no VAT
     };
 
 
@@ -89,9 +83,9 @@ export function usePricing({
       calculatedPricingDetails.subtotal = calculatedPricingDetails.totalAccommodationCost; // Keep accom cost, just zero out food
       calculatedPricingDetails.totalAmount = calculatedPricingDetails.totalAccommodationCost; // Total is just accom cost
       calculatedPricingDetails.durationDiscountAmount = 0; // No food discount applicable
-      // Recalculate VAT for test accommodation
-      calculatedPricingDetails.vatAmount = parseFloat((calculatedPricingDetails.totalAmount * vatRate).toFixed(2));
-      calculatedPricingDetails.totalWithVat = parseFloat((calculatedPricingDetails.totalAmount + calculatedPricingDetails.vatAmount).toFixed(2));
+      // No VAT for nonprofit
+      calculatedPricingDetails.vatAmount = 0;
+      calculatedPricingDetails.totalWithVat = calculatedPricingDetails.totalAmount;
     }
     // --- END TEST ACCOMMODATION OVERRIDE ---
 

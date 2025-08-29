@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { BedDouble, Bath, Percent, Info, Ear, ChevronLeft, ChevronRight, Users, Clock } from 'lucide-react';
+import { BedDouble, Bath, Percent, Info, Ear, ChevronLeft, ChevronRight, Users, Clock, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 import clsx from 'clsx';
 import type { Accommodation } from '../types';
 import { Week } from '../types/calendar';
@@ -35,6 +35,7 @@ interface ExtendedAccommodation extends Accommodation {
   property_location?: string | null;
   property_section?: string | null;
   additional_info?: string | null;
+  sold_out?: boolean;
 }
 
 interface Props {
@@ -168,6 +169,9 @@ export function CabinSelector({
   // State for bathroom filters
   const [showOnlyWithBathrooms, setShowOnlyWithBathrooms] = useState(false);
   const [showOnlySharedBathrooms, setShowOnlySharedBathrooms] = useState(false);
+  
+  // State for price sorting
+  const [sortBy, setSortBy] = useState<'default' | 'price-low' | 'price-high'>('default');
   
   // State for simple gallery
   const [galleryOpen, setGalleryOpen] = useState(false);
@@ -338,40 +342,31 @@ export function CabinSelector({
       return accommodation.bathroom_type;
     }
     
-    // Check description for specific bathroom indicators
-    const desc = accommodation.description || '';
+    // Check description and additional_info for bathroom indicators
+    const desc = (accommodation.description || '') + ' ' + (accommodation.additional_info || '');
+    const lowerDesc = desc.toLowerCase();
     
-    // Check for shared bathroom indicators first (more specific)
-    // Using regex with word boundaries to avoid false matches
-    if (/\bshared\s+(bath|bathroom)/i.test(desc) || 
-        /\bshared\s+facilities/i.test(desc) || 
-        /\bcommunal\s+(bath|bathroom)/i.test(desc)) {
+    // Rule: 'shared bath' = shared, 'private bath' = private, just 'bath' = private, nothing = shared
+    if (lowerDesc.includes('shared bath') || 
+        lowerDesc.includes('communal bath') || 
+        lowerDesc.includes('shared facilities') ||
+        lowerDesc.includes('shared bathroom')) {
       return 'shared';
     }
     
-    // Check for private bathroom indicators
-    if (/\bprivate\s+(bath|bathroom)/i.test(desc) || 
-        /\bensuite\b/i.test(desc) || 
-        /\ben-suite\b/i.test(desc) || 
-        /\bown\s+(bath|bathroom)/i.test(desc)) {
+    if (lowerDesc.includes('private bath') || 
+        lowerDesc.includes('private bathroom') ||
+        lowerDesc.includes('ensuite') || 
+        lowerDesc.includes('en-suite')) {
       return 'private';
     }
     
-    // If just mentions 'bath' or 'bathroom' as a whole word (not part of another word), assume private
-    if (/\bbath(room)?\b/i.test(desc)) {
+    // If it just says 'bath' or 'bathroom' (without shared/private qualifiers), it's private
+    if (lowerDesc.includes('bath')) {
       return 'private';
     }
     
-    // Default based on accommodation type patterns
-    const title = accommodation.title.toLowerCase();
-    if (title.includes('micro cabin') || title.includes('attic') || title.includes('dovecote')) {
-      return 'private';
-    }
-    if (title.includes('dorm') || title.includes('bell tent') || title.includes('tipi') || title.includes('own tent') || title.includes('van')) {
-      return 'shared';
-    }
-    
-    // Default fallback
+    // If no bathroom mention at all, default to shared
     return 'shared';
   };
 
@@ -401,7 +396,26 @@ export function CabinSelector({
       return true;
     })
     .sort((a, b) => {
-      // Define accommodation priority (new ordering)
+      // Price sorting takes priority if selected
+      if (sortBy !== 'default') {
+        // Get the actual weekly price for each accommodation
+        const aPrice = memoizedPriceInfo[a.id]?.price ?? a.base_price;
+        const bPrice = memoizedPriceInfo[b.id]?.price ?? b.base_price;
+        
+        if (sortBy === 'price-low') {
+          // Sort by price low to high
+          if (aPrice !== bPrice) {
+            return aPrice - bPrice;
+          }
+        } else if (sortBy === 'price-high') {
+          // Sort by price high to low
+          if (aPrice !== bPrice) {
+            return bPrice - aPrice;
+          }
+        }
+      }
+      
+      // Default sorting logic
       const getPriority = (acc: typeof a) => {
         const title = acc.title.toLowerCase();
         
@@ -513,57 +527,105 @@ export function CabinSelector({
         </p>
       </div>
 
-      {/* Filter options */}
-      <div className="flex items-center gap-4 mb-4 flex-wrap">
-        <button
-          onClick={() => {
-            setShowOnlyWithBathrooms(!showOnlyWithBathrooms);
-            if (showOnlySharedBathrooms) setShowOnlySharedBathrooms(false);
-          }}
-          className={clsx(
-            "flex items-center gap-2 px-4 py-2 rounded-sm border transition-all duration-200 font-mono text-sm",
-            showOnlyWithBathrooms 
-              ? "bg-accent-primary text-white border-accent-primary" 
-              : "bg-surface text-secondary border-border hover:border-accent-primary"
-          )}
-        >
-          <Bath size={16} />
-          <span>Private Bathrooms</span>
-          {showOnlyWithBathrooms && (
-            <span className="ml-1 text-xs opacity-90">
-              ({accommodations.filter(acc => {
-                if ((acc as any).parent_accommodation_id) return false;
-                const bathroomType = getBathroomType(acc);
-                return bathroomType === 'private';
-              }).length})
-            </span>
-          )}
-        </button>
+      {/* Filter and Sort options */}
+      <div className="flex flex-col gap-4 mb-4">
+        {/* Bathroom Filters */}
+        <div className="flex items-center gap-4 flex-wrap">
+          <button
+            onClick={() => {
+              setShowOnlyWithBathrooms(!showOnlyWithBathrooms);
+              if (showOnlySharedBathrooms) setShowOnlySharedBathrooms(false);
+            }}
+            className={clsx(
+              "flex items-center gap-2 px-4 py-2 rounded-sm border transition-all duration-200 font-mono text-sm",
+              showOnlyWithBathrooms 
+                ? "bg-accent-primary text-white border-accent-primary" 
+                : "bg-surface text-secondary border-border hover:border-accent-primary"
+            )}
+          >
+            <Bath size={16} />
+            <span>Private Bathrooms</span>
+            {showOnlyWithBathrooms && (
+              <span className="ml-1 text-xs opacity-90">
+                ({accommodations.filter(acc => {
+                  if ((acc as any).parent_accommodation_id) return false;
+                  const bathroomType = getBathroomType(acc);
+                  return bathroomType === 'private';
+                }).length})
+              </span>
+            )}
+          </button>
+          
+          <button
+            onClick={() => {
+              setShowOnlySharedBathrooms(!showOnlySharedBathrooms);
+              if (showOnlyWithBathrooms) setShowOnlyWithBathrooms(false);
+            }}
+            className={clsx(
+              "flex items-center gap-2 px-4 py-2 rounded-sm border transition-all duration-200 font-mono text-sm",
+              showOnlySharedBathrooms 
+                ? "bg-accent-primary text-white border-accent-primary" 
+                : "bg-surface text-secondary border-border hover:border-accent-primary"
+            )}
+          >
+            <Users size={16} />
+            <span>Shared Bathrooms</span>
+            {showOnlySharedBathrooms && (
+              <span className="ml-1 text-xs opacity-90">
+                ({accommodations.filter(acc => {
+                  if ((acc as any).parent_accommodation_id) return false;
+                  const bathroomType = getBathroomType(acc);
+                  return bathroomType === 'shared';
+                }).length})
+              </span>
+            )}
+          </button>
+        </div>
         
-        <button
-          onClick={() => {
-            setShowOnlySharedBathrooms(!showOnlySharedBathrooms);
-            if (showOnlyWithBathrooms) setShowOnlyWithBathrooms(false);
-          }}
-          className={clsx(
-            "flex items-center gap-2 px-4 py-2 rounded-sm border transition-all duration-200 font-mono text-sm",
-            showOnlySharedBathrooms 
-              ? "bg-accent-primary text-white border-accent-primary" 
-              : "bg-surface text-secondary border-border hover:border-accent-primary"
-          )}
-        >
-          <Users size={16} />
-          <span>Shared Bathrooms</span>
-          {showOnlySharedBathrooms && (
-            <span className="ml-1 text-xs opacity-90">
-              ({accommodations.filter(acc => {
-                if ((acc as any).parent_accommodation_id) return false;
-                const bathroomType = getBathroomType(acc);
-                return bathroomType === 'shared';
-              }).length})
-            </span>
-          )}
-        </button>
+        {/* Price Sorting */}
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-secondary font-mono">Sort by:</span>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setSortBy('default')}
+              className={clsx(
+                "flex items-center gap-2 px-4 py-2 rounded-sm border transition-all duration-200 font-mono text-sm",
+                sortBy === 'default'
+                  ? "bg-accent-primary text-white border-accent-primary"
+                  : "bg-surface text-secondary border-border hover:border-accent-primary"
+              )}
+            >
+              <ArrowUpDown size={16} />
+              <span>Default</span>
+            </button>
+            
+            <button
+              onClick={() => setSortBy('price-low')}
+              className={clsx(
+                "flex items-center gap-2 px-4 py-2 rounded-sm border transition-all duration-200 font-mono text-sm",
+                sortBy === 'price-low'
+                  ? "bg-accent-primary text-white border-accent-primary"
+                  : "bg-surface text-secondary border-border hover:border-accent-primary"
+              )}
+            >
+              <ArrowUp size={16} />
+              <span>Price: Low to High</span>
+            </button>
+            
+            <button
+              onClick={() => setSortBy('price-high')}
+              className={clsx(
+                "flex items-center gap-2 px-4 py-2 rounded-sm border transition-all duration-200 font-mono text-sm",
+                sortBy === 'price-high'
+                  ? "bg-accent-primary text-white border-accent-primary"
+                  : "bg-surface text-secondary border-border hover:border-accent-primary"
+              )}
+            >
+              <ArrowDown size={16} />
+              <span>Price: High to Low</span>
+            </button>
+          </div>
+        </div>
       </div>
       
       {isLoading ? (
@@ -625,18 +687,28 @@ export function CabinSelector({
                       {tentAcc && (
                         <button
                           onClick={() => {
+                            if (tentAcc.sold_out) return;
                             if (testMode || (selectedWeeks.length > 0 && !isDisabled)) {
                               handleSelectAccommodation(tentAcc.id);
                             }
                           }}
                           className={clsx(
-                            "flex-1 p-4 border-b border-border transition-all duration-200 hover:bg-surface-hover flex flex-col justify-center items-center min-h-[150px]",
+                            "flex-1 p-4 border-b border-border transition-all duration-200 flex flex-col justify-center items-center min-h-[150px]",
+                            // Add hover effect only when not sold out
+                            !tentAcc.sold_out && "hover:bg-surface-hover",
                             selectedAccommodationId === tentAcc.id && "bg-[color-mix(in_srgb,_var(--color-bg-surface)_95%,_var(--color-accent-primary)_5%)] shadow-lg",
-                            (!testMode && (!selectedWeeks.length || isDisabled)) && "opacity-50 cursor-not-allowed"
+                            // Enhanced sold out styling
+                            tentAcc.sold_out && "opacity-50 cursor-not-allowed grayscale saturate-0 pointer-events-none",
+                            // Regular disabled state
+                            !tentAcc.sold_out && (!testMode && (!selectedWeeks.length || isDisabled)) && "opacity-50 cursor-not-allowed"
                           )}
                         >
                           <h3 className="text-lg font-medium text-primary font-lettra-bold uppercase mb-2">YOUR OWN TENT</h3>
-                          <span className="text-accent-primary text-xl font-lettra-bold font-mono">Free</span>
+                          {tentAcc.sold_out ? (
+                            <span className="text-red-600 text-xl font-bold font-mono tracking-wider">SOLD OUT</span>
+                          ) : (
+                            <span className="text-accent-primary text-xl font-lettra-bold font-mono">Free</span>
+                          )}
                         </button>
                       )}
                       
@@ -644,18 +716,28 @@ export function CabinSelector({
                       {vanAcc && (
                         <button
                           onClick={() => {
+                            if (vanAcc.sold_out) return;
                             if (testMode || (selectedWeeks.length > 0 && !isDisabled)) {
                               handleSelectAccommodation(vanAcc.id);
                             }
                           }}
                           className={clsx(
-                            "flex-1 p-4 transition-all duration-200 hover:bg-surface-hover flex flex-col justify-center items-center min-h-[150px]",
+                            "flex-1 p-4 transition-all duration-200 flex flex-col justify-center items-center min-h-[150px]",
+                            // Add hover effect only when not sold out
+                            !vanAcc.sold_out && "hover:bg-surface-hover",
                             selectedAccommodationId === vanAcc.id && "bg-[color-mix(in_srgb,_var(--color-bg-surface)_95%,_var(--color-accent-primary)_5%)] shadow-lg",
-                            (!testMode && (!selectedWeeks.length || isDisabled)) && "opacity-50 cursor-not-allowed"
+                            // Enhanced sold out styling
+                            vanAcc.sold_out && "opacity-50 cursor-not-allowed grayscale saturate-0 pointer-events-none",
+                            // Regular disabled state
+                            !vanAcc.sold_out && (!testMode && (!selectedWeeks.length || isDisabled)) && "opacity-50 cursor-not-allowed"
                           )}
                         >
                           <h3 className="text-lg font-medium text-primary font-lettra-bold uppercase mb-2">YOUR OWN VAN</h3>
-                          <span className="text-accent-primary text-xl font-lettra-bold font-mono">Free</span>
+                          {vanAcc.sold_out ? (
+                            <span className="text-red-600 text-xl font-bold font-mono tracking-wider">SOLD OUT</span>
+                          ) : (
+                            <span className="text-accent-primary text-xl font-lettra-bold font-mono">Free</span>
+                          )}
                         </button>
                       )}
                     </div>
@@ -732,8 +814,12 @@ export function CabinSelector({
                     isSelected 
                       ? "shadow-lg bg-[color-mix(in_srgb,_var(--color-bg-surface)_95%,_var(--color-accent-primary)_5%)]" 
                       : "bg-surface", // Use the renamed class
+                    // Sold out state - enhanced styling
+                    acc.sold_out && "opacity-50 grayscale saturate-0",
                     // Pointer state:
-                    (testMode || (finalCanSelect && !isDisabled)) && 'cursor-pointer'
+                    (testMode || (finalCanSelect && !isDisabled)) && !acc.sold_out && 'cursor-pointer',
+                    // Disable hover effects for sold out items
+                    acc.sold_out && 'pointer-events-none'
                   )}
                   onClick={(e) => {
                     // Check if click is on interactive elements that should not trigger selection
@@ -741,6 +827,11 @@ export function CabinSelector({
                     
                     // Don't select if clicking on buttons, links, or other interactive elements
                     if (target.closest('button') || target.closest('a')) {
+                      return;
+                    }
+                    
+                    // Don't allow selection if sold out
+                    if (acc.sold_out) {
                       return;
                     }
                     
@@ -754,14 +845,17 @@ export function CabinSelector({
                   }} 
                 >
                   {/* Use the StatusOverlay helper component */}
-                  <StatusOverlay isVisible={!testMode && isDisabled} zIndex={4}>
+                  <StatusOverlay isVisible={acc.sold_out} zIndex={5}>
+                    <span className="text-red-600 font-bold text-lg tracking-wider">SOLD OUT</span>
+                  </StatusOverlay>
+                  <StatusOverlay isVisible={!testMode && isDisabled && !acc.sold_out} zIndex={4}>
                     Select dates first
                   </StatusOverlay>
-                  <StatusOverlay isVisible={!testMode && !isDisabled && isFullyBooked} zIndex={3}>
+                  <StatusOverlay isVisible={!testMode && !isDisabled && isFullyBooked && !acc.sold_out} zIndex={3}>
                     {pendingBookings[acc.id] && pendingBookings[acc.id].count > 0 ? 'Being booked' : 'Booked out'}
                   </StatusOverlay>
                   <StatusOverlay 
-                    isVisible={!testMode && !isDisabled && isOutOfSeason && !isFullyBooked} 
+                    isVisible={!testMode && !isDisabled && isOutOfSeason && !isFullyBooked && !acc.sold_out} 
                     zIndex={2}
                     className="border-amber-500 dark:border-amber-600" // Pass specific class for amber border
                   >

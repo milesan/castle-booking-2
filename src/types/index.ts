@@ -20,6 +20,7 @@ export interface Accommodation {
   bathroom_type?: 'none' | 'private' | 'shared';
   has_wifi: boolean;
   has_electricity: boolean;
+  sold_out?: boolean;
   bed_size: string | null;
   image_url: string | null;
   is_fungible: boolean;
