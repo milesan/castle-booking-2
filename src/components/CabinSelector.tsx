@@ -339,21 +339,26 @@ export function CabinSelector({
     }
     
     // Check description for specific bathroom indicators
-    const desc = accommodation.description?.toLowerCase() || '';
+    const desc = accommodation.description || '';
     
     // Check for shared bathroom indicators first (more specific)
-    if (desc.includes('shared bath') || desc.includes('shared facilities') || desc.includes('communal bath')) {
+    // Using regex with word boundaries to avoid false matches
+    if (/\bshared\s+(bath|bathroom)/i.test(desc) || 
+        /\bshared\s+facilities/i.test(desc) || 
+        /\bcommunal\s+(bath|bathroom)/i.test(desc)) {
       return 'shared';
     }
     
     // Check for private bathroom indicators
-    if (desc.includes('private bath') || desc.includes('ensuite') || desc.includes('en-suite') || 
-        desc.includes('own bath') || desc.includes('bath on')) {
+    if (/\bprivate\s+(bath|bathroom)/i.test(desc) || 
+        /\bensuite\b/i.test(desc) || 
+        /\ben-suite\b/i.test(desc) || 
+        /\bown\s+(bath|bathroom)/i.test(desc)) {
       return 'private';
     }
     
-    // If just mentions 'bath' without qualifier, assume private
-    if (desc.includes('bath')) {
+    // If just mentions 'bath' or 'bathroom' as a whole word (not part of another word), assume private
+    if (/\bbath(room)?\b/i.test(desc)) {
       return 'private';
     }
     
@@ -592,7 +597,82 @@ export function CabinSelector({
       ) : (
         <div>
           <div className="grid grid-cols-1 sm:grid-cols-2 2xl:grid-cols-3 gap-4">
-            {visibleAccommodations.map((acc) => {
+            {/* Special combined card for tent and van */}
+            {(() => {
+              const tentAcc = visibleAccommodations.find(acc => 
+                acc.title.toLowerCase().includes('own tent') || 
+                acc.title.toLowerCase().includes('your own tent')
+              );
+              const vanAcc = visibleAccommodations.find(acc => 
+                acc.title.toLowerCase().includes('own van') || 
+                acc.title.toLowerCase().includes('your own van') || 
+                acc.title.toLowerCase().includes('van parking')
+              );
+              
+              if (tentAcc || vanAcc) {
+                return (
+                  <motion.div
+                    key="tent-van-combined"
+                    layout
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.2 }}
+                    className="relative rounded-sm overflow-hidden bg-surface flex flex-col border border-border"
+                    style={{ minHeight: '300px' }}
+                  >
+                    <div className="flex flex-col h-full">
+                      {/* Tent Button */}
+                      {tentAcc && (
+                        <button
+                          onClick={() => {
+                            if (testMode || (selectedWeeks.length > 0 && !isDisabled)) {
+                              handleSelectAccommodation(tentAcc.id);
+                            }
+                          }}
+                          className={clsx(
+                            "flex-1 p-4 border-b border-border transition-all duration-200 hover:bg-surface-hover flex flex-col justify-center items-center min-h-[150px]",
+                            selectedAccommodationId === tentAcc.id && "bg-[color-mix(in_srgb,_var(--color-bg-surface)_95%,_var(--color-accent-primary)_5%)] shadow-lg",
+                            (!testMode && (!selectedWeeks.length || isDisabled)) && "opacity-50 cursor-not-allowed"
+                          )}
+                        >
+                          <h3 className="text-lg font-medium text-primary font-lettra-bold uppercase mb-2">YOUR OWN TENT</h3>
+                          <span className="text-accent-primary text-xl font-lettra-bold font-mono">Free</span>
+                        </button>
+                      )}
+                      
+                      {/* Van Button */}
+                      {vanAcc && (
+                        <button
+                          onClick={() => {
+                            if (testMode || (selectedWeeks.length > 0 && !isDisabled)) {
+                              handleSelectAccommodation(vanAcc.id);
+                            }
+                          }}
+                          className={clsx(
+                            "flex-1 p-4 transition-all duration-200 hover:bg-surface-hover flex flex-col justify-center items-center min-h-[150px]",
+                            selectedAccommodationId === vanAcc.id && "bg-[color-mix(in_srgb,_var(--color-bg-surface)_95%,_var(--color-accent-primary)_5%)] shadow-lg",
+                            (!testMode && (!selectedWeeks.length || isDisabled)) && "opacity-50 cursor-not-allowed"
+                          )}
+                        >
+                          <h3 className="text-lg font-medium text-primary font-lettra-bold uppercase mb-2">YOUR OWN VAN</h3>
+                          <span className="text-accent-primary text-xl font-lettra-bold font-mono">Free</span>
+                        </button>
+                      )}
+                    </div>
+                  </motion.div>
+                );
+              }
+              return null;
+            })()}
+            
+            {/* Regular accommodation cards (excluding tent and van) */}
+            {visibleAccommodations.filter(acc => 
+              !acc.title.toLowerCase().includes('own tent') && 
+              !acc.title.toLowerCase().includes('your own tent') &&
+              !acc.title.toLowerCase().includes('own van') && 
+              !acc.title.toLowerCase().includes('your own van') && 
+              !acc.title.toLowerCase().includes('van parking')
+            ).map((acc) => {
               
               const isSelected = selectedAccommodationId === acc.id;
               const availability = availabilityMap[acc.id];
@@ -634,10 +714,8 @@ export function CabinSelector({
               const hasDurationDiscount = currentDurationDiscount > 0;
               const hasAnyDiscount = !isTestAccommodation && (hasSeasonalDiscount || hasDurationDiscount); // <-- Modified: Exclude test type
               
-              // Check if this is a tent or van accommodation for special styling
-              const isTentOrVan = acc.title.toLowerCase().includes('own tent') || 
-                                 acc.title.toLowerCase().includes('own van') || 
-                                 acc.title.toLowerCase().includes('van parking');
+              // No longer need special tent/van styling since they have their own card
+              const isTentOrVan = false;
               
               return (
                 <motion.div
@@ -672,17 +750,7 @@ export function CabinSelector({
                     }
                   }}
                   style={{ 
-                    minHeight: isTentOrVan ? '140px' : '300px', // Half height for tent/van
-                    ...(isTentOrVan && {
-                      // Position tent/van cards to appear as stacked in grid
-                      position: acc.title.toLowerCase().includes('own van') || acc.title.toLowerCase().includes('van parking') 
-                        ? 'relative' 
-                        : 'relative',
-                      transform: acc.title.toLowerCase().includes('own van') || acc.title.toLowerCase().includes('van parking')
-                        ? 'translateY(-146px)' // Move van up to stack with tent
-                        : 'none',
-                      marginBottom: acc.title.toLowerCase().includes('own tent') ? '-146px' : '0' // Create space for van to slide up
-                    })
+                    minHeight: '300px' // Keep standard height for all cards
                   }} 
                 >
                   {/* Use the StatusOverlay helper component */}
@@ -733,9 +801,7 @@ export function CabinSelector({
                   </div>
 
                   {/* Image - hide for "your own tent" and "van parking" */}
-                  {!acc.title.toLowerCase().includes('own tent') && 
-                   !acc.title.toLowerCase().includes('own van') && 
-                   !acc.title.toLowerCase().includes('van parking') && (
+                  {!isTentOrVan && (
                     <div className={clsx(
                       "relative h-56 overflow-hidden", // REMOVED bg-surface
                       // Apply blur and corresponding opacity/grayscale conditionally
@@ -758,7 +824,9 @@ export function CabinSelector({
                     !testMode && (!isDisabled && isOutOfSeason && !isFullyBooked) && "blur-sm opacity-40 grayscale-[0.3]"
                   )}>
                     <div>
-                      <h3 className="text-lg font-medium mb-1 text-primary font-lettra-bold uppercase">{acc.title}</h3>
+                      {!isTentOrVan && (
+                        <h3 className="text-lg font-medium mb-1 text-primary font-lettra-bold uppercase">{acc.title}</h3>
+                      )}
                       {/* Property Location Badge */}
                       <div className="mb-2 flex items-center gap-2 flex-wrap">
                         {acc.property_location && (
