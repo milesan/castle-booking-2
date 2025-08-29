@@ -713,12 +713,15 @@ export function CabinSelector({
                     (testMode || (finalCanSelect && !isDisabled)) && 'cursor-pointer'
                   )}
                   onClick={(e) => {
-                    // Check if click is on the image or image container
+                    // Check if click is on interactive elements that should not trigger selection
                     const target = e.target as HTMLElement;
-                    if (target.tagName === 'IMG' || target.closest('.group/gallery')) {
+                    
+                    // Don't select if clicking on buttons, links, or other interactive elements
+                    if (target.closest('button') || target.closest('a')) {
                       return;
                     }
-                    // Only select accommodation if not clicking on interactive elements
+                    
+                    // Only select accommodation if clicking is allowed
                     if (testMode || (finalCanSelect && !isDisabled)) {
                       handleSelectAccommodation(acc.id);
                     }

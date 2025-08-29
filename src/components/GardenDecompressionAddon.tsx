@@ -78,6 +78,12 @@ export function GardenDecompressionAddon({
         <p className="text-sm sm:text-base text-secondary font-mono">
           Decompress after The Castle at our permanent campus in Portugal
         </p>
+        <p className="text-xs text-secondary font-mono">
+          You can proceed without selecting any decompression option.
+        </p>
+        <p className="text-xs text-secondary font-mono italic">
+          Note: The Garden is more tightly curated than The Castle. If you wish to stay past October 6th, you must apply separately.
+        </p>
       </div>
 
       {/* Options Grid */}
@@ -190,8 +196,7 @@ export function GardenDecompressionAddon({
                 </div>
 
                 <div className="text-xs text-secondary font-mono italic">
-                  Note: The Garden decompression is a separate booking from The Castle. 
-                  You'll receive separate confirmation and check-in instructions.
+                  Note: The Garden decompression is a separate experience from The Castle.
                 </div>
               </div>
             </motion.div>
