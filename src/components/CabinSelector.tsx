@@ -338,13 +338,35 @@ export function CabinSelector({
       return accommodation.bathroom_type;
     }
     
-    // Check description for 'bath' keyword - if present, it's private
+    // Check description for specific bathroom indicators
     const desc = accommodation.description?.toLowerCase() || '';
+    
+    // Check for shared bathroom indicators first (more specific)
+    if (desc.includes('shared bath') || desc.includes('shared facilities') || desc.includes('communal bath')) {
+      return 'shared';
+    }
+    
+    // Check for private bathroom indicators
+    if (desc.includes('private bath') || desc.includes('ensuite') || desc.includes('en-suite') || 
+        desc.includes('own bath') || desc.includes('bath on')) {
+      return 'private';
+    }
+    
+    // If just mentions 'bath' without qualifier, assume private
     if (desc.includes('bath')) {
       return 'private';
     }
     
-    // If no 'bath' mentioned in description, it's shared
+    // Default based on accommodation type patterns
+    const title = accommodation.title.toLowerCase();
+    if (title.includes('micro cabin') || title.includes('attic') || title.includes('dovecote')) {
+      return 'private';
+    }
+    if (title.includes('dorm') || title.includes('bell tent') || title.includes('tipi') || title.includes('own tent') || title.includes('van')) {
+      return 'shared';
+    }
+    
+    // Default fallback
     return 'shared';
   };
 
