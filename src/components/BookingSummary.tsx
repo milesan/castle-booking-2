@@ -479,7 +479,7 @@ export function BookingSummary({
           // NEW: Store accommodation price after seasonal/duration but before discount codes
           accommodationPriceAfterSeasonalDuration: parseFloat(accommodationAfterSeasonalDuration.toFixed(2)),
           // NEW: Store subtotal after discount code but before credits
-          subtotalAfterDiscountCode: parseFloat(subtotalAfterDiscountCode.toFixed(2)),
+          subtotalAfterDiscountCode: parseFloat(pricing.totalAmount.toFixed(2)),
           // FIXED: Store exact discount code amount for payment breakdown
           discountCodeAmount: parseFloat(exactDiscountCodeAmount.toFixed(2)),
           paymentRowId: paymentRowIdToUse,
@@ -1350,23 +1350,18 @@ Please manually create the booking for this user or process a refund.`;
               <div className="bg-transparent"> {/* Removed mt-6 */}
                 {/* Total Donated - Shows value being donated to the garden */}
                 <div className="pt-4 mt-4">
+                  {/* Total */}
                   <div className="flex font-mono justify-between items-baseline">
                     <span className="uppercase text-primary font-display text-2xl">Total</span>
-                    {/* Show original price if discount applied */}
-                    {false ? (
-                        <div className="text-right">
-                            <span className="text-sm line-through text-secondary mr-2">
-                                {formatPriceDisplay(pricing.subtotal)}
-                            </span>
-                            <span className="text-2xl font-display text-primary">
-                                {formatPriceDisplay(pricing.totalAmount)}
-                            </span>
-                        </div>
-                    ) : (
-                        <span className="text-2xl font-display text-primary">
-                            {formatPriceDisplay(pricing.totalAmount)}
-                        </span>
-                    )}
+                    <div className="text-right">
+                      <span className="text-2xl font-display text-primary">
+                        {formatPriceDisplay(pricing.totalAmount)}
+                      </span>
+                      {/* BTC/ETH info right under the total */}
+                      <div className="text-xs text-secondary mt-1">
+                        BTC & ETH accepted
+                      </div>
+                    </div>
                   </div>
                 </div>
 
