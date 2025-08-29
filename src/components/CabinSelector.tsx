@@ -693,14 +693,19 @@ export function CabinSelector({
                             }
                           }}
                           className={clsx(
-                            "flex-1 p-4 border-b border-border transition-all duration-200 hover:bg-surface-hover flex flex-col justify-center items-center min-h-[150px]",
+                            "flex-1 p-4 border-b border-border transition-all duration-200 flex flex-col justify-center items-center min-h-[150px]",
+                            // Add hover effect only when not sold out
+                            !tentAcc.sold_out && "hover:bg-surface-hover",
                             selectedAccommodationId === tentAcc.id && "bg-[color-mix(in_srgb,_var(--color-bg-surface)_95%,_var(--color-accent-primary)_5%)] shadow-lg",
-                            (tentAcc.sold_out || (!testMode && (!selectedWeeks.length || isDisabled))) && "opacity-50 cursor-not-allowed"
+                            // Enhanced sold out styling
+                            tentAcc.sold_out && "opacity-50 cursor-not-allowed grayscale saturate-0 pointer-events-none",
+                            // Regular disabled state
+                            !tentAcc.sold_out && (!testMode && (!selectedWeeks.length || isDisabled)) && "opacity-50 cursor-not-allowed"
                           )}
                         >
                           <h3 className="text-lg font-medium text-primary font-lettra-bold uppercase mb-2">YOUR OWN TENT</h3>
                           {tentAcc.sold_out ? (
-                            <span className="text-orange-600 text-xl font-bold font-mono">SOLD OUT</span>
+                            <span className="text-red-600 text-xl font-bold font-mono tracking-wider">SOLD OUT</span>
                           ) : (
                             <span className="text-accent-primary text-xl font-lettra-bold font-mono">Free</span>
                           )}
@@ -717,14 +722,19 @@ export function CabinSelector({
                             }
                           }}
                           className={clsx(
-                            "flex-1 p-4 transition-all duration-200 hover:bg-surface-hover flex flex-col justify-center items-center min-h-[150px]",
+                            "flex-1 p-4 transition-all duration-200 flex flex-col justify-center items-center min-h-[150px]",
+                            // Add hover effect only when not sold out
+                            !vanAcc.sold_out && "hover:bg-surface-hover",
                             selectedAccommodationId === vanAcc.id && "bg-[color-mix(in_srgb,_var(--color-bg-surface)_95%,_var(--color-accent-primary)_5%)] shadow-lg",
-                            (vanAcc.sold_out || (!testMode && (!selectedWeeks.length || isDisabled))) && "opacity-50 cursor-not-allowed"
+                            // Enhanced sold out styling
+                            vanAcc.sold_out && "opacity-50 cursor-not-allowed grayscale saturate-0 pointer-events-none",
+                            // Regular disabled state
+                            !vanAcc.sold_out && (!testMode && (!selectedWeeks.length || isDisabled)) && "opacity-50 cursor-not-allowed"
                           )}
                         >
                           <h3 className="text-lg font-medium text-primary font-lettra-bold uppercase mb-2">YOUR OWN VAN</h3>
                           {vanAcc.sold_out ? (
-                            <span className="text-orange-600 text-xl font-bold font-mono">SOLD OUT</span>
+                            <span className="text-red-600 text-xl font-bold font-mono tracking-wider">SOLD OUT</span>
                           ) : (
                             <span className="text-accent-primary text-xl font-lettra-bold font-mono">Free</span>
                           )}
@@ -804,10 +814,12 @@ export function CabinSelector({
                     isSelected 
                       ? "shadow-lg bg-[color-mix(in_srgb,_var(--color-bg-surface)_95%,_var(--color-accent-primary)_5%)]" 
                       : "bg-surface", // Use the renamed class
-                    // Sold out state
-                    acc.sold_out && "opacity-60",
+                    // Sold out state - enhanced styling
+                    acc.sold_out && "opacity-50 grayscale saturate-0",
                     // Pointer state:
-                    (testMode || (finalCanSelect && !isDisabled)) && !acc.sold_out && 'cursor-pointer'
+                    (testMode || (finalCanSelect && !isDisabled)) && !acc.sold_out && 'cursor-pointer',
+                    // Disable hover effects for sold out items
+                    acc.sold_out && 'pointer-events-none'
                   )}
                   onClick={(e) => {
                     // Check if click is on interactive elements that should not trigger selection
@@ -834,7 +846,7 @@ export function CabinSelector({
                 >
                   {/* Use the StatusOverlay helper component */}
                   <StatusOverlay isVisible={acc.sold_out} zIndex={5}>
-                    <span className="text-orange-600 font-bold">SOLD OUT</span>
+                    <span className="text-red-600 font-bold text-lg tracking-wider">SOLD OUT</span>
                   </StatusOverlay>
                   <StatusOverlay isVisible={!testMode && isDisabled && !acc.sold_out} zIndex={4}>
                     Select dates first
