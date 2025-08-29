@@ -26,16 +26,39 @@ class BookingService {
   async getAccommodations() {
     console.log('[BookingService] Fetching accommodations with images');
     
-    // Fetch accommodations
-    const { data: accommodationsData, error: accommodationsError } = await supabase
-      .from('accommodations')
-      .select('*')
-      .order('display_order', { ascending: true });
-
-    if (accommodationsError) {
-      console.error('[BookingService] Error fetching accommodations:', accommodationsError);
-      throw accommodationsError;
+    // Fetch accommodations with fallback
+    let accommodationsData = null;
+    try {
+      const result = await supabase
+        .from('accommodations')
+        .select('*')
+        .order('display_order', { ascending: true });
+      
+      if (result.error) {
+        console.error('[BookingService] Error fetching accommodations:', result.error);
+        console.log('[BookingService] Attempting fallback query without ordering...');
+        
+        // Fallback: try without ordering
+        const fallbackResult = await supabase
+          .from('accommodations')
+          .select('*');
+          
+        if (fallbackResult.error) {
+          console.error('[BookingService] Fallback query also failed:', fallbackResult.error);
+          throw fallbackResult.error;
+        }
+        
+        accommodationsData = fallbackResult.data;
+        console.log('[BookingService] Fallback query succeeded');
+      } else {
+        accommodationsData = result.data;
+      }
+    } catch (err) {
+      console.error('[BookingService] Critical error:', err);
+      throw err;
     }
+
+    console.log('[BookingService] Final accommodations count:', accommodationsData?.length || 0);
 
     // Fetch all images for all accommodations
     const { data: imagesData, error: imagesError } = await supabase
