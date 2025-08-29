@@ -339,28 +339,21 @@ export function CabinSelector({
       return accommodation.bathroom_type;
     }
     
-    // Check description for specific bathroom indicators
-    const desc = accommodation.description || '';
+    // Check description and additional_info for bathroom indicators
+    const desc = (accommodation.description || '') + ' ' + (accommodation.additional_info || '');
+    const lowerDesc = desc.toLowerCase();
     
-    // Check for shared bathroom indicators first (more specific)
-    // Using regex with word boundaries to avoid false matches
-    if (/\bshared\s+(bath|bathroom)/i.test(desc) || 
-        /\bshared\s+facilities/i.test(desc) || 
-        /\bcommunal\s+(bath|bathroom)/i.test(desc)) {
+    // Simple rule: if it contains just 'bath' (not preceded by other words like 'shared'), it's private
+    // If it contains 'shared bath', 'communal bath', etc., it's shared
+    if (lowerDesc.includes('shared bath') || 
+        lowerDesc.includes('communal bath') || 
+        lowerDesc.includes('shared facilities') ||
+        lowerDesc.includes('shared bathroom')) {
       return 'shared';
     }
     
-    // Check for private bathroom indicators
-    if (/\bprivate\s+(bath|bathroom)/i.test(desc) || 
-        /\bensuite\b/i.test(desc) || 
-        /\ben-suite\b/i.test(desc) || 
-        /\bown\s+(bath|bathroom)/i.test(desc)) {
-      return 'private';
-    }
-    
-    // Check if mentions 'bath' or 'bathroom' WITHOUT being preceded by 'shared'
-    // This catches cases like "bath" or "bathroom" that are private
-    if (/\bbath(room)?\b/i.test(desc) && !/\bshared\s+(bath|bathroom)/i.test(desc)) {
+    // If it just mentions 'bath' or 'bathroom' (including 'private bath'), it's private
+    if (lowerDesc.includes('bath')) {
       return 'private';
     }
     
