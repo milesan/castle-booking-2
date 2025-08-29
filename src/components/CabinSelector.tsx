@@ -336,37 +336,50 @@ export function CabinSelector({
   };
 
   // Helper function to determine bathroom type from description or bathroom_type field
-  const getBathroomType = (accommodation: ExtendedAccommodation) => {
-    // First check the bathroom_type field if it exists and is not 'none'
-    if (accommodation.bathroom_type && accommodation.bathroom_type !== 'none') {
-      return accommodation.bathroom_type;
+  const getBathroomType = (accommodation: ExtendedAccommodation): 'private' | 'shared' => {
+    // First check the bathroom_type field if it exists and is valid
+    if (accommodation.bathroom_type === 'private') {
+      return 'private';
     }
-    
-    // Check description and additional_info for bathroom indicators
-    const desc = (accommodation.description || '') + ' ' + (accommodation.additional_info || '');
-    const lowerDesc = desc.toLowerCase();
-    
-    // Rule: 'shared bath' = shared, 'private bath' = private, just 'bath' = private, nothing = shared
-    if (lowerDesc.includes('shared bath') || 
-        lowerDesc.includes('communal bath') || 
-        lowerDesc.includes('shared facilities') ||
-        lowerDesc.includes('shared bathroom')) {
+    if (accommodation.bathroom_type === 'shared') {
       return 'shared';
     }
     
-    if (lowerDesc.includes('private bath') || 
-        lowerDesc.includes('private bathroom') ||
-        lowerDesc.includes('ensuite') || 
-        lowerDesc.includes('en-suite')) {
+    // Check description for specific bathroom indicators
+    const desc = accommodation.description || '';
+    const additionalInfo = accommodation.additional_info || '';
+    const fullText = (desc + ' ' + additionalInfo).toLowerCase();
+    
+    // Check for shared bathroom indicators first (more specific)
+    if (/\bshared\s+(bath|bathroom)/i.test(fullText) || 
+        /\bshared\s+facilities/i.test(fullText) || 
+        /\bcommunal\s+(bath|bathroom)/i.test(fullText)) {
+      return 'shared';
+    }
+    
+    // Check for private bathroom indicators
+    if (/\bprivate\s+(bath|bathroom)/i.test(fullText) || 
+        /\bensuite\b/i.test(fullText) || 
+        /\ben-suite\b/i.test(fullText) || 
+        /\bown\s+(bath|bathroom)/i.test(fullText)) {
       return 'private';
     }
     
-    // If it just says 'bath' or 'bathroom' (without shared/private qualifiers), it's private
-    if (lowerDesc.includes('bath')) {
+    // Check if mentions 'bath' or 'bathroom' WITHOUT being preceded by 'shared'
+    if (/\bbath(room)?\b/i.test(fullText) && !/\bshared\s+(bath|bathroom)/i.test(fullText)) {
       return 'private';
     }
     
-    // If no bathroom mention at all, default to shared
+    // Default based on accommodation type patterns
+    const title = accommodation.title.toLowerCase();
+    if (title.includes('micro cabin') || title.includes('attic') || title.includes('dovecote')) {
+      return 'private';
+    }
+    if (title.includes('dorm') || title.includes('bell tent') || title.includes('tipi') || title.includes('own tent') || title.includes('van')) {
+      return 'shared';
+    }
+    
+    // Default fallback - ensure we ALWAYS return either 'private' or 'shared'
     return 'shared';
   };
 
