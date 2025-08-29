@@ -23,6 +23,7 @@ interface Accommodation {
   has_wifi: boolean;
   has_electricity: boolean;
   is_unlimited: boolean;
+  sold_out?: boolean;
   additional_info: string;
   property_location: string | null; // Main property location
   property_section: string | null; // Sub-section (e.g., floor for Renaissance)
@@ -281,6 +282,7 @@ export function Accommodations() {
       capacity: 1, // Add default capacity
       has_wifi: false,
       has_electricity: false,
+      sold_out: false,
       additional_info: '',
       property_location: null,
       property_section: null
@@ -637,6 +639,11 @@ export function Accommodations() {
     // has_electricity (boolean)
     if (!originalAccommodation || currentEditData.has_electricity !== originalAccommodation.has_electricity) {
         dataToSave.has_electricity = currentEditData.has_electricity;
+    }
+
+    // sold_out (boolean)
+    if (!originalAccommodation || currentEditData.sold_out !== originalAccommodation.sold_out) {
+        dataToSave.sold_out = currentEditData.sold_out;
     }
 
     // property_location (enum string or null)
@@ -1375,6 +1382,16 @@ export function Accommodations() {
                     />
                     <span>Has Electricity</span>
                   </label>
+                  <label className={`${checkboxLabelClassName} text-orange-500`}>
+                    <input 
+                      type="checkbox" 
+                      checked={!!newAccommodationData.sold_out} 
+                      onChange={(e) => handleNewAccommodationInputChange(e, 'sold_out')} 
+                      disabled={createLoading} 
+                      className={checkboxInputClassName}
+                    />
+                    <span className="font-semibold">Sold Out</span>
+                  </label>
                 </div>
               </div>
             )}
@@ -1727,6 +1744,10 @@ export function Accommodations() {
                             <input type="checkbox" checked={!!currentEditData.has_electricity} onChange={(e) => handleInputChange(e, 'has_electricity')} disabled={editLoading} className={checkboxInputClassName}/>
                             <span>Has Electricity</span>
                          </label>
+                         <label className={`${checkboxLabelClassName} text-orange-500`}>
+                            <input type="checkbox" checked={!!currentEditData.sold_out} onChange={(e) => handleInputChange(e, 'sold_out')} disabled={editLoading} className={checkboxInputClassName}/>
+                            <span className="font-semibold">Sold Out</span>
+                         </label>
                     </div>
                   </>
                 ) : (
@@ -1777,10 +1798,11 @@ export function Accommodations() {
                         <span className='text-xs ml-1'>({ALLOWED_PROPERTY_SECTIONS.find(sec => sec.value === accommodation.property_section)?.label})</span>
                       )}
                     </p>
-                    <div className="flex gap-2 pt-1"> 
+                    <div className="flex gap-2 pt-1 flex-wrap"> 
                       {accommodation.has_wifi && <span className="inline-flex items-center gap-1 bg-[var(--color-bg-success-subtle)] text-[var(--color-text-success)] px-2 py-0.5 rounded-sm text-xs"><Wifi size={12}/> WiFi</span>}
                       {accommodation.has_electricity && <span className="inline-flex items-center gap-1 bg-[var(--color-bg-success-subtle)] text-[var(--color-text-success)] px-2 py-0.5 rounded-sm text-xs"><Zap size={12}/> Electricity</span>}
-                      {!accommodation.has_wifi && !accommodation.has_electricity && <span className='text-xs italic'>No listed features.</span>}
+                      {accommodation.sold_out && <span className="inline-flex items-center gap-1 bg-orange-100 text-orange-700 px-2 py-0.5 rounded-sm text-xs font-semibold">SOLD OUT</span>}
+                      {!accommodation.has_wifi && !accommodation.has_electricity && !accommodation.sold_out && <span className='text-xs italic'>No listed features.</span>}
                     </div>
                   </>
                 )}

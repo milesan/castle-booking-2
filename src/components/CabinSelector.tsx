@@ -35,6 +35,7 @@ interface ExtendedAccommodation extends Accommodation {
   property_location?: string | null;
   property_section?: string | null;
   additional_info?: string | null;
+  sold_out?: boolean;
 }
 
 interface Props {
@@ -625,6 +626,7 @@ export function CabinSelector({
                       {tentAcc && (
                         <button
                           onClick={() => {
+                            if (tentAcc.sold_out) return;
                             if (testMode || (selectedWeeks.length > 0 && !isDisabled)) {
                               handleSelectAccommodation(tentAcc.id);
                             }
@@ -632,11 +634,15 @@ export function CabinSelector({
                           className={clsx(
                             "flex-1 p-4 border-b border-border transition-all duration-200 hover:bg-surface-hover flex flex-col justify-center items-center min-h-[150px]",
                             selectedAccommodationId === tentAcc.id && "bg-[color-mix(in_srgb,_var(--color-bg-surface)_95%,_var(--color-accent-primary)_5%)] shadow-lg",
-                            (!testMode && (!selectedWeeks.length || isDisabled)) && "opacity-50 cursor-not-allowed"
+                            (tentAcc.sold_out || (!testMode && (!selectedWeeks.length || isDisabled))) && "opacity-50 cursor-not-allowed"
                           )}
                         >
                           <h3 className="text-lg font-medium text-primary font-lettra-bold uppercase mb-2">YOUR OWN TENT</h3>
-                          <span className="text-accent-primary text-xl font-lettra-bold font-mono">Free</span>
+                          {tentAcc.sold_out ? (
+                            <span className="text-orange-600 text-xl font-bold font-mono">SOLD OUT</span>
+                          ) : (
+                            <span className="text-accent-primary text-xl font-lettra-bold font-mono">Free</span>
+                          )}
                         </button>
                       )}
                       
@@ -644,6 +650,7 @@ export function CabinSelector({
                       {vanAcc && (
                         <button
                           onClick={() => {
+                            if (vanAcc.sold_out) return;
                             if (testMode || (selectedWeeks.length > 0 && !isDisabled)) {
                               handleSelectAccommodation(vanAcc.id);
                             }
@@ -651,11 +658,15 @@ export function CabinSelector({
                           className={clsx(
                             "flex-1 p-4 transition-all duration-200 hover:bg-surface-hover flex flex-col justify-center items-center min-h-[150px]",
                             selectedAccommodationId === vanAcc.id && "bg-[color-mix(in_srgb,_var(--color-bg-surface)_95%,_var(--color-accent-primary)_5%)] shadow-lg",
-                            (!testMode && (!selectedWeeks.length || isDisabled)) && "opacity-50 cursor-not-allowed"
+                            (vanAcc.sold_out || (!testMode && (!selectedWeeks.length || isDisabled))) && "opacity-50 cursor-not-allowed"
                           )}
                         >
                           <h3 className="text-lg font-medium text-primary font-lettra-bold uppercase mb-2">YOUR OWN VAN</h3>
-                          <span className="text-accent-primary text-xl font-lettra-bold font-mono">Free</span>
+                          {vanAcc.sold_out ? (
+                            <span className="text-orange-600 text-xl font-bold font-mono">SOLD OUT</span>
+                          ) : (
+                            <span className="text-accent-primary text-xl font-lettra-bold font-mono">Free</span>
+                          )}
                         </button>
                       )}
                     </div>
@@ -732,8 +743,10 @@ export function CabinSelector({
                     isSelected 
                       ? "shadow-lg bg-[color-mix(in_srgb,_var(--color-bg-surface)_95%,_var(--color-accent-primary)_5%)]" 
                       : "bg-surface", // Use the renamed class
+                    // Sold out state
+                    acc.sold_out && "opacity-60",
                     // Pointer state:
-                    (testMode || (finalCanSelect && !isDisabled)) && 'cursor-pointer'
+                    (testMode || (finalCanSelect && !isDisabled)) && !acc.sold_out && 'cursor-pointer'
                   )}
                   onClick={(e) => {
                     // Check if click is on interactive elements that should not trigger selection
@@ -741,6 +754,11 @@ export function CabinSelector({
                     
                     // Don't select if clicking on buttons, links, or other interactive elements
                     if (target.closest('button') || target.closest('a')) {
+                      return;
+                    }
+                    
+                    // Don't allow selection if sold out
+                    if (acc.sold_out) {
                       return;
                     }
                     
@@ -754,14 +772,17 @@ export function CabinSelector({
                   }} 
                 >
                   {/* Use the StatusOverlay helper component */}
-                  <StatusOverlay isVisible={!testMode && isDisabled} zIndex={4}>
+                  <StatusOverlay isVisible={acc.sold_out} zIndex={5}>
+                    <span className="text-orange-600 font-bold">SOLD OUT</span>
+                  </StatusOverlay>
+                  <StatusOverlay isVisible={!testMode && isDisabled && !acc.sold_out} zIndex={4}>
                     Select dates first
                   </StatusOverlay>
-                  <StatusOverlay isVisible={!testMode && !isDisabled && isFullyBooked} zIndex={3}>
+                  <StatusOverlay isVisible={!testMode && !isDisabled && isFullyBooked && !acc.sold_out} zIndex={3}>
                     {pendingBookings[acc.id] && pendingBookings[acc.id].count > 0 ? 'Being booked' : 'Booked out'}
                   </StatusOverlay>
                   <StatusOverlay 
-                    isVisible={!testMode && !isDisabled && isOutOfSeason && !isFullyBooked} 
+                    isVisible={!testMode && !isDisabled && isOutOfSeason && !isFullyBooked && !acc.sold_out} 
                     zIndex={2}
                     className="border-amber-500 dark:border-amber-600" // Pass specific class for amber border
                   >
