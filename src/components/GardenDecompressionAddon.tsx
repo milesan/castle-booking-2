@@ -43,7 +43,7 @@ export function GardenDecompressionAddon({
       },
       {
         id: 'full-week',
-        name: 'Full Week Decompression',
+        name: 'Full Decompression',
         startDate: sept26,
         endDate: oct6,
         price: 400,
