@@ -38,7 +38,7 @@ export function usePricing({
     const totalAccommodationCost = parseFloat((weeklyAccPrice * displayWeeks).toFixed(2));
 
     // === Calculate Food & Facilities Cost ===
-    const baseFoodCost = calculateBaseFoodCost(totalNights);
+    const { totalBaseFoodCost: baseFoodCost } = calculateBaseFoodCost(totalNights, displayWeeks, foodContribution);
     
     // Apply duration discount to food if staying 3+ weeks
     const rawDurationDiscountPercent = getDurationDiscount(completeWeeks);
