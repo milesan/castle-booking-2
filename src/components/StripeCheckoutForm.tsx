@@ -37,6 +37,22 @@ interface Props {
 }
 
 export function StripeCheckoutForm({ total, authToken, description, userEmail, onSuccess, onClose, bookingMetadata, paymentRowId }: Props) {
+  // Create dynamic mailto URL with room information
+  const createCryptoMailtoUrl = () => {
+    const subject = encodeURIComponent("Bitcoin/Ethereum Payment Request");
+    const body = encodeURIComponent(`Hi,
+
+I'd like to pay with cryptocurrency for my booking:
+
+${description}
+Total: €${total}
+
+Please provide Bitcoin or Ethereum payment details.
+
+Thank you!`);
+    
+    return `mailto:concierge@castle.community?subject=${subject}&body=${body}`;
+  };
   useEffect(() => {
     console.log('[StripeCheckout] Current environment:', import.meta.env.MODE);
   }, []);
@@ -255,7 +271,7 @@ export function StripeCheckoutForm({ total, authToken, description, userEmail, o
             textAlign: 'center'
           }}>
             <a 
-              href="mailto:concierge@castle.community?subject=Bitcoin%2FEthereum%20Payment%20Inquiry&body=Hi%2C%0A%0AI%27d%20like%20to%20pay%20with%20cryptocurrency%20for%20my%20booking.%20Please%20provide%20payment%20details.%0A%0AThank%20you"
+              href={createCryptoMailtoUrl()}
               style={{
                 color: '#666',
                 fontSize: '13px',
