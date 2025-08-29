@@ -200,12 +200,18 @@ async function loadCredits() {
 
     const { data, error } = await supabase
       .from('profiles')
-      .select('credits')
+      .select('*')
       .eq('id', user.id)
       .single();
 
     if (error) {
       console.error('[CreditsGlobal] Error loading credits:', error);
+      // If profiles table doesn't have credits column, default to 0
+      if (error.code === '42703') {
+        console.log('[CreditsGlobal] Credits column not found, defaulting to 0');
+        updateGlobalState({ credits: 0, loading: false, error: null });
+        return;
+      }
       updateGlobalState({ error, loading: false });
       return;
     }
