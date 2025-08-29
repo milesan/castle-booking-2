@@ -29,7 +29,12 @@ export function usePricing({
     const displayWeeks = selectedWeeks.length > 0 ? Math.round(exactWeeksDecimal * 10) / 10 : 0;
     
     // === Calculate Accommodation Cost using discounted weekly price ===
-    const weeklyAccPrice = calculatedWeeklyAccommodationPrice ?? 0;
+    // Ensure we have a valid number, default to 0 if null/undefined/NaN
+    const weeklyAccPrice = (calculatedWeeklyAccommodationPrice !== null && 
+                           calculatedWeeklyAccommodationPrice !== undefined && 
+                           !isNaN(calculatedWeeklyAccommodationPrice)) 
+                          ? calculatedWeeklyAccommodationPrice 
+                          : 0;
     const totalAccommodationCost = parseFloat((weeklyAccPrice * displayWeeks).toFixed(2));
 
     // === Calculate Food & Facilities Cost ===
