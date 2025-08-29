@@ -5,7 +5,7 @@
 
 [build.environment]
 
-# Production (main branch) - in.thegarden.pt
+# Production (main branch) - rooms.castle.community
 [context.production]
   [context.production.environment]
     NODE_ENV = "production"
