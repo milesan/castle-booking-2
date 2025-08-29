@@ -406,12 +406,12 @@ export function AnimatedTerminal({ onComplete }: Props) {
         </AnimatePresence>
       </div>
       
-      {/* Decompression pricing at the very bottom */}
+      {/* Decompression pricing fixed at the very bottom of viewport */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 2, duration: 1 }}
-        className="absolute bottom-4 left-1/2 transform -translate-x-1/2 text-center z-10"
+        className="fixed bottom-0 left-1/2 transform -translate-x-1/2 text-center z-50 pb-4"
         style={{ color: 'var(--castle-text-accent)', fontFamily: 'var(--castle-font-primary)' }}
       >
         <div className="space-y-1 text-xs sm:text-sm">
