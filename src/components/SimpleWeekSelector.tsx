@@ -13,23 +13,6 @@ export function SimpleWeekSelector({ weeks, selectedWeeks, onWeekSelect }: Simpl
   
   const isSelected = selectedWeeks.some(w => w.id === week.id);
   
-  return (
-    <div className="p-8 castle-animate-fade">
-      <div className="max-w-md mx-auto">
-        <div
-          className="castle-card w-full p-6 transition-all relative overflow-hidden castle-animate-glow transform scale-105"
-          style={{
-            background: 'linear-gradient(135deg, var(--castle-bg-tertiary), var(--castle-accent-gold-dark))',
-            border: '2px solid var(--castle-accent-gold)',
-            boxShadow: 'var(--castle-shadow-glow)',
-            cursor: 'default'
-          }}
-        >
-          <div className="mt-4 font-semibold" style={{ color: 'var(--castle-accent-gold)' }}>
-            ✓ Selected
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+  // Component functionality preserved but visual card removed
+  return null;
 }
