@@ -1396,6 +1396,25 @@ Please manually create the booking for this user or process a refund.`;
                   onConfirm={handleConfirmClick}
                   onAdminConfirm={handleAdminConfirm}
                 />
+
+                {/* Crypto Payment Option - only show when payment is required */}
+                {finalAmountAfterCredits > 0 && (
+                  <div className="mt-6 p-4 bg-surface/30 rounded-sm border border-border/50">
+                    <div className="text-center">
+                      <p className="text-xs text-secondary mb-2 font-mono">
+                        BTC & ETH also accepted
+                      </p>
+                      <p className="text-xs text-secondary font-mono">
+                        Contact: <a 
+                          href="mailto:concierge@castle.community" 
+                          className="text-accent-primary hover:text-accent-secondary underline"
+                        >
+                          concierge@castle.community
+                        </a>
+                      </p>
+                    </div>
+                  </div>
+                )}
               </div> {/* End of Wrapper (now transparent) */}
             </div>
           )}
