@@ -358,8 +358,9 @@ export function CabinSelector({
       return 'private';
     }
     
-    // If just mentions 'bath' or 'bathroom' as a whole word (not part of another word), assume private
-    if (/\bbath(room)?\b/i.test(desc)) {
+    // Check if mentions 'bath' or 'bathroom' WITHOUT being preceded by 'shared'
+    // This catches cases like "bath" or "bathroom" that are private
+    if (/\bbath(room)?\b/i.test(desc) && !/\bshared\s+(bath|bathroom)/i.test(desc)) {
       return 'private';
     }
     
