@@ -1359,7 +1359,12 @@ Please manually create the booking for this user or process a refund.`;
                       </span>
                       {/* BTC/ETH info right under the total */}
                       <div className="text-xs text-secondary mt-1">
-                        BTC & ETH accepted
+                        <a 
+                          href="mailto:concierge@castle.community?subject=I%20want%20to%20secure%20a%20room%20with%20crypto"
+                          className="hover:text-primary transition-colors"
+                        >
+                          BTC & ETH accepted
+                        </a>
                       </div>
                     </div>
                   </div>
@@ -1397,7 +1402,12 @@ Please manually create the booking for this user or process a refund.`;
                   <div className="mt-6 p-4 bg-surface/30 rounded-sm border border-border/50">
                     <div className="text-center">
                       <p className="text-xs text-secondary mb-2 font-mono">
-                        BTC & ETH also accepted
+                        <a 
+                          href="mailto:concierge@castle.community?subject=I%20want%20to%20secure%20a%20room%20with%20crypto"
+                          className="hover:text-primary transition-colors"
+                        >
+                          BTC & ETH also accepted
+                        </a>
                       </p>
                       <p className="text-xs text-secondary font-mono">
                         Contact: <a 
