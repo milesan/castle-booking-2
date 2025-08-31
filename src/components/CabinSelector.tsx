@@ -740,7 +740,7 @@ export function CabinSelector({
                             !tentAcc.sold_out && "hover:bg-surface-hover",
                             selectedAccommodationId === tentAcc.id && "bg-[color-mix(in_srgb,_var(--color-bg-surface)_95%,_var(--color-accent-primary)_5%)] shadow-lg",
                             // Enhanced sold out styling
-                            tentAcc.sold_out && "opacity-75 cursor-not-allowed grayscale saturate-0 pointer-events-none",
+                            tentAcc.sold_out && "opacity-100 cursor-not-allowed pointer-events-none",
                             // Regular disabled state
                             !tentAcc.sold_out && (!testMode && (!selectedWeeks.length || isDisabled)) && "opacity-50 cursor-not-allowed"
                           )}
@@ -769,7 +769,7 @@ export function CabinSelector({
                             !vanAcc.sold_out && "hover:bg-surface-hover",
                             selectedAccommodationId === vanAcc.id && "bg-[color-mix(in_srgb,_var(--color-bg-surface)_95%,_var(--color-accent-primary)_5%)] shadow-lg",
                             // Enhanced sold out styling
-                            vanAcc.sold_out && "opacity-75 cursor-not-allowed grayscale saturate-0 pointer-events-none",
+                            vanAcc.sold_out && "opacity-100 cursor-not-allowed pointer-events-none",
                             // Regular disabled state
                             !vanAcc.sold_out && (!testMode && (!selectedWeeks.length || isDisabled)) && "opacity-50 cursor-not-allowed"
                           )}
@@ -857,7 +857,7 @@ export function CabinSelector({
                       ? "shadow-lg bg-[color-mix(in_srgb,_var(--color-bg-surface)_95%,_var(--color-accent-primary)_5%)]" 
                       : "bg-surface", // Use the renamed class
                     // Sold out state - enhanced styling
-                    acc.sold_out && "opacity-75 grayscale saturate-0",
+                    acc.sold_out && "opacity-100",
                     // Pointer state:
                     (testMode || (finalCanSelect && !isDisabled)) && !acc.sold_out && 'cursor-pointer',
                     // Disable hover effects for sold out items
@@ -941,9 +941,9 @@ export function CabinSelector({
                     <div className={clsx(
                       "relative h-56 overflow-hidden", // REMOVED bg-surface
                       // Apply blur and corresponding opacity/grayscale conditionally
-                      !testMode && isDisabled && "blur-sm opacity-20 grayscale-[0.5]",
-                      !testMode && (!isDisabled && isFullyBooked) && "blur-sm opacity-20 grayscale-[0.7]",
-                      !testMode && (!isDisabled && isOutOfSeason && !isFullyBooked) && "blur-sm opacity-40 grayscale-[0.3]"
+                      !testMode && isDisabled && "opacity-50 grayscale-[0.5]",
+                      !testMode && (!isDisabled && isFullyBooked) && "opacity-50 grayscale-[0.7]",
+                      !testMode && (!isDisabled && isOutOfSeason && !isFullyBooked) && "opacity-60 grayscale-[0.3]"
                     )}>
                       <ImageGallery accommodation={acc} />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent pointer-events-none"></div> {/* Increased gradient opacity from 40% to 60% */}
@@ -955,9 +955,9 @@ export function CabinSelector({
                     "p-3 flex-grow flex flex-col justify-between", // Base classes
                     // REMOVED background logic here - relies on parent motion.div now
                     // Apply blur and corresponding opacity/grayscale conditionally
-                    !testMode && isDisabled && "blur-sm opacity-20 grayscale-[0.5]",
-                    !testMode && (!isDisabled && isFullyBooked) && "blur-sm opacity-20 grayscale-[0.7]",
-                    !testMode && (!isDisabled && isOutOfSeason && !isFullyBooked) && "blur-sm opacity-40 grayscale-[0.3]"
+                    !testMode && isDisabled && "blur-[1px] opacity-50 grayscale-[0.5]",
+                    !testMode && (!isDisabled && isFullyBooked) && "blur-[1px] opacity-50 grayscale-[0.7]",
+                    !testMode && (!isDisabled && isOutOfSeason && !isFullyBooked) && "blur-[1px] opacity-60 grayscale-[0.3]"
                   )}>
                     <div>
                       {!isTentOrVan && (
