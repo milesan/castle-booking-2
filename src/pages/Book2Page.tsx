@@ -883,12 +883,12 @@ export function Book2Page() {
             </div> {/* == END: New wrapper div == */}
           </div> {/* Closing lg:col-span-2 div */}
 
-          {/* Right Column - Booking Summary (becomes a bottom column on mobile/tablet) */}
-          <div>
+          {/* Right Column - Booking Summary (becomes a top section on mobile) */}
+          <div className="order-first lg:order-last">
             {/* Re-add sticky, add max-height and overflow for independent scrolling on large screens */}
             <div className="lg:sticky lg:top-8 lg:max-h-[calc(100vh-4rem)] lg:overflow-y-auto">
               {/* This inner div now just handles the styling */}
-              <div className="rounded-sm shadow-sm p-3 xs:p-4 sm:p-6 mb-4 xs:mb-5 sm:mb-6">
+              <div className="rounded-sm shadow-sm p-3 xs:p-4 sm:p-6 mb-4 xs:mb-5 sm:mb-6" id="booking-summary">
                 {selectedWeeks.length > 0 ? (
                   <BookingSummary 
                     selectedWeeks={selectedWeeks}
@@ -951,6 +951,29 @@ export function Book2Page() {
         auctionEndDate={auctionEndDate}
         hasStarted={hasStarted}
       /> */}
+      
+      {/* Mobile Sticky Summary Bar */}
+      {selectedWeeks.length > 0 && selectedAccommodation && (
+        <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-surface border-t border-border p-3 z-40 shadow-lg">
+          <div className="flex items-center justify-between">
+            <div className="flex-1">
+              <div className="text-xs text-secondary mb-1">Total Price</div>
+              <div className="text-lg font-bold text-primary">
+                €{Math.round(seasonBreakdown?.finalPrice || 0)}
+              </div>
+            </div>
+            <button
+              onClick={() => {
+                const element = document.getElementById('booking-summary');
+                element?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              }}
+              className="bg-accent-primary hover:bg-accent-primary-hover text-white px-4 py-2 rounded-sm font-medium text-sm transition-colors"
+            >
+              View Details & Pay
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

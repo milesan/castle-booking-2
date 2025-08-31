@@ -458,15 +458,17 @@ export function CabinSelector({
       const getPriority = (acc: typeof a) => {
         const title = acc.title.toLowerCase();
         
-        // Priority 1: Own tent/van (first on site)
-        if (title.includes('own tent') || title.includes('your own tent')) return 1;
-        if (title.includes('own van') || title.includes('van parking') || title.includes('your own van')) return 2;
+        // Priority 1: Single Tipi (at the top)
+        if (title.includes('single tipi')) return 1;
         
-        // Priority 2: Le Dorm (new budget option)
-        if (title === 'le dorm') return 3;
+        // Priority 2: DIY camping (Own tent/van)
+        if (title.includes('own tent') || title.includes('your own tent')) return 2;
+        if (title.includes('own van') || title.includes('van parking') || title.includes('your own van')) return 3;
         
-        // Priority 3: Fixed price glamping (tipi and bell tent)
-        if (title.includes('single tipi')) return 4;
+        // Priority 3: Le Dorm (budget option)
+        if (title === 'le dorm') return 4;
+        
+        // Priority 4: Other glamping (bell tent)
         if (title.includes('bell tent')) return 5;
         
         // Priority 4: Other glamping options
