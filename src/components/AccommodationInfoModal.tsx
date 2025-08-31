@@ -40,13 +40,43 @@ const getCheckInOutInfo = (title: string, propertyLocation?: string | null) => {
     };
   }
   
-  // Gardens Glamping (Tipi, Bell Tent) - SECURE COMPOUND 2 MIN WALK
-  if (lowerTitle.includes('tipi') || lowerTitle.includes('bell tent')) {
+  // Castle Grounds & Ramparts Glamping - AVAILABLE BY 4PM
+  if (lowerTitle.includes('castle view') || lowerTitle.includes('near castle') || lowerTitle.includes('rampart')) {
     return {
-      checkIn: '8pm on 21st',
+      checkIn: '4pm on 21st',
       checkOut: '12pm on 26th',
-      notes: 'Secure, quiet compound 2 min walk from Chateau with 24-hour security. We will take your bags and put them directly in your accommodation when ready.',
-      type: 'Gardens Glamping'
+      notes: lowerTitle.includes('rampart') ? 'Ramparts view location. Available from 4pm.' : 'Castle grounds location. Available from 4pm.',
+      type: lowerTitle.includes('bell tent') ? 'Castle Grounds Bell Tent' : 'Ramparts View Tipi'
+    };
+  }
+  
+  // Valley Gardens Glamping & Single Tipi - AVAILABLE BY 9PM (AFTER OPENING CEREMONY)
+  if (lowerTitle.includes('single tipi') || (lowerTitle.includes('garden') && (lowerTitle.includes('tipi') || lowerTitle.includes('bell tent')))) {
+    return {
+      checkIn: '9pm on 21st',
+      checkOut: '12pm on 26th',
+      notes: 'Valley gardens location. Available from 9pm after the opening ceremony. We will take your bags and put them directly in your accommodation when ready.',
+      type: lowerTitle.includes('single tipi') ? 'Single Tipi (Valley Gardens)' : 'Valley Gardens Glamping'
+    };
+  }
+  
+  // Standard Bell Tent (if not castle/garden specific)
+  if (lowerTitle.includes('bell tent')) {
+    return {
+      checkIn: '4pm on 21st',
+      checkOut: '12pm on 26th',
+      notes: 'Available from 4pm.',
+      type: '4m Bell Tent'
+    };
+  }
+  
+  // Standard Tipi (if not already caught)
+  if (lowerTitle.includes('tipi')) {
+    return {
+      checkIn: '9pm on 21st',
+      checkOut: '12pm on 26th',
+      notes: 'Valley gardens location. Available from 9pm after the opening ceremony.',
+      type: 'Tipi'
     };
   }
   
