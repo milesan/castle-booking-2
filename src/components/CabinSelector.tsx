@@ -170,8 +170,8 @@ export function CabinSelector({
   const [showOnlyWithBathrooms, setShowOnlyWithBathrooms] = useState(false);
   const [showOnlySharedBathrooms, setShowOnlySharedBathrooms] = useState(false);
   
-  // State for price sorting
-  const [sortBy, setSortBy] = useState<'default' | 'price-low' | 'price-high'>('default');
+  // State for price sorting - default to cheapest first
+  const [sortBy, setSortBy] = useState<'default' | 'price-low' | 'price-high'>('price-low');
   
   // State for simple gallery
   const [galleryOpen, setGalleryOpen] = useState(false);

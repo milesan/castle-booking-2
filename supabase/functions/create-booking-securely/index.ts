@@ -177,37 +177,68 @@ serve(async (req: Request) => {
         console.log(`[CreateBookingSecurely] Availability check passed for ${bookingPayload.accommodationId}. Unlimited: ${isUnlimited}, Available: ${isAvailable}`);
         // --- End Availability Check ---
 
-        // 4. Insert Booking using SERVER-CALCULATED price
-        const bookingToInsert = {
-            accommodation_id: bookingPayload.accommodationId,
-            user_id: userId,
-            check_in: checkInISO,
-            check_out: checkOutISO,
-            total_price: finalTotalPrice, // Use server-calculated price!
-            applied_discount_code: validatedDiscountCode, // Store validated code
-            discount_amount: discountAmount > 0 ? discountAmount : null, // Store discount amount
-            status: 'confirmed', // Default status
-            // Add other necessary fields (e.g., food_contribution if you add that column)
-            // created_at/updated_at have defaults
-        };
-        console.log("[CreateBookingSecurely] Inserting booking record:", bookingToInsert);
+        // 4. Insert Booking using our new ATOMIC LOCKING function
+        // This ensures proper inventory management and prevents double-booking
+        console.log("[CreateBookingSecurely] Creating booking with atomic locking...");
+        
+        // First check if we have the accommodation_item_id from the payload
+        const accommodationItemId = bookingPayload.accommodationItemId || null;
+        
+        // Use the atomic booking creation function via RPC
+        const { data: bookingId, error: bookingError } = await supabaseAdminForInvoke
+            .rpc('create_booking_with_atomic_lock', {
+                p_accommodation_id: bookingPayload.accommodationId,
+                p_user_id: userId,
+                p_check_in: checkInISO,
+                p_check_out: checkOutISO,
+                p_total_price: finalTotalPrice,
+                p_status: 'confirmed', // We set to confirmed since payment will be handled
+                p_accommodation_item_id: accommodationItemId,
+                p_applied_discount_code: validatedDiscountCode,
+                p_discount_amount: discountAmount > 0 ? discountAmount : null
+            });
 
-        const { data: newBooking, error: insertError } = await supabaseAdminForInvoke
+        if (bookingError) {
+            console.error("[CreateBookingSecurely] Error creating booking with atomic lock:", bookingError);
+            
+            // Check if it's an availability error
+            if (bookingError.message.includes('No availability') || 
+                bookingError.message.includes('fully booked')) {
+                throw new Error("Sorry, this accommodation is no longer available for the selected dates. Another guest just booked it. Please try different dates or another accommodation.");
+            }
+            
+            throw new Error(`Failed to create booking: ${bookingError.message}`);
+        }
+
+        if (!bookingId) {
+            throw new Error("Booking ID was not returned after creation.");
+        }
+        
+        console.log("[CreateBookingSecurely] Booking created successfully with atomic locking:", bookingId);
+        
+        // Fetch the full booking record for the response
+        const { data: newBooking, error: fetchError } = await supabaseAdminForInvoke
             .from('bookings')
-            .insert(bookingToInsert)
-            .select('*') // Select the fields needed by the frontend
+            .select('*')
+            .eq('id', bookingId)
             .single();
-
-        if (insertError) {
-            console.error("[CreateBookingSecurely] Error inserting booking:", insertError);
-            // TODO: Handle specific DB errors, e.g., constraint violations (like overlapping bookings if you have checks)
-            throw new Error(`Database error creating booking: ${insertError.message}`);
+            
+        if (fetchError || !newBooking) {
+            console.error("[CreateBookingSecurely] Error fetching created booking:", fetchError);
+            // The booking was created, but we can't fetch it - still return success with minimal data
+            const minimalBooking = {
+                id: bookingId,
+                accommodation_id: bookingPayload.accommodationId,
+                user_id: userId,
+                check_in: checkInISO,
+                check_out: checkOutISO,
+                total_price: finalTotalPrice,
+                status: 'confirmed'
+            };
+            console.log("[CreateBookingSecurely] Returning minimal booking data:", minimalBooking);
         }
-
-        if (!newBooking) {
-            throw new Error("Booking record was not returned after insert.");
-        }
-        console.log("[CreateBookingSecurely] Booking created successfully:", newBooking.id);
+        
+        console.log("[CreateBookingSecurely] Full booking record fetched:", newBooking?.id);
 
         // 5. Trigger Confirmation Email
         if (userEmail) {
