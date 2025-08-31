@@ -28,9 +28,9 @@ export function usePricing({
     const displayWeeks = selectedWeeks.length > 0 ? Math.round(exactWeeksDecimal * 10) / 10 : 0;
     
     // === Calculate Accommodation Cost using raw base price only ===
-    // Use the raw base price without any discounts
+    // Use the raw base price exactly as shown - no multipliers or discounts
     const weeklyAccPrice = selectedAccommodation?.base_price || 0;
-    const totalAccommodationCost = parseFloat((weeklyAccPrice * displayWeeks).toFixed(2));
+    const totalAccommodationCost = weeklyAccPrice; // No multiplication, just the exact base price
 
     // No food cost - accommodation only
     const finalFoodCost = 0;
