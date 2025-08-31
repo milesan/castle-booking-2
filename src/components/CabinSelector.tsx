@@ -955,9 +955,9 @@ export function CabinSelector({
                     "p-3 flex-grow flex flex-col justify-between", // Base classes
                     // REMOVED background logic here - relies on parent motion.div now
                     // Apply blur and corresponding opacity/grayscale conditionally
-                    !testMode && isDisabled && "blur-sm opacity-20 grayscale-[0.5]",
-                    !testMode && (!isDisabled && isFullyBooked) && "blur-sm opacity-20 grayscale-[0.7]",
-                    !testMode && (!isDisabled && isOutOfSeason && !isFullyBooked) && "blur-sm opacity-40 grayscale-[0.3]"
+                    !testMode && isDisabled && "blur-[1px] opacity-50 grayscale-[0.5]",
+                    !testMode && (!isDisabled && isFullyBooked) && "blur-[1px] opacity-50 grayscale-[0.7]",
+                    !testMode && (!isDisabled && isOutOfSeason && !isFullyBooked) && "blur-[1px] opacity-60 grayscale-[0.3]"
                   )}>
                     <div>
                       {!isTentOrVan && (
