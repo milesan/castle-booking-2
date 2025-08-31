@@ -185,6 +185,8 @@ export function MyBookings() {
   const [enlargedImageUrl, setEnlargedImageUrl] = React.useState<string | null>(null);
   const [enlargedAccommodation, setEnlargedAccommodation] = React.useState<ExtendedAccommodation | null>(null);
   const [originalCheckOut, setOriginalCheckOut] = React.useState<Date | null>(null);
+  const [extendingBooking, setExtendingBooking] = React.useState<Booking | null>(null);
+  const [extensionWeeks, setExtensionWeeks] = React.useState<any[]>([]);
   
   // Masonry gallery state
   const [galleryOpen, setGalleryOpen] = React.useState(false);
@@ -216,6 +218,19 @@ export function MyBookings() {
 
   // Credits functionality for extensions - allows users to use their available credits
   // to reduce the amount they need to pay for their booking extension
+
+  // Derive checkIn and checkOut from the extending booking if available
+  const checkIn = extendingBooking 
+    ? (typeof extendingBooking.check_in === 'string' 
+        ? normalizeToUTCDate(extendingBooking.check_in) 
+        : extendingBooking.check_in)
+    : new Date();
+    
+  const checkOut = extendingBooking
+    ? (typeof extendingBooking.check_out === 'string' 
+        ? normalizeToUTCDate(extendingBooking.check_out) 
+        : extendingBooking.check_out)
+    : addMonths(new Date(), 1);
 
   const calendar = useCalendar({
     startDate: checkIn,
