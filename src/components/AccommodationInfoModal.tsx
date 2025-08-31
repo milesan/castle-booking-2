@@ -55,7 +55,7 @@ const getCheckInOutInfo = (title: string, propertyLocation?: string | null) => {
     return {
       checkIn: '9pm on 21st',
       checkOut: '11:30am on 26th',
-      notes: 'Valley gardens location. Available from 9pm after the opening ceremony. We will take your bags and put them directly in your accommodation when ready.',
+      notes: 'Valley Gardens location. Available from 9pm after the opening ceremony. We will take your bags and put them directly in your accommodation when ready.',
       type: lowerTitle.includes('single tipi') ? 'Single Tipi (Valley Gardens)' : 'Valley Gardens Glamping'
     };
   }
@@ -84,8 +84,8 @@ const getCheckInOutInfo = (title: string, propertyLocation?: string | null) => {
   if (lowerTitle.includes('own van') || lowerTitle.includes('van parking') || lowerTitle.includes('your own van')) {
     return {
       checkIn: '5pm on 21st',
-      checkOut: '12pm on 26th',
-      notes: 'Located in secure compound with 24-hour security, 2 min walk from Chateau.',
+      checkOut: '3pm on 26th',
+      notes: 'Valley Gardens location. Located in secure compound with 24-hour security, 2 min walk from Chateau.',
       type: 'Your Own Van'
     };
   }
@@ -94,8 +94,8 @@ const getCheckInOutInfo = (title: string, propertyLocation?: string | null) => {
   if (lowerTitle.includes('own tent') || lowerTitle.includes('your own tent')) {
     return {
       checkIn: '5pm on 21st',
-      checkOut: '12pm on 26th',
-      notes: 'Located in secure compound with 24-hour security, 2 min walk from Chateau.',
+      checkOut: '3pm on 26th',
+      notes: 'Valley Gardens location. Located in secure compound with 24-hour security, 2 min walk from Chateau.',
       type: 'Your Own Tent'
     };
   }
@@ -129,9 +129,9 @@ export function AccommodationInfoModal({ isOpen, onClose, title, propertyLocatio
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-[101] w-full max-w-md"
+            className="fixed inset-4 md:inset-auto md:left-1/2 md:top-1/2 md:-translate-x-1/2 md:-translate-y-1/2 z-[101] md:w-[90%] md:max-w-md max-h-[calc(100vh-2rem)] md:max-h-[90vh] overflow-y-auto"
           >
-            <div className="bg-surface border border-border rounded-sm shadow-2xl">
+            <div className="bg-surface border border-border rounded-sm shadow-2xl h-full md:h-auto flex flex-col">
               {/* Header */}
               <div className="flex items-center justify-between p-4 border-b border-border">
                 <h2 className="text-lg font-lettra-bold uppercase text-primary">
@@ -147,7 +147,7 @@ export function AccommodationInfoModal({ isOpen, onClose, title, propertyLocatio
               </div>
               
               {/* Content */}
-              <div className="p-4 space-y-4">
+              <div className="p-4 space-y-4 flex-1 overflow-y-auto">
                 {/* Check-in Time */}
                 <div className="flex items-start gap-3">
                   <Clock size={20} className="text-accent-primary mt-0.5" />
