@@ -54,7 +54,7 @@ const getCheckInOutInfo = (title: string, propertyLocation?: string | null) => {
   if (lowerTitle.includes('single tipi') || (lowerTitle.includes('garden') && (lowerTitle.includes('tipi') || lowerTitle.includes('bell tent')))) {
     return {
       checkIn: '9pm on 21st',
-      checkOut: '12pm on 26th',
+      checkOut: '11:30am on 26th',
       notes: 'Valley gardens location. Available from 9pm after the opening ceremony. We will take your bags and put them directly in your accommodation when ready.',
       type: lowerTitle.includes('single tipi') ? 'Single Tipi (Valley Gardens)' : 'Valley Gardens Glamping'
     };
@@ -74,7 +74,7 @@ const getCheckInOutInfo = (title: string, propertyLocation?: string | null) => {
   if (lowerTitle.includes('tipi')) {
     return {
       checkIn: '9pm on 21st',
-      checkOut: '12pm on 26th',
+      checkOut: '11:30am on 26th',
       notes: 'Valley gardens location. Available from 9pm after the opening ceremony.',
       type: 'Tipi'
     };
@@ -90,10 +90,10 @@ const getCheckInOutInfo = (title: string, propertyLocation?: string | null) => {
     };
   }
   
-  // Your Own Tent - 4PM CHECK-IN
+  // Your Own Tent - 5PM CHECK-IN
   if (lowerTitle.includes('own tent') || lowerTitle.includes('your own tent')) {
     return {
-      checkIn: '4pm on 21st',
+      checkIn: '5pm on 21st',
       checkOut: '12pm on 26th',
       notes: 'Located in secure compound with 24-hour security, 2 min walk from Chateau.',
       type: 'Your Own Tent'
