@@ -27,13 +27,9 @@ export function usePricing({
     const exactWeeksDecimal = calculateTotalWeeksDecimal(selectedWeeks); // For display
     const displayWeeks = selectedWeeks.length > 0 ? Math.round(exactWeeksDecimal * 10) / 10 : 0;
     
-    // === Calculate Accommodation Cost using discounted weekly price ===
-    // Use base price from selectedAccommodation if calculatedWeeklyAccommodationPrice is not available
-    const weeklyAccPrice = (calculatedWeeklyAccommodationPrice !== null && 
-                           calculatedWeeklyAccommodationPrice !== undefined && 
-                           !isNaN(calculatedWeeklyAccommodationPrice)) 
-                          ? calculatedWeeklyAccommodationPrice 
-                          : (selectedAccommodation?.base_price || 0);
+    // === Calculate Accommodation Cost using raw base price only ===
+    // Use the raw base price without any discounts
+    const weeklyAccPrice = selectedAccommodation?.base_price || 0;
     const totalAccommodationCost = parseFloat((weeklyAccPrice * displayWeeks).toFixed(2));
 
     // No food cost - accommodation only
