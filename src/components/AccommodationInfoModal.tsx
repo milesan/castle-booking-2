@@ -124,14 +124,14 @@ export function AccommodationInfoModal({ isOpen, onClose, title, propertyLocatio
             className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100]"
           />
           
-          {/* Modal */}
+          {/* Modal - Fullscreen on mobile, centered on desktop */}
           <motion.div
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-[101] w-full max-w-md"
+            className="fixed inset-0 sm:inset-auto sm:left-1/2 sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 z-[101] w-full sm:w-auto sm:max-w-md flex items-center justify-center p-4 sm:p-0"
           >
-            <div className="bg-surface border border-border rounded-sm shadow-2xl">
+            <div className="bg-surface border border-border rounded-sm shadow-2xl w-full sm:w-auto max-h-[90vh] sm:max-h-[85vh] overflow-y-auto">
               {/* Header */}
               <div className="flex items-center justify-between p-4 border-b border-border">
                 <h2 className="text-lg font-lettra-bold uppercase text-primary">
