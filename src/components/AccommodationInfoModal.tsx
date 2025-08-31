@@ -124,7 +124,7 @@ export function AccommodationInfoModal({ isOpen, onClose, title, propertyLocatio
             className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100]"
           />
           
-          {/* Modal */}
+          {/* Modal - Fullscreen on mobile, centered on desktop */}
           <motion.div
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
