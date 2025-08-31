@@ -849,11 +849,15 @@ export function Book2Page() {
                 )}
               </div> {/* Closing Calendar card div */}
               
-              {/* Move heading outside the card and center it */}
-              <h2 className="text-2xl sm:text-3xl font-display font-light text-primary mb-3 xs:mb-4 text-center w-full">Pick your nest</h2>
-              
-              {/* Outer Cabin Selector card */}
-              <div className="rounded-sm shadow-sm py-3 xs:py-4 sm:py-6 px-3 xs:px-4 sm:px-6 mb-4 xs:mb-5 sm:mb-6 cabin-selector">
+              {/* Cabin Selector with heading inside, matching Calendar card structure */}
+              <div className="rounded-sm shadow-sm py-3 xs:py-4 sm:py-6 mb-4 xs:mb-5 sm:mb-6">
+                <div className="flex flex-col gap-3 mb-4">
+                  <div className="flex flex-wrap items-center justify-center gap-3">
+                    <h2 className="text-2xl sm:text-3xl font-display font-light text-primary text-center">
+                      Pick your nest
+                    </h2>
+                  </div>
+                </div>
                 <CabinSelector 
                   accommodations={accommodations || []}
                   selectedAccommodationId={selectedAccommodation}
