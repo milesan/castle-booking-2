@@ -849,10 +849,11 @@ export function Book2Page() {
                 )}
               </div> {/* Closing Calendar card div */}
               
-              {/* Outer Cabin Selector keeps py-* padding */}
+              {/* Move heading outside the card and center it */}
+              <h2 className="text-2xl sm:text-3xl font-display font-light text-primary mb-3 xs:mb-4 text-center w-full">Pick your nest</h2>
+              
+              {/* Outer Cabin Selector card */}
               <div className="rounded-sm shadow-sm py-3 xs:py-4 sm:py-6 px-3 xs:px-4 sm:px-6 mb-4 xs:mb-5 sm:mb-6 cabin-selector">
-                {/* Center the heading */}
-                <h2 className="text-2xl sm:text-3xl font-display font-light text-primary mb-3 xs:mb-4 text-center">Pick your nest</h2>
                 <CabinSelector 
                   accommodations={accommodations || []}
                   selectedAccommodationId={selectedAccommodation}
