@@ -30,34 +30,43 @@ const getCheckInOutInfo = (title: string, propertyLocation?: string | null) => {
     };
   }
   
-  // Castle Glamping (Microcabin, Yurt, A-Frame)
+  // Castle Glamping (Microcabin, Yurt, A-Frame) - VIEW OF CHATEAU
   if (lowerTitle.includes('microcabin') || lowerTitle.includes('yurt') || lowerTitle.includes('a-frame')) {
     return {
       checkIn: '4pm on 21st',
       checkOut: '9am on 26th',
-      notes: 'Early checkout required: 3-hour window needed for wedding setup. Please ensure timely departure.',
+      notes: 'View of Chateau. Early checkout required: We only have 3 hours to tear down the tents as a wedding party will be setting up, so it is very important that people checkout on time.',
       type: 'Castle Glamping'
     };
   }
   
-  // Gardens Glamping (Tipi, Bell Tent)
+  // Gardens Glamping (Tipi, Bell Tent) - SECURE COMPOUND 2 MIN WALK
   if (lowerTitle.includes('tipi') || lowerTitle.includes('bell tent')) {
     return {
       checkIn: '8pm on 21st',
       checkOut: '12pm on 26th',
-      notes: 'Late check-in: We will take your bags and place them directly in your accommodation when ready. Located in secure compound with 24-hour security, 2 min walk from Chateau.',
+      notes: 'Secure, quiet compound 2 min walk from Chateau with 24-hour security. We will take your bags and put them directly in your accommodation when ready.',
       type: 'Gardens Glamping'
     };
   }
   
-  // Your Own Tent / Van
-  if (lowerTitle.includes('own tent') || lowerTitle.includes('your own tent') || 
-      lowerTitle.includes('own van') || lowerTitle.includes('van parking') || lowerTitle.includes('your own van')) {
+  // Your Own Van - 5PM CHECK-IN
+  if (lowerTitle.includes('own van') || lowerTitle.includes('van parking') || lowerTitle.includes('your own van')) {
     return {
-      checkIn: '8pm on 21st',
+      checkIn: '5pm on 21st',
       checkOut: '12pm on 26th',
       notes: 'Located in secure compound with 24-hour security, 2 min walk from Chateau.',
-      type: lowerTitle.includes('tent') ? 'Your Own Tent' : 'Your Own Van'
+      type: 'Your Own Van'
+    };
+  }
+  
+  // Your Own Tent - 4PM CHECK-IN
+  if (lowerTitle.includes('own tent') || lowerTitle.includes('your own tent')) {
+    return {
+      checkIn: '4pm on 21st',
+      checkOut: '12pm on 26th',
+      notes: 'Located in secure compound with 24-hour security, 2 min walk from Chateau.',
+      type: 'Your Own Tent'
     };
   }
   
