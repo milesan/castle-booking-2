@@ -18,6 +18,7 @@ import { usePendingBookings } from '../hooks/usePendingBookings';
 // import { FullScreenMasonry } from './FullScreenMasonry';
 import { SimpleImageGallery } from './SimpleImageGallery';
 import { SimpleThumbnailGallery } from './SimpleThumbnailGallery';
+import { AccommodationInfoModal } from './AccommodationInfoModal';
 
 // Local interface for accommodation images
 interface AccommodationImage {
@@ -178,6 +179,10 @@ export function CabinSelector({
   const [galleryImages, setGalleryImages] = useState<{id: string, url: string, alt?: string}[]>([]);
   const [galleryTitle, setGalleryTitle] = useState<string>('');
   const [galleryStartIndex, setGalleryStartIndex] = useState(0);
+  
+  // State for accommodation info modal
+  const [infoModalOpen, setInfoModalOpen] = useState(false);
+  const [infoModalAccommodation, setInfoModalAccommodation] = useState<ExtendedAccommodation | null>(null);
 
   // Handler to open gallery
   const handleOpenGallery = useCallback((accommodation: ExtendedAccommodation, startIndex: number = 0) => {
@@ -308,7 +313,7 @@ export function CabinSelector({
     // MODIFIED: Dependency array includes derived dates implicitly via selectedWeeks
   }, [selectedWeeks, accommodations, checkWeekAvailability]);
 
-  const handleSelectAccommodation = useCallback((id: string) => {
+  const handleSelectAccommodation = useCallback((id: string, accommodation?: ExtendedAccommodation) => {
     // NEW: If clicking the already selected accommodation, deselect it
     if (id === selectedAccommodationId) {
       onSelectAccommodation('');
@@ -319,6 +324,12 @@ export function CabinSelector({
     // This was causing double API calls and state thrashing leading to flickering
 
     onSelectAccommodation(id);
+    
+    // Show info modal when accommodation is selected
+    if (accommodation) {
+      setInfoModalAccommodation(accommodation);
+      setInfoModalOpen(true);
+    }
   }, [onSelectAccommodation, selectedAccommodationId]);
 
   // Helper function to check if user can see test accommodations
@@ -720,7 +731,7 @@ export function CabinSelector({
                           onClick={() => {
                             if (tentAcc.sold_out) return;
                             if (testMode || (selectedWeeks.length > 0 && !isDisabled)) {
-                              handleSelectAccommodation(tentAcc.id);
+                              handleSelectAccommodation(tentAcc.id, tentAcc);
                             }
                           }}
                           className={clsx(
@@ -749,7 +760,7 @@ export function CabinSelector({
                           onClick={() => {
                             if (vanAcc.sold_out) return;
                             if (testMode || (selectedWeeks.length > 0 && !isDisabled)) {
-                              handleSelectAccommodation(vanAcc.id);
+                              handleSelectAccommodation(vanAcc.id, vanAcc);
                             }
                           }}
                           className={clsx(
@@ -868,7 +879,7 @@ export function CabinSelector({
                     
                     // Only select accommodation if clicking is allowed
                     if (testMode || (finalCanSelect && !isDisabled)) {
-                      handleSelectAccommodation(acc.id);
+                      handleSelectAccommodation(acc.id, acc);
                     }
                   }}
                   style={{ 
@@ -1145,6 +1156,16 @@ export function CabinSelector({
         title={galleryTitle}
         startIndex={galleryStartIndex}
       />
+      
+      {/* Accommodation Info Modal */}
+      {infoModalAccommodation && (
+        <AccommodationInfoModal
+          isOpen={infoModalOpen}
+          onClose={() => setInfoModalOpen(false)}
+          title={infoModalAccommodation.title}
+          propertyLocation={infoModalAccommodation.property_location}
+        />
+      )}
     </div>
   );
 }
