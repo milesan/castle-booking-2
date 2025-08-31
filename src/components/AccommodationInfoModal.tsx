@@ -80,23 +80,23 @@ const getCheckInOutInfo = (title: string, propertyLocation?: string | null) => {
     };
   }
   
-  // Your Own Van - 5PM CHECK-IN
-  if (lowerTitle.includes('own van') || lowerTitle.includes('van parking') || lowerTitle.includes('your own van')) {
+  // Your Own Van / DIY Van - 5PM CHECK-IN
+  if (lowerTitle.includes('own van') || lowerTitle.includes('van parking') || lowerTitle.includes('your own van') || lowerTitle.includes('diy van')) {
     return {
       checkIn: '5pm on 21st',
       checkOut: '3pm on 26th',
       notes: 'Valley Gardens location. Located in secure compound with 24-hour security, 2 min walk from Chateau.',
-      type: 'Your Own Van'
+      type: lowerTitle.includes('diy') ? 'DIY Van' : 'Your Own Van'
     };
   }
   
-  // Your Own Tent - 5PM CHECK-IN
-  if (lowerTitle.includes('own tent') || lowerTitle.includes('your own tent')) {
+  // Your Own Tent / DIY Tent - 5PM CHECK-IN
+  if (lowerTitle.includes('own tent') || lowerTitle.includes('your own tent') || lowerTitle.includes('diy tent')) {
     return {
       checkIn: '5pm on 21st',
       checkOut: '3pm on 26th',
       notes: 'Valley Gardens location. Located in secure compound with 24-hour security, 2 min walk from Chateau.',
-      type: 'Your Own Tent'
+      type: lowerTitle.includes('diy') ? 'DIY Tent' : 'Your Own Tent'
     };
   }
   

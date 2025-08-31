@@ -462,8 +462,8 @@ export function CabinSelector({
         if (title.includes('single tipi')) return 1;
         
         // Priority 2: DIY camping (Own tent/van)
-        if (title.includes('own tent') || title.includes('your own tent')) return 2;
-        if (title.includes('own van') || title.includes('van parking') || title.includes('your own van')) return 3;
+        if (title.includes('own tent') || title.includes('your own tent') || title.includes('diy tent')) return 2;
+        if (title.includes('own van') || title.includes('van parking') || title.includes('your own van') || title.includes('diy van')) return 3;
         
         // Priority 3: Le Dorm (budget option)
         if (title === 'le dorm') return 4;
