@@ -466,6 +466,25 @@ export function Accommodations() {
     console.log('[ACCOM] Confirming Delete:', { id: accommodationId });
 
     try {
+      // First check if there are any bookings for this accommodation
+      const { data: bookings, error: bookingsError } = await supabase
+        .from('bookings')
+        .select('id')
+        .eq('accommodation_id', accommodationId)
+        .limit(1);
+      
+      if (bookingsError) throw bookingsError;
+      
+      if (bookings && bookings.length > 0) {
+        // Accommodation has bookings, show appropriate error
+        const errorMessage = 'Cannot delete this accommodation because it has existing bookings. Please delete all bookings for this accommodation first.';
+        console.error('[ACCOM] Delete blocked - has bookings:', { id: accommodationId });
+        alert(errorMessage);
+        setDeleteConfirmId(null);
+        return;
+      }
+
+      // No bookings exist, safe to delete
       const { error: deleteError } = await supabase
         .from('accommodations')
         .delete()
@@ -481,8 +500,12 @@ export function Accommodations() {
 
     } catch (err: any) {
       console.error('[ACCOM] Supabase Delete Error:', err);
-      // Could set a delete error state here if needed
-      alert(`Failed to delete accommodation: ${err.message}`);
+      // Parse the error message for better user feedback
+      let errorMessage = err.message || 'Failed to delete accommodation';
+      if (err.code === '23503' || errorMessage.includes('foreign key constraint')) {
+        errorMessage = 'Cannot delete this accommodation because it is referenced by other data (bookings, images, etc.). Please remove all related data first.';
+      }
+      alert(errorMessage);
     } finally {
       setDeleteLoading(null);
     }
