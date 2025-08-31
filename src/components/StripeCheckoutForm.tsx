@@ -39,7 +39,7 @@ interface Props {
 export function StripeCheckoutForm({ total, authToken, description, userEmail, onSuccess, onClose, bookingMetadata, paymentRowId }: Props) {
   // Create dynamic mailto URL with room information
   const createCryptoMailtoUrl = () => {
-    const subject = encodeURIComponent("Bitcoin/Ethereum Payment Request");
+    const subject = encodeURIComponent("I want to secure a room with crypto");
     const body = encodeURIComponent(`Hi,
 
 I'd like to pay with cryptocurrency for my booking:
@@ -191,7 +191,32 @@ Thank you!`);
   }, [authToken, clientSecret, onSuccess, onClose, paymentRowId]);
 
   if (!clientSecret) {
-    return <div>Loading checkout...</div>;
+    return createPortal(
+      <div 
+        style={{ 
+          position: 'fixed',
+          top: '0',
+          left: '0',
+          width: '100%',
+          height: '100%',
+          backgroundColor: 'rgba(0, 0, 0, 0.75)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 2147483647, // Maximum z-index value
+          isolation: 'isolate'
+        }}
+      >
+        <div style={{
+          color: 'white',
+          fontSize: '18px',
+          fontWeight: '500'
+        }}>
+          Loading payment...
+        </div>
+      </div>,
+      document.body
+    );
   }
 
   console.log('[StripeCheckout] Rendering as portal outside normal component hierarchy');
@@ -208,7 +233,7 @@ Thank you!`);
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
-        zIndex: 999999,
+        zIndex: 2147483647, // Maximum z-index value
         isolation: 'isolate'
       }}
     >
