@@ -300,11 +300,18 @@ Thank you!`);
               style={{
                 color: '#666',
                 fontSize: '13px',
-                textDecoration: 'none',
-                transition: 'color 0.2s'
+                textDecoration: 'underline',
+                transition: 'color 0.2s',
+                cursor: 'pointer'
               }}
-              onMouseEnter={(e) => e.currentTarget.style.color = '#000'}
-              onMouseLeave={(e) => e.currentTarget.style.color = '#666'}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.color = '#000';
+                e.currentTarget.style.textDecoration = 'underline';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.color = '#666';
+                e.currentTarget.style.textDecoration = 'underline';
+              }}
             >
               BTC &amp; ETH accepted →
             </a>
