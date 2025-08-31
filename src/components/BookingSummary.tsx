@@ -1361,9 +1361,9 @@ Please manually create the booking for this user or process a refund.`;
                       <div className="text-xs text-secondary mt-1">
                         <a 
                           href="mailto:concierge@castle.community?subject=I%20want%20to%20secure%20a%20room%20with%20crypto"
-                          className="hover:text-primary transition-colors"
+                          className="underline hover:text-primary transition-colors cursor-pointer"
                         >
-                          BTC & ETH accepted
+                          BTC & ETH accepted →
                         </a>
                       </div>
                     </div>
@@ -1404,9 +1404,9 @@ Please manually create the booking for this user or process a refund.`;
                       <p className="text-xs text-secondary mb-2 font-mono">
                         <a 
                           href="mailto:concierge@castle.community?subject=I%20want%20to%20secure%20a%20room%20with%20crypto"
-                          className="hover:text-primary transition-colors"
+                          className="underline hover:text-primary transition-colors cursor-pointer"
                         >
-                          BTC & ETH also accepted
+                          BTC & ETH also accepted →
                         </a>
                       </p>
                       <p className="text-xs text-secondary font-mono">
