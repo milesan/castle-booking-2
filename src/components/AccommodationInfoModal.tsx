@@ -124,33 +124,33 @@ export function AccommodationInfoModal({ isOpen, onClose, title, propertyLocatio
             className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100]"
           />
           
-          {/* Modal */}
+          {/* Modal - Full screen on mobile, centered card on desktop */}
           <motion.div
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-[101] w-full max-w-md"
+            className="fixed inset-0 sm:inset-auto sm:left-1/2 sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 z-[101] w-full sm:w-auto sm:max-w-md flex items-center justify-center sm:block p-4 sm:p-0"
           >
-            <div className="bg-surface border border-border rounded-sm shadow-2xl">
-              {/* Header */}
-              <div className="flex items-center justify-between p-4 border-b border-border">
-                <h2 className="text-lg font-lettra-bold uppercase text-primary">
+            <div className="bg-surface border border-border rounded-sm shadow-2xl w-full sm:w-auto max-h-[90vh] sm:max-h-[85vh] overflow-hidden flex flex-col">
+              {/* Header with larger close button on mobile */}
+              <div className="flex items-center justify-between p-4 sm:p-4 border-b border-border flex-shrink-0">
+                <h2 className="text-base sm:text-lg font-lettra-bold uppercase text-primary pr-2">
                   {info.type || title}
                 </h2>
                 <button
                   onClick={onClose}
-                  className="p-1 hover:bg-surface-hover rounded-sm transition-colors"
+                  className="p-2 sm:p-1 hover:bg-surface-hover rounded-sm transition-colors -mr-2 sm:mr-0"
                   aria-label="Close modal"
                 >
-                  <X size={20} className="text-secondary" />
+                  <X size={24} className="text-secondary sm:w-5 sm:h-5" />
                 </button>
               </div>
               
-              {/* Content */}
-              <div className="p-4 space-y-4">
+              {/* Scrollable Content */}
+              <div className="p-4 sm:p-4 space-y-4 overflow-y-auto flex-grow">
                 {/* Check-in Time */}
                 <div className="flex items-start gap-3">
-                  <Clock size={20} className="text-accent-primary mt-0.5" />
+                  <Clock size={20} className="text-accent-primary mt-0.5 flex-shrink-0" />
                   <div>
                     <div className="text-sm font-medium text-primary mb-1">Check-in</div>
                     <div className="text-base text-primary font-mono">{info.checkIn}</div>
@@ -159,7 +159,7 @@ export function AccommodationInfoModal({ isOpen, onClose, title, propertyLocatio
                 
                 {/* Check-out Time */}
                 <div className="flex items-start gap-3">
-                  <Clock size={20} className="text-accent-primary mt-0.5" />
+                  <Clock size={20} className="text-accent-primary mt-0.5 flex-shrink-0" />
                   <div>
                     <div className="text-sm font-medium text-primary mb-1">Check-out</div>
                     <div className="text-base text-primary font-mono">{info.checkOut}</div>
@@ -185,6 +185,14 @@ export function AccommodationInfoModal({ isOpen, onClose, title, propertyLocatio
                     Please ensure you adhere to these times to avoid any inconvenience.
                   </p>
                 </div>
+                
+                {/* Close button for mobile at bottom */}
+                <button
+                  onClick={onClose}
+                  className="sm:hidden w-full py-3 mt-4 bg-surface-hover text-primary font-medium rounded-sm border border-border"
+                >
+                  Close
+                </button>
               </div>
             </div>
           </motion.div>
