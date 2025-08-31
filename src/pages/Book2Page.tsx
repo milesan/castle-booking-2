@@ -825,9 +825,9 @@ export function Book2Page() {
               <div className="rounded-sm shadow-sm py-3 xs:py-4 sm:py-6 mb-4 xs:mb-5 sm:mb-6">
                 {/* REMOVING px-* padding from this inner div */}
                 <div className="flex flex-col gap-3 mb-4">
-                  <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div className="flex flex-wrap items-center justify-center gap-3">
                     {/* Increased font size for the header */}
-                    <h2 className="text-2xl sm:text-3xl font-display font-light text-primary">
+                    <h2 className="text-2xl sm:text-3xl font-display font-light text-primary text-center">
                       The Castle · September 21-26, 2025
                     </h2>
                   </div>
@@ -850,8 +850,8 @@ export function Book2Page() {
               </div> {/* Closing Calendar card div */}
               
               {/* Outer Cabin Selector keeps py-* padding */}
-              <div className="rounded-sm shadow-sm py-3 xs:py-4 sm:py-6 mb-4 xs:mb-5 sm:mb-6 cabin-selector">
-                {/* REMOVING px-* padding from this h2 */}
+              <div className="rounded-sm shadow-sm py-3 xs:py-4 sm:py-6 px-3 xs:px-4 sm:px-6 mb-4 xs:mb-5 sm:mb-6 cabin-selector">
+                {/* Center the heading */}
                 <h2 className="text-2xl sm:text-3xl font-display font-light text-primary mb-3 xs:mb-4 text-center">Pick your nest</h2>
                 <CabinSelector 
                   accommodations={accommodations || []}
