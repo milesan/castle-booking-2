@@ -314,6 +314,12 @@ export function CabinSelector({
   }, [selectedWeeks, accommodations, checkWeekAvailability]);
 
   const handleSelectAccommodation = useCallback((id: string, accommodation?: ExtendedAccommodation) => {
+    // Show info modal when ANY accommodation is clicked
+    if (accommodation) {
+      setInfoModalAccommodation(accommodation);
+      setInfoModalOpen(true);
+    }
+    
     // NEW: If clicking the already selected accommodation, deselect it
     if (id === selectedAccommodationId) {
       onSelectAccommodation('');
@@ -324,12 +330,6 @@ export function CabinSelector({
     // This was causing double API calls and state thrashing leading to flickering
 
     onSelectAccommodation(id);
-    
-    // Show info modal when accommodation is selected
-    if (accommodation) {
-      setInfoModalAccommodation(accommodation);
-      setInfoModalOpen(true);
-    }
   }, [onSelectAccommodation, selectedAccommodationId]);
 
   // Helper function to check if user can see test accommodations
