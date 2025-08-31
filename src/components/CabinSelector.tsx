@@ -729,7 +729,7 @@ export function CabinSelector({
                             !tentAcc.sold_out && "hover:bg-surface-hover",
                             selectedAccommodationId === tentAcc.id && "bg-[color-mix(in_srgb,_var(--color-bg-surface)_95%,_var(--color-accent-primary)_5%)] shadow-lg",
                             // Enhanced sold out styling
-                            tentAcc.sold_out && "opacity-50 cursor-not-allowed grayscale saturate-0 pointer-events-none",
+                            tentAcc.sold_out && "opacity-75 cursor-not-allowed grayscale saturate-0 pointer-events-none",
                             // Regular disabled state
                             !tentAcc.sold_out && (!testMode && (!selectedWeeks.length || isDisabled)) && "opacity-50 cursor-not-allowed"
                           )}
@@ -758,7 +758,7 @@ export function CabinSelector({
                             !vanAcc.sold_out && "hover:bg-surface-hover",
                             selectedAccommodationId === vanAcc.id && "bg-[color-mix(in_srgb,_var(--color-bg-surface)_95%,_var(--color-accent-primary)_5%)] shadow-lg",
                             // Enhanced sold out styling
-                            vanAcc.sold_out && "opacity-50 cursor-not-allowed grayscale saturate-0 pointer-events-none",
+                            vanAcc.sold_out && "opacity-75 cursor-not-allowed grayscale saturate-0 pointer-events-none",
                             // Regular disabled state
                             !vanAcc.sold_out && (!testMode && (!selectedWeeks.length || isDisabled)) && "opacity-50 cursor-not-allowed"
                           )}
@@ -846,7 +846,7 @@ export function CabinSelector({
                       ? "shadow-lg bg-[color-mix(in_srgb,_var(--color-bg-surface)_95%,_var(--color-accent-primary)_5%)]" 
                       : "bg-surface", // Use the renamed class
                     // Sold out state - enhanced styling
-                    acc.sold_out && "opacity-50 grayscale saturate-0",
+                    acc.sold_out && "opacity-75 grayscale saturate-0",
                     // Pointer state:
                     (testMode || (finalCanSelect && !isDisabled)) && !acc.sold_out && 'cursor-pointer',
                     // Disable hover effects for sold out items
