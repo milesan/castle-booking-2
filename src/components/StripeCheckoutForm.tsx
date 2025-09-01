@@ -37,6 +37,11 @@ interface Props {
 }
 
 export function StripeCheckoutForm({ total, authToken, description, userEmail, onSuccess, onClose, bookingMetadata, paymentRowId }: Props) {
+  // Track if payment is being processed to prevent duplicate submissions
+  const [isPaymentProcessing, setIsPaymentProcessing] = useState(false);
+  const [paymentCompleted, setPaymentCompleted] = useState(false);
+  const processingRef = useRef(false);
+  
   // Create dynamic mailto URL with room information
   const createCryptoMailtoUrl = () => {
     const subject = encodeURIComponent("I want to secure a room with crypto");
