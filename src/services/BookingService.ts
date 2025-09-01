@@ -431,6 +431,25 @@ class BookingService {
 
       if (error) {
         console.error('[BookingService] Error creating booking:', error);
+        
+        // Check if this is a duplicate payment intent error
+        if (error.code === '23505' && error.message?.includes('stripe_payment_intent_id')) {
+          console.log('[BookingService] Duplicate payment intent detected, checking for existing booking');
+          
+          // Try to fetch the existing booking with this payment intent
+          const { data: existingBooking } = await supabase
+            .from('bookings')
+            .select('*')
+            .eq('stripe_payment_intent_id', booking.paymentIntentId)
+            .single();
+            
+          if (existingBooking) {
+            console.log('[BookingService] Found existing booking with payment intent:', existingBooking.id);
+            // Return the existing booking instead of throwing error
+            return existingBooking as Booking;
+          }
+        }
+        
         throw error;
       }
       if (!newBooking) {
@@ -502,6 +521,8 @@ class BookingService {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
+      console.log('[BookingService] Fetching bookings for user:', user.id);
+
       const { data, error } = await supabase
         .from('bookings')
         .select(`
@@ -519,10 +540,15 @@ class BookingService {
           )
         `)
         .eq('user_id', user.id)
-        .neq('status', 'cancelled')
+        .in('status', ['confirmed', 'pending']) // Explicitly include both confirmed and pending
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('[BookingService] Error fetching user bookings:', error);
+        throw error;
+      }
+      
+      console.log('[BookingService] Found bookings:', data?.length || 0, 'bookings');
       
       // Fetch accommodation images for all accommodations
       if (data && data.length > 0) {

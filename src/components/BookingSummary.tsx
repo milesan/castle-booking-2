@@ -700,10 +700,11 @@ export function BookingSummary({
         }, 1500);
         
       } catch (err) {
-        console.error('[BOOKING_FLOW] === STEP 6 FAILED: Error creating booking ===');
+        console.error('[BOOKING_FLOW] === STEP 6 FAILED: Error creating/updating booking ===');
         console.error('[BOOKING_FLOW] Error details:', err);
         
-        // ALWAYS navigate to confirmation page when payment succeeded but booking failed
+        // IMPORTANT: ALWAYS navigate to confirmation page when payment succeeded
+        // This ensures user sees confirmation even if booking creation had issues
         
         // Track status for admin alert
         let confirmationEmailSent = false;
@@ -852,14 +853,16 @@ export function BookingSummary({
         // Check if webhook has already created the booking before sending alert
         let bookingExistsFromWebhook = false;
         if (paymentIntentId) {
+          console.log('[BOOKING_FLOW] Checking if webhook created booking for payment:', paymentIntentId);
           
           // Wait a bit to give webhook time to process
-          await new Promise(resolve => setTimeout(resolve, 2000));
+          await new Promise(resolve => setTimeout(resolve, 3000)); // Increased to 3 seconds
           
           try {
             bookingExistsFromWebhook = await bookingService.checkBookingByPaymentIntent(paymentIntentId);
+            console.log('[BOOKING_FLOW] Webhook booking check result:', bookingExistsFromWebhook);
           } catch (checkError) {
-            console.error('[BookingSummary] Error checking for webhook booking:', checkError);
+            console.error('[BOOKING_FLOW] Error checking for webhook booking:', checkError);
             // Continue with alert even if check fails
           }
         }
@@ -937,11 +940,12 @@ Please manually create the booking for this user or process a refund.`;
           checkOut: checkOut,
           status: 'confirmed',
           created_at: new Date().toISOString(),
+          stripe_payment_intent_id: paymentIntentId, // Include payment intent ID for tracking
           // Add flags to indicate status
           isPendingManualCreation: !bookingExistsFromWebhook,
           manualCreationMessage: bookingExistsFromWebhook 
-            ? undefined // No message needed if webhook succeeded
-            : 'Your payment was successful and confirmation email has been sent! Our team is finalizing your booking in our system. Note: This booking may not appear in your bookings list immediately but will be processed manually.'
+            ? 'Your booking has been confirmed! It should appear in your bookings list shortly.'
+            : 'Your payment was successful! Your booking is being finalized. If it doesn\'t appear in your bookings list within a few minutes, please contact support with your payment reference: ' + (paymentIntentId || 'N/A')
         };
         
         // Navigate to confirmation page with the booking data
@@ -976,6 +980,13 @@ Please manually create the booking for this user or process a refund.`;
 
   const handleConfirmClick = async () => {
     console.log('[BOOKING_FLOW] === STEP 1: Confirm button clicked ===');
+    
+    // Prevent duplicate clicks while processing
+    if (isBooking) {
+      console.log('[BOOKING_FLOW] Already processing booking, ignoring duplicate click');
+      return;
+    }
+    
     console.log('[BOOKING_FLOW] Button handler reached with:', {
       selectedAccommodation: selectedAccommodation?.title,
       accommodationPrice: pricing.totalAccommodationCost,
@@ -985,15 +996,18 @@ Please manually create the booking for this user or process a refund.`;
     });
     
     setErrorWithLogging(null); // Clear previous errors
+    setIsBookingWithLogging(true); // Set booking flag immediately
 
     if (!validateCheckInDate()) {
       console.warn('[BOOKING_FLOW] STEP 1 FAILED: Check-in date validation failed.');
+      setIsBookingWithLogging(false); // Reset booking flag
       return;
     }
     // Allow booking if either accommodation OR garden addon is selected
     if (!selectedAccommodation && !gardenAddon) {
       console.warn('[BOOKING_FLOW] STEP 1 FAILED: No accommodation or garden addon selected');
       setError('Please select an accommodation or Garden decompression option');
+      setIsBookingWithLogging(false); // Reset booking flag
       return;
     }
     try {
@@ -1003,6 +1017,7 @@ Please manually create the booking for this user or process a refund.`;
       if (!isAvailable) {
         console.warn('[BOOKING_FLOW] STEP 2 FAILED: Accommodation no longer available');
         setError('This accommodation is no longer available for the selected dates');
+        setIsBookingWithLogging(false); // Reset booking flag
         return;
       }
       console.log('[BOOKING_FLOW] STEP 2 SUCCESS: Availability confirmed');
@@ -1156,6 +1171,7 @@ Please manually create the booking for this user or process a refund.`;
     } catch (err) {
       console.error('[BOOKING_FLOW] Error in handleConfirmClick:', err);
       setErrorWithLogging('An error occurred. Please try again.');
+      setIsBookingWithLogging(false); // Reset booking flag on error
       
       // Clean up any pending booking if it was created
       if (pendingBookingId) {
@@ -1283,7 +1299,22 @@ Please manually create the booking for this user or process a refund.`;
                 onSuccess={handleBookingSuccess}
                 paymentRowId={pendingPaymentRowId || undefined}
                 onClose={() => {
+                  console.log('[BOOKING_FLOW] Stripe modal closed by user');
                   setShowStripeModalWithLogging(false);
+                  setIsBookingWithLogging(false); // Reset booking flag when modal is closed
+                  
+                  // Cancel the pending booking if user closes modal without payment
+                  if (pendingBookingId) {
+                    console.log('[BOOKING_FLOW] Cancelling pending booking after modal close:', pendingBookingId);
+                    bookingService.updateBookingStatus(pendingBookingId, 'cancelled')
+                      .then(() => {
+                        setPendingBookingId(null);
+                        console.log('[BOOKING_FLOW] Pending booking cancelled successfully');
+                      })
+                      .catch((cancelError) => {
+                        console.error('[BOOKING_FLOW] Error cancelling pending booking:', cancelError);
+                      });
+                  }
                 }}
               />
             </motion.div>
