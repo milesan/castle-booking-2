@@ -717,6 +717,19 @@ export function Book2Page() {
               {/* Moved h1 inside wrapper - REMOVING px-* padding now */}
               <h1 className="text-4xl lg:text-[78px] font-display mb-3 xs:mb-4 text-primary pt-14 leading-[1.1] tracking-[-0.02em]">THE GATES BECKON</h1>
               
+              {/* Financial Context */}
+              <div className="bg-surface/50 border border-border rounded-sm p-4 mb-4 space-y-3">
+                <p className="text-sm text-secondary leading-relaxed">
+                  The castle is a financially ambitious endeavor. Typically, the venue alone would cost more than €1400+ per participant for the size of gathering we are organizing. Let alone the rest of our budget, financial aid, production, and all inclusive food. We have worked some magic in order to make this all possible, and if you are of means, securing a room is a way to live large & support the project.
+                </p>
+                <p className="text-sm text-secondary leading-relaxed">
+                  We strive to be as inclusive as possible so that we can curate on character, conviction, curiosity, and care – not capital.
+                </p>
+                <p className="text-sm text-secondary leading-relaxed">
+                  In order to do this, and to keep admission accessible, we must charge a premium for the limited rooms of the chateau ♥.
+                </p>
+              </div>
+              
               {/* Closed Container Notice */}
               <div className="bg-amber-900/20 border border-amber-700/30 rounded-sm p-3 mb-4">
                 <p className="text-sm text-amber-200 font-mono">
