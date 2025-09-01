@@ -172,7 +172,7 @@ export function CabinSelector({
   const [showOnlySharedBathrooms, setShowOnlySharedBathrooms] = useState(false);
   
   // State for price sorting - default to cheapest first
-  const [sortBy, setSortBy] = useState<'default' | 'price-low' | 'price-high'>('price-low');
+  const [sortBy, setSortBy] = useState<'price-low' | 'price-high'>('price-low');
   
   // State for simple gallery
   const [galleryOpen, setGalleryOpen] = useState(false);
@@ -622,19 +622,6 @@ export function CabinSelector({
         <div className="flex items-center gap-2">
           <span className="text-sm text-secondary font-mono">Sort by:</span>
           <div className="flex items-center gap-2">
-            <button
-              onClick={() => setSortBy('default')}
-              className={clsx(
-                "flex items-center gap-2 px-4 py-2 rounded-sm border transition-all duration-200 font-mono text-sm",
-                sortBy === 'default'
-                  ? "bg-accent-primary text-white border-accent-primary"
-                  : "bg-surface text-secondary border-border hover:border-accent-primary"
-              )}
-            >
-              <ArrowUpDown size={16} />
-              <span>Default</span>
-            </button>
-            
             <button
               onClick={() => setSortBy('price-low')}
               className={clsx(
