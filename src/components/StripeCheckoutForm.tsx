@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { loadStripe, Stripe } from '@stripe/stripe-js';
 import { EmbeddedCheckoutProvider, EmbeddedCheckout } from '@stripe/react-stripe-js';
 import { createPortal } from 'react-dom';
@@ -355,6 +355,12 @@ Thank you!`);
           }}>
             <a 
               href={createCryptoMailtoUrl()}
+              onClick={(e) => {
+                e.preventDefault();
+                const mailtoUrl = createCryptoMailtoUrl();
+                console.log('[StripeCheckout] Opening crypto mailto:', mailtoUrl);
+                window.location.href = mailtoUrl;
+              }}
               style={{
                 color: '#666',
                 fontSize: '13px',
