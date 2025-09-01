@@ -172,7 +172,7 @@ export function CabinSelector({
   const [showOnlySharedBathrooms, setShowOnlySharedBathrooms] = useState(false);
   
   // State for price sorting - default to cheapest first
-  const [sortBy, setSortBy] = useState<'default' | 'price-low' | 'price-high'>('price-low');
+  const [sortBy, setSortBy] = useState<'price-low' | 'price-high'>('price-low');
   
   // State for simple gallery
   const [galleryOpen, setGalleryOpen] = useState(false);
@@ -435,26 +435,23 @@ export function CabinSelector({
       return true;
     })
     .sort((a, b) => {
-      // Price sorting takes priority if selected
-      if (sortBy !== 'default') {
-        // Get the actual weekly price for each accommodation
-        const aPrice = memoizedPriceInfo[a.id]?.price ?? a.base_price;
-        const bPrice = memoizedPriceInfo[b.id]?.price ?? b.base_price;
-        
-        if (sortBy === 'price-low') {
-          // Sort by price low to high
-          if (aPrice !== bPrice) {
-            return aPrice - bPrice;
-          }
-        } else if (sortBy === 'price-high') {
-          // Sort by price high to low
-          if (aPrice !== bPrice) {
-            return bPrice - aPrice;
-          }
+      // Get the actual weekly price for each accommodation
+      const aPrice = memoizedPriceInfo[a.id]?.price ?? a.base_price;
+      const bPrice = memoizedPriceInfo[b.id]?.price ?? b.base_price;
+      
+      if (sortBy === 'price-low') {
+        // Sort by price low to high
+        if (aPrice !== bPrice) {
+          return aPrice - bPrice;
+        }
+      } else if (sortBy === 'price-high') {
+        // Sort by price high to low
+        if (aPrice !== bPrice) {
+          return bPrice - aPrice;
         }
       }
       
-      // Default sorting logic
+      // Secondary sorting logic (after price sorting)
       const getPriority = (acc: typeof a) => {
         const title = acc.title.toLowerCase();
         
@@ -630,19 +627,6 @@ export function CabinSelector({
         <div className="flex items-center gap-2">
           <span className="text-sm text-secondary font-mono">Sort by:</span>
           <div className="flex items-center gap-2">
-            <button
-              onClick={() => setSortBy('default')}
-              className={clsx(
-                "flex items-center gap-2 px-4 py-2 rounded-sm border transition-all duration-200 font-mono text-sm",
-                sortBy === 'default'
-                  ? "bg-accent-primary text-white border-accent-primary"
-                  : "bg-surface text-secondary border-border hover:border-accent-primary"
-              )}
-            >
-              <ArrowUpDown size={16} />
-              <span>Default</span>
-            </button>
-            
             <button
               onClick={() => setSortBy('price-low')}
               className={clsx(
