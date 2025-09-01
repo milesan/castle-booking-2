@@ -186,6 +186,16 @@ export function AccommodationInfoModal({ isOpen, onClose, title, propertyLocatio
                   </p>
                 </div>
               </div>
+              
+              {/* Footer with Okay button */}
+              <div className="p-4 border-t border-border">
+                <button
+                  onClick={onClose}
+                  className="w-full py-2 px-4 bg-accent-primary hover:bg-accent-secondary text-white font-medium rounded-sm transition-colors"
+                >
+                  Okay!
+                </button>
+              </div>
             </div>
           </motion.div>
         </>

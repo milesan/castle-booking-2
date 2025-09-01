@@ -21,7 +21,7 @@ import { normalizeToUTCDate } from './utils/dates';
 import { AuthCallback } from './components/AuthCallback';
 import { MainAppLayout } from './components/MainAppLayout';
 import { WhitelistWelcomeModal } from './components/WhitelistWelcomeModal';
-import { BugReportFAB } from './components/BugReportFAB';
+// import { BugReportFAB } from './components/BugReportFAB';
 import { useUserPermissions } from './hooks/useUserPermissions';
 
 // Configure logging early to enable debugging logs
@@ -302,7 +302,7 @@ export default function App() {
           Sign Out
         </button>
         {/* BugReportFAB is positioned fixed, so it doesn't need to be in flow here particularly */}
-        <BugReportFAB /> 
+        {/* <BugReportFAB /> */} 
       </div>
     );
     // --- END MODIFIED LOADING SCREEN ---
