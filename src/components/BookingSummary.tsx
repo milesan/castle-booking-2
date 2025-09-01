@@ -1131,7 +1131,12 @@ Please manually create the booking for this user or process a refund.`;
             
           } catch (bookingErr) {
             console.error('[BOOKING_FLOW] STEP 3.5 WARNING: Could not create pending booking:', bookingErr);
-            // Continue anyway - we'll try again after payment
+            // Check if this is the no_new_pending_bookings constraint
+            if (bookingErr && typeof bookingErr === 'object' && 'code' in bookingErr && bookingErr.code === '23514') {
+              console.log('[BOOKING_FLOW] Database constraint preventing pending bookings - will create booking after payment');
+            }
+            // Continue anyway - we'll create the booking after payment instead
+            setPendingBookingId(null);
           }
 
           // If the final amount is 0 (free accommodation, fully paid with credits, or both), skip payment
