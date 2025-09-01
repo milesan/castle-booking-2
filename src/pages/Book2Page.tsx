@@ -818,7 +818,7 @@ export function Book2Page() {
               <img 
                 src="/images/horizontal-line.svg" 
                 alt="Decorative divider" 
-                className="w-full max-w-3xl my-8 block" 
+                className="w-full max-w-3xl my-8 block mx-auto" 
               />
 
               {/* Moved Calendar card inside wrapper - CHANGING p-* to py-* now */}
@@ -848,6 +848,15 @@ export function Book2Page() {
                   </>
                 )}
               </div> {/* Closing Calendar card div */}
+              
+              {/* Castle Map */}
+              <div className="w-full flex justify-center mb-4 xs:mb-5 sm:mb-6">
+                <img 
+                  src="/images/castle-map.jpg" 
+                  alt="Castle Map" 
+                  className="w-full max-w-3xl rounded-sm"
+                />
+              </div>
               
               {/* Cabin Selector with heading inside, matching Calendar card structure */}
               <div className="rounded-sm shadow-sm py-3 xs:py-4 sm:py-6 mb-4 xs:mb-5 sm:mb-6">

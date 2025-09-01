@@ -40,12 +40,12 @@ const getCheckInOutInfo = (title: string, propertyLocation?: string | null) => {
     };
   }
   
-  // Castle Grounds & Ramparts Glamping - AVAILABLE BY 4PM
+  // Castle Grounds & Ramparts Glamping - AVAILABLE BY 4PM - MUST CHECK OUT BY 9AM
   if (lowerTitle.includes('castle view') || lowerTitle.includes('near castle') || lowerTitle.includes('rampart')) {
     return {
       checkIn: '4pm on 21st',
-      checkOut: '12pm on 26th',
-      notes: lowerTitle.includes('rampart') ? 'Ramparts view location. Available from 4pm.' : 'Castle grounds location. Available from 4pm.',
+      checkOut: '9am on 26th',
+      notes: lowerTitle.includes('rampart') ? 'Ramparts view location. Available from 4pm. Early checkout required: We only have 3 hours to tear down the tents as a wedding party will be setting up, so it is very important that people checkout on time.' : 'Castle grounds location. Available from 4pm. Early checkout required: We only have 3 hours to tear down the tents as a wedding party will be setting up, so it is very important that people checkout on time.',
       type: lowerTitle.includes('bell tent') ? 'Castle Grounds Bell Tent' : 'Ramparts View Tipi'
     };
   }
@@ -55,7 +55,7 @@ const getCheckInOutInfo = (title: string, propertyLocation?: string | null) => {
     return {
       checkIn: '9pm on 21st',
       checkOut: '11:30am on 26th',
-      notes: 'Valley Gardens location. Available from 9pm after the opening ceremony. We will take your bags and put them directly in your accommodation when ready.',
+      notes: 'Valley Gardens location. Available from 9pm. We will take your bags and put them directly in your accommodation when ready.',
       type: lowerTitle.includes('single tipi') ? 'Single Tipi (Valley Gardens)' : 'Valley Gardens Glamping'
     };
   }
@@ -64,8 +64,8 @@ const getCheckInOutInfo = (title: string, propertyLocation?: string | null) => {
   if (lowerTitle.includes('bell tent')) {
     return {
       checkIn: '4pm on 21st',
-      checkOut: '12pm on 26th',
-      notes: 'Available from 4pm.',
+      checkOut: '9am on 26th',
+      notes: 'Available from 4pm. Early checkout required: We only have 3 hours to tear down the tents as a wedding party will be setting up, so it is very important that people checkout on time.',
       type: '4m Bell Tent'
     };
   }
@@ -75,7 +75,7 @@ const getCheckInOutInfo = (title: string, propertyLocation?: string | null) => {
     return {
       checkIn: '9pm on 21st',
       checkOut: '11:30am on 26th',
-      notes: 'Valley gardens location. Available from 9pm after the opening ceremony.',
+      notes: 'Valley gardens location. Available from 9pm.',
       type: 'Tipi'
     };
   }
