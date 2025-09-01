@@ -236,6 +236,13 @@ Thank you!`);
         zIndex: 2147483647, // Maximum z-index value
         isolation: 'isolate'
       }}
+      onClick={(e) => {
+        // Prevent closing modal by clicking backdrop if payment is processing
+        if (e.target === e.currentTarget && !isPaymentProcessing && !paymentCompleted) {
+          console.log('[StripeCheckout] Backdrop clicked - closing modal');
+          onClose();
+        }
+      }}
     >
       <div 
         id="checkout" 
@@ -253,9 +260,17 @@ Thank you!`);
           zIndex: 999999
         }}
       >
-        {/* Close Button */}
+        {/* Close Button - disabled while payment is processing */}
         <button
-          onClick={onClose}
+          onClick={() => {
+            if (!isPaymentProcessing && !paymentCompleted) {
+              console.log('[StripeCheckout] User clicked close button - payment not in progress');
+              onClose();
+            } else {
+              console.log('[StripeCheckout] Close button clicked but payment is processing/completed, ignoring');
+            }
+          }}
+          disabled={isPaymentProcessing || paymentCompleted}
           style={{
             position: 'absolute',
             top: '10px',
@@ -272,13 +287,51 @@ Thank you!`);
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            lineHeight: '1'
+            lineHeight: '1',
+            opacity: (isPaymentProcessing || paymentCompleted) ? 0.5 : 1,
+            cursor: (isPaymentProcessing || paymentCompleted) ? 'not-allowed' : 'pointer'
           }}
           aria-label="Close payment form"
         >
-          &times;
+          {isPaymentProcessing ? '...' : '\u00d7'}
         </button>
         <div style={{ position: 'relative', zIndex: 999999 }}>
+          {/* Payment processing overlay */}
+          {isPaymentProcessing && (
+            <div style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: 'rgba(255, 255, 255, 0.9)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 1000001,
+              borderRadius: '8px'
+            }}>
+              <div style={{
+                textAlign: 'center',
+                padding: '20px'
+              }}>
+                <div style={{
+                  fontSize: '18px',
+                  fontWeight: '600',
+                  marginBottom: '10px',
+                  color: '#333'
+                }}>
+                  Processing payment...
+                </div>
+                <div style={{
+                  fontSize: '14px',
+                  color: '#666'
+                }}>
+                  Please wait while we confirm your payment
+                </div>
+              </div>
+            </div>
+          )}
           <EmbeddedCheckoutProvider
             stripe={getStripePromise()}
             options={{
