@@ -854,7 +854,7 @@ export function Book2Page() {
                 <img 
                   src="/images/castle-map.jpg" 
                   alt="Castle Map" 
-                  className="w-full max-w-3xl rounded-sm"
+                  className="w-full max-w-5xl rounded-sm"
                 />
               </div>
               

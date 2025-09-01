@@ -1413,7 +1413,7 @@ export function Accommodations() {
                       disabled={createLoading} 
                       className={checkboxInputClassName}
                     />
-                    <span className="font-semibold">Sold Out</span>
+                    <span className="font-semibold">Booked Out</span>
                   </label>
                 </div>
               </div>
@@ -1769,7 +1769,7 @@ export function Accommodations() {
                          </label>
                          <label className={`${checkboxLabelClassName} text-orange-500`}>
                             <input type="checkbox" checked={!!currentEditData.sold_out} onChange={(e) => handleInputChange(e, 'sold_out')} disabled={editLoading} className={checkboxInputClassName}/>
-                            <span className="font-semibold">Sold Out</span>
+                            <span className="font-semibold">Booked Out</span>
                          </label>
                     </div>
                   </>
@@ -1824,7 +1824,7 @@ export function Accommodations() {
                     <div className="flex gap-2 pt-1 flex-wrap"> 
                       {accommodation.has_wifi && <span className="inline-flex items-center gap-1 bg-[var(--color-bg-success-subtle)] text-[var(--color-text-success)] px-2 py-0.5 rounded-sm text-xs"><Wifi size={12}/> WiFi</span>}
                       {accommodation.has_electricity && <span className="inline-flex items-center gap-1 bg-[var(--color-bg-success-subtle)] text-[var(--color-text-success)] px-2 py-0.5 rounded-sm text-xs"><Zap size={12}/> Electricity</span>}
-                      {accommodation.sold_out && <span className="inline-flex items-center gap-1 bg-orange-100 text-orange-700 px-2 py-0.5 rounded-sm text-xs font-semibold">SOLD OUT</span>}
+                      {accommodation.sold_out && <span className="inline-flex items-center gap-1 bg-gray-100 text-gray-700 px-2 py-0.5 rounded-sm text-xs font-semibold">BOOKED OUT</span>}
                       {!accommodation.has_wifi && !accommodation.has_electricity && !accommodation.sold_out && <span className='text-xs italic'>No listed features.</span>}
                     </div>
                   </>
