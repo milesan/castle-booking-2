@@ -741,7 +741,7 @@ export function CabinSelector({
                         >
                           <h3 className="text-lg font-medium text-primary font-lettra-bold uppercase mb-2">YOUR OWN TENT</h3>
                           {tentAcc.sold_out ? (
-                            <span className="text-red-600 text-xl font-bold font-mono tracking-wider">SOLD OUT</span>
+                            <span className="text-white text-xl font-bold font-mono tracking-wider">BOOKED OUT</span>
                           ) : (
                             <span className="text-accent-primary text-xl font-lettra-bold font-mono">Free</span>
                           )}
@@ -770,7 +770,7 @@ export function CabinSelector({
                         >
                           <h3 className="text-lg font-medium text-primary font-lettra-bold uppercase mb-2">YOUR OWN VAN</h3>
                           {vanAcc.sold_out ? (
-                            <span className="text-red-600 text-xl font-bold font-mono tracking-wider">SOLD OUT</span>
+                            <span className="text-white text-xl font-bold font-mono tracking-wider">BOOKED OUT</span>
                           ) : (
                             <span className="text-accent-primary text-xl font-lettra-bold font-mono">Free</span>
                           )}
@@ -882,7 +882,7 @@ export function CabinSelector({
                 >
                   {/* Use the StatusOverlay helper component */}
                   <StatusOverlay isVisible={acc.sold_out} zIndex={5}>
-                    <span className="text-red-600 font-bold text-lg tracking-wider">SOLD OUT</span>
+                    <span className="text-white font-bold text-lg tracking-wider">BOOKED OUT</span>
                   </StatusOverlay>
                   <StatusOverlay isVisible={!testMode && isDisabled && !acc.sold_out} zIndex={4}>
                     Select dates first
