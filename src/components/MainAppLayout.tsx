@@ -6,7 +6,7 @@ import { useSession } from '../hooks/useSession';
 // Assuming a ThemeContext exists and provides a useTheme hook
 // import { useTheme } from '../contexts/ThemeContext'; 
 import { Footer } from './Footer';
-import { BugReportFAB } from './BugReportFAB';
+// import { BugReportFAB } from './BugReportFAB';
 import { useUserPermissions } from '../hooks/useUserPermissions'; // <-- Import the new hook
 import { HoverClickPopover } from './HoverClickPopover';
 import { useCredits } from '../hooks/useCredits';
@@ -370,7 +370,7 @@ export function MainAppLayout({ children }: MainAppLayoutProps) {
       {/* === Footer End === */}
 
       {/* === Modals and FABs Start === */}
-      <BugReportFAB />
+      {/* <BugReportFAB /> */}
       {/* === Modals and FABs End === */}
 
       {/* Keyframes can stay here or move to a global CSS file */}
