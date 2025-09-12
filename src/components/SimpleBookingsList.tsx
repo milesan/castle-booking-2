@@ -15,12 +15,19 @@ interface SimpleBooking {
   accommodations?: {
     title: string;
   };
+  garden_addon_details?: {
+    option_name: string;
+    start_date: string;
+    end_date: string;
+    price: number;
+  };
 }
 
 export function SimpleBookingsList() {
   const [bookings, setBookings] = useState<SimpleBooking[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [gardenStats, setGardenStats] = useState({ total: 0, addons: 0, standalone: 0 });
   const [cancelModalBooking, setCancelModalBooking] = useState<SimpleBooking | null>(null);
   const [deleteMode, setDeleteMode] = useState<'cancel' | 'delete'>('cancel');
   const [isProcessing, setIsProcessing] = useState(false);
@@ -39,6 +46,25 @@ export function SimpleBookingsList() {
     loadAccommodations();
   }, []);
 
+  useEffect(() => {
+    // Calculate garden decompression statistics
+    const gardenBookings = bookings.filter(b => 
+      b.garden_addon_details || 
+      b.accommodations?.title === 'Garden Decompression (No Castle Accommodation)'
+    );
+    
+    const gardenAddons = bookings.filter(b => b.garden_addon_details).length;
+    const gardenStandalone = bookings.filter(b => 
+      b.accommodations?.title === 'Garden Decompression (No Castle Accommodation)'
+    ).length;
+    
+    setGardenStats({
+      total: gardenBookings.length,
+      addons: gardenAddons,
+      standalone: gardenStandalone
+    });
+  }, [bookings]);
+
   async function loadBookings() {
     setLoading(true);
     setError(null);
@@ -55,7 +81,8 @@ export function SimpleBookingsList() {
           check_in,
           check_out,
           accommodation_id,
-          accommodations ( title )
+          accommodations ( title ),
+          garden_addon_details
         `)
         .order('created_at', { ascending: false });
 
@@ -201,6 +228,18 @@ export function SimpleBookingsList() {
         <h2 className="text-lg font-medium text-[var(--color-text-primary)]">
           Bookings ({bookings.length})
         </h2>
+        {gardenStats.total > 0 && (
+          <div className="mt-2 p-3 bg-green-50 rounded-sm border border-green-200">
+            <div className="text-sm font-medium text-green-800">
+              Garden Decompression Sales: {gardenStats.total} total
+            </div>
+            <div className="text-xs text-green-600 mt-1">
+              • Garden Add-ons (with Castle): {gardenStats.addons}
+              <br />
+              • Garden-Only bookings: {gardenStats.standalone}
+            </div>
+          </div>
+        )}
       </div>
       
       <div className="overflow-x-auto">
@@ -234,7 +273,14 @@ export function SimpleBookingsList() {
                   {booking.user_email}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-[var(--color-text-primary)]">
-                  {booking.accommodations?.title || 'N/A'}
+                  <div>
+                    {booking.accommodations?.title || 'N/A'}
+                    {booking.garden_addon_details && (
+                      <div className="text-xs text-green-600 mt-1">
+                        + Garden: {booking.garden_addon_details.option_name}
+                      </div>
+                    )}
+                  </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-[var(--color-text-primary)]">
                   €{Number(booking.total_price).toFixed(2)}
